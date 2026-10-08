@@ -1,10 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Atmosphere } from '../src/ambient.ts';
-import { COLOR_BITS } from '../src/config.ts';
+import { COLORS, COLOR_BITS } from '../src/config.ts';
 import { Frame } from '../src/frame.ts';
 import { Renderer, quantize, viewOrigin } from '../src/render.ts';
 import { World } from '../src/world.ts';
+import type { ChunkSource } from '../src/world.ts';
+import { Projection } from '../src/geo.ts';
 
 function scene(startHour: number) {
   return {
@@ -78,4 +80,40 @@ test('night is darker than noon, and the lantern lights your surroundings', () =
   const nearYou = ratio(12 * 80 + 36, 12 * 80 + 44);
   const farAway = ratio(0, 8);
   assert.ok(nearYou > farAway, `near ${nearYou} vs far ${farAway}`);
+});
+
+test('a chunk still loading draws as fog, with no drops', () => {
+  const { world, atm, player } = scene(12);
+  const fog = { ...world.chunk(0, 0), ready: false };
+  const loading: ChunkSource = {
+    seed: 1,
+    generated: 0,
+    chunk: () => fog,
+    chunkAt: () => fog,
+    biomeAt: () => 6,
+    temperatureAt: () => 0.5,
+    prefetch: () => 0,
+  };
+  const frame = new Frame(60, 20);
+  const raining = { ...new Atmosphere(1, { startHour: 12, forceFront: 1 }).snapshot() };
+  new Renderer().render(frame, loading, atm, raining, player, { fps: 60 });
+  for (let i = 0; i < 19 * 60; i++) {
+    if (i === 9 * 60 + 30) continue; // you
+    assert.equal(frame.glyph[i], '·'.codePointAt(0), `cell ${i}`);
+    assert.equal(frame.fg[i], COLORS.fogFg);
+    assert.equal(frame.bg[i], COLORS.fogBg);
+  }
+});
+
+test('the real-world status bar shows coordinates, the place, attribution and the loading state', () => {
+  const { world, atm } = scene(12);
+  const frame = new Frame(120, 20);
+  const place = { name: 'Prague', projection: new Projection(50.088, 14.414, 3), loading: 2, offline: true };
+  new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place });
+  const bar = frame.rowText(19);
+  assert.match(bar, /^ 50\.0880,14\.4140 │/);
+  assert.ok(bar.includes('Prague · © OpenStreetMap · loading · offline'), bar);
+  assert.ok(!bar.includes('seed'));
+  new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place: { ...place, loading: 0, offline: false } });
+  assert.ok(!frame.rowText(19).includes('loading') && !frame.rowText(19).includes('offline'));
 });

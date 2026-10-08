@@ -1,18 +1,47 @@
-// Entry point: `node src/main.ts [--seed N]` to play, `node src/main.ts --bench` to measure.
+// Entry point: `node src/main.ts [--seed N] [--place TEXT | --at LAT,LON] [--scale M]` to play, `--bench` to measure.
 import { FRAME_DT, FRAME_MS, MAX_CATCH_UP_STEPS, PREFETCH_BUDGET_MS } from './config.ts';
-import { Game, parseOptions, randomSeed, runBench } from './game.ts';
-import type { Options } from './game.ts';
+import { Game, cleanLabel, parseOptions, randomSeed, runBench, seedFrom } from './game.ts';
+import type { GameOptions, Options } from './game.ts';
 import { InputState } from './input.ts';
+import { Net, defaultCacheDir } from './net.ts';
+import { resolvePlace } from './place.ts';
+import { RealWorld } from './realworld.ts';
 import { SYNC_BEGIN, SYNC_END, Terminal } from './terminal.ts';
+
+/** The real world for `--place` or `--at`, with its seed; null for the generated world. */
+async function realWorld(options: Options): Promise<{ seed: number; game: GameOptions } | null> {
+  if (options.place === null && options.at === null) return null;
+  const net = new Net(defaultCacheDir());
+  let origin: { lat: number; lon: number };
+  let name: string;
+  if (options.at !== null) {
+    origin = options.at;
+    name = `${origin.lat.toFixed(4)},${origin.lon.toFixed(4)}`;
+  } else {
+    const place = await resolvePlace(options.place ?? '', net);
+    origin = place;
+    name = cleanLabel(place.name) || `${place.lat.toFixed(4)},${place.lon.toFixed(4)}`;
+  }
+  const seed = options.seed ?? seedFrom(`${origin.lat.toFixed(4)},${origin.lon.toFixed(4)}`);
+  const world = new RealWorld(origin, options.scale, seed, net);
+  return { seed, game: { world, place: { name, projection: world.projection, status: () => world.status() } } };
+}
 
 async function play(options: Options): Promise<void> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     process.stderr.write('wander needs a terminal\n');
     process.exit(1);
   }
+  let real: { seed: number; game: GameOptions } | null;
+  try {
+    real = await realWorld(options);
+  } catch (err) {
+    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+    process.exit(2);
+  }
   const term = new Terminal({ stdin: process.stdin, stdout: process.stdout, stderr: process.stderr, proc: process });
   await term.open();
-  const game = new Game(options.seed ?? randomSeed(), term.cols, term.rows);
+  const game = new Game(real?.seed ?? options.seed ?? randomSeed(), term.cols, term.rows, real?.game ?? {});
   game.prefetch(Infinity);
   const input = new InputState(term.kitty);
   term.onData((text) => input.feed(text, performance.now()));

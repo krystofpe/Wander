@@ -1,22 +1,35 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ASPECT, BIOMES, Water } from '../src/config.ts';
-import { Game, benchIntent, parseOptions, seedFrom } from '../src/game.ts';
+import { Game, benchIntent, cleanLabel, parseOptions, seedFrom } from '../src/game.ts';
+import { World } from '../src/world.ts';
+import { Projection } from '../src/geo.ts';
 
 const idle = { dx: 0, dy: 0, run: false, fastTime: false };
 
-test('parseOptions reads seed, bench, size and frames', () => {
+test('parseOptions reads seed, bench, size, frames, place, at and scale', () => {
   assert.deepEqual(parseOptions(['--seed', '42', '--bench', '--size', '80x24', '--frames', '30']), {
     seed: 42,
     bench: true,
     cols: 80,
     rows: 24,
     frames: 30,
+    place: null,
+    at: null,
+    scale: 3,
   });
+  assert.deepEqual(parseOptions(['--place', 'Prague', '--scale', '6']).place, 'Prague');
+  assert.deepEqual(parseOptions(['--at', '50.088,14.414']).at, { lat: 50.088, lon: 14.414 });
+  assert.equal(parseOptions(['--scale', '6']).scale, 6);
 });
 
 test('parseOptions has defaults and rejects bad input', () => {
-  assert.deepEqual(parseOptions([]), { seed: null, bench: false, cols: 200, rows: 60, frames: 600 });
+  assert.deepEqual(parseOptions([]), { seed: null, bench: false, cols: 200, rows: 60, frames: 600, place: null, at: null, scale: 3 });
+  assert.throws(() => parseOptions(['--at', 'Prague']), /--at must look like 50.088,14.414/);
+  assert.throws(() => parseOptions(['--at', '95,14']), /--at must look like 50.088,14.414/);
+  assert.throws(() => parseOptions(['--place', 'Prague', '--at', '50,14']), /use --place or --at, not both/);
+  assert.throws(() => parseOptions(['--scale', '0']), /--scale must be a positive number of metres/);
+  assert.throws(() => parseOptions(['--scale', 'big']), /--scale must be a positive number of metres/);
   assert.throws(() => parseOptions(['--size', 'big']), /--size must look like 200x60/);
   assert.throws(() => parseOptions(['--frames', '0']), /--frames must be a positive whole number/);
   assert.throws(() => parseOptions(['--nope']));
@@ -67,4 +80,35 @@ test('the bench walk has five two-second legs, some running', () => {
   assert.deepEqual(benchIntent(0), { dx: 1, dy: 0, run: false, fastTime: false });
   assert.deepEqual(benchIntent(120), { dx: 1, dy: 1, run: true, fastTime: false });
   assert.deepEqual(benchIntent(600), benchIntent(0));
+});
+
+test('a game in a given world starts on cell (0, 0) and draws that world', () => {
+  const world = new World(1);
+  const game = new Game(5, 80, 24, { world });
+  assert.equal(game.world, world);
+  assert.deepEqual(game.player, { x: 0.5, y: ASPECT * 0.5, vx: 0, vy: 0 });
+  assert.equal(game.place, null);
+  game.prefetch(Infinity);
+  assert.ok(game.draw().length > 0);
+});
+
+test('place names are cleaned to characters the status bar can draw one per column', () => {
+  assert.equal(cleanLabel('Praha 😀'), 'Praha');
+  assert.equal(cleanLabel('東京'), '');
+  assert.equal(cleanLabel('Zoë\u200b'), 'Zoë');
+  assert.equal(cleanLabel('e\u0301'), '\u00e9');
+  assert.equal(cleanLabel('\x1b[31mBrno'), '[31mBrno');
+  assert.equal(cleanLabel('   '), '');
+  assert.equal(cleanLabel('a'.repeat(40)).length, 32);
+});
+
+test('the status bar of a game with a place reports loading and offline from the world', () => {
+  const world = new World(1);
+  let loading = 1;
+  const game = new Game(5, 120, 24, { world, place: { name: 'Prague', projection: new Projection(50.088, 14.414, 3), status: () => ({ loading, offline: false }) } });
+  game.prefetch(Infinity);
+  assert.ok(game.draw().includes('Prague · © OpenStreetMap · loading'));
+  loading = 0;
+  game.update(idle, 1 / 60);
+  assert.ok(!game.draw().includes('loading'));
 });

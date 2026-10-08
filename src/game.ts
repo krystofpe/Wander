@@ -1,7 +1,7 @@
 // The game without the terminal: options, world + sky + you, one step and one frame at a time, and the bench.
 import { Buffer } from 'node:buffer';
 import { parseArgs } from 'node:util';
-import { ASPECT, BIOMES, FRAME_DT, PREFETCH_BUDGET_MS, TIME_LAPSE } from './config.ts';
+import { ASPECT, BIOMES, FRAME_DT, PREFETCH_BUDGET_MS, REAL, TIME_LAPSE } from './config.ts';
 import { Atmosphere } from './ambient.ts';
 import type { AtmosphereOptions } from './ambient.ts';
 import { Frame } from './frame.ts';
@@ -9,8 +9,11 @@ import type { Intent } from './input.ts';
 import { stepPlayer } from './player.ts';
 import type { Player } from './player.ts';
 import { Renderer, viewOrigin } from './render.ts';
+import type { PlaceHud } from './render.ts';
 import { diffFrames } from './screen.ts';
 import { World, findLand, findSea } from './world.ts';
+import type { ChunkSource } from './world.ts';
+import type { Projection } from './geo.ts';
 
 export type Options = {
   /** null when no --seed was given. */
@@ -19,6 +22,12 @@ export type Options = {
   readonly cols: number;
   readonly rows: number;
   readonly frames: number;
+  /** A place name to resolve, or null. */
+  readonly place: string | null;
+  /** Coordinates to start at, or null. */
+  readonly at: { readonly lat: number; readonly lon: number } | null;
+  /** Metres per column in a real world. */
+  readonly scale: number;
 };
 
 export function parseOptions(argv: readonly string[]): Options {
@@ -29,6 +38,9 @@ export function parseOptions(argv: readonly string[]): Options {
       bench: { type: 'boolean', default: false },
       size: { type: 'string', default: '200x60' },
       frames: { type: 'string', default: '600' },
+      place: { type: 'string' },
+      at: { type: 'string' },
+      scale: { type: 'string', default: String(REAL.scale) },
     },
   });
   const size = /^(\d+)x(\d+)$/.exec(values.size);
@@ -39,12 +51,26 @@ export function parseOptions(argv: readonly string[]): Options {
   if (!Number.isInteger(frames) || frames < 1) {
     throw new Error(`--frames must be a positive whole number, not "${values.frames}"`);
   }
+  let at: { lat: number; lon: number } | null = null;
+  if (values.at !== undefined) {
+    const m = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(values.at);
+    const lat = m === null ? NaN : Number(m[1]);
+    const lon = m === null ? NaN : Number(m[2]);
+    if (m === null || lat < -85 || lat > 85 || lon < -180 || lon > 180) throw new Error(`--at must look like 50.088,14.414, not "${values.at}"`);
+    at = { lat, lon };
+  }
+  if (values.place !== undefined && at !== null) throw new Error('use --place or --at, not both');
+  const scale = Number(values.scale);
+  if (!Number.isFinite(scale) || scale <= 0) throw new Error(`--scale must be a positive number of metres, not "${values.scale}"`);
   return {
     seed: values.seed === undefined ? null : seedFrom(values.seed),
     bench: values.bench,
     cols: Number(size[1]),
     rows: Number(size[2]),
     frames,
+    place: values.place ?? null,
+    at,
+    scale,
   };
 }
 
@@ -60,11 +86,52 @@ export function randomSeed(): number {
   return Math.floor(Math.random() * 100000);
 }
 
-export type GameOptions = AtmosphereOptions & { readonly spawn?: 'land' | 'coast' };
+/** Code point ranges that take two terminal columns (East Asian wide and fullwidth, emoji). */
+const WIDE: readonly (readonly [number, number])[] = [
+  [0x1100, 0x115f],
+  [0x2e80, 0xa4cf],
+  [0xac00, 0xd7a3],
+  [0xf900, 0xfaff],
+  [0xfe30, 0xfe4f],
+  [0xff00, 0xff60],
+  [0xffe0, 0xffe6],
+  [0x1f300, 0x1faff],
+  [0x20000, 0x3fffd],
+];
+/** Control and format characters, combining marks, and line and paragraph separators. */
+const HIDDEN = /[\p{Cc}\p{Cf}\p{M}\p{Zl}\p{Zp}]/u;
+
+/** A label the status bar can draw one character per column: composed, without hidden or double-width characters, at most 32 long. May be empty. */
+export function cleanLabel(text: string): string {
+  return Array.from(text.normalize('NFC'))
+    .filter((ch) => {
+      const cp = ch.codePointAt(0) ?? 0;
+      return !HIDDEN.test(ch) && !WIDE.some(([from, to]) => cp >= from && cp <= to);
+    })
+    .join('')
+    .trim()
+    .slice(0, 32)
+    .trim();
+}
+
+/** A real place for the status bar. */
+export type GamePlace = {
+  readonly name: string;
+  readonly projection: Projection;
+  status(): { readonly loading: number; readonly offline: boolean };
+};
+
+export type GameOptions = AtmosphereOptions & {
+  readonly spawn?: 'land' | 'coast';
+  /** The world to play in; without it a generated world is made from the seed. */
+  readonly world?: ChunkSource;
+  readonly place?: GamePlace;
+};
 
 /** World, sky and you, advanced one fixed step at a time and drawn one frame at a time. */
 export class Game {
-  readonly world: World;
+  readonly world: ChunkSource;
+  readonly place: GamePlace | null;
   readonly atm: Atmosphere;
   player: Player;
   showHud = true;
@@ -74,12 +141,20 @@ export class Game {
   private previous: Frame | null = null;
 
   constructor(seed: number, cols: number, rows: number, options: GameOptions = {}) {
-    this.world = new World(seed);
     this.atm = new Atmosphere(seed, options);
-    // Start on land; the bench starts on the land nearest a sea, so water is in view.
-    const from = options.spawn === 'coast' ? findSea(this.world, 0, 0) : { mx: 0, my: 0 };
-    const land = findLand(this.world, from.mx, from.my);
-    this.player = { x: land.mx + 0.5, y: (land.my + 0.5) * ASPECT, vx: 0, vy: 0 };
+    this.place = options.place ?? null;
+    if (options.world !== undefined) {
+      // A real place: you start exactly on the cell the place resolved to.
+      this.world = options.world;
+      this.player = { x: 0.5, y: 0.5 * ASPECT, vx: 0, vy: 0 };
+    } else {
+      const world = new World(seed);
+      this.world = world;
+      // Start on land; the bench starts on the land nearest a sea, so water is in view.
+      const from = options.spawn === 'coast' ? findSea(world, 0, 0) : { mx: 0, my: 0 };
+      const land = findLand(world, from.mx, from.my);
+      this.player = { x: land.mx + 0.5, y: (land.my + 0.5) * ASPECT, vx: 0, vy: 0 };
+    }
     this.frames = [new Frame(cols, rows), new Frame(cols, rows)];
   }
 
@@ -110,11 +185,17 @@ export class Game {
   /** Renders the next frame and returns the escape sequences that put it on screen ('' if nothing changed). */
   draw(): string {
     const next = this.previous === this.frames[0] ? this.frames[1] : this.frames[0];
-    const hud = this.showHud ? { fps: this.fps } : null;
+    const hud = this.showHud ? { fps: this.fps, place: this.placeHud() } : null;
     this.renderer.render(next, this.world, this.atm, this.atm.snapshot(), this.player, hud);
     const out = diffFrames(this.previous, next);
     this.previous = next;
     return out;
+  }
+
+  private placeHud(): PlaceHud | null {
+    if (this.place === null) return null;
+    const { loading, offline } = this.place.status();
+    return { name: this.place.name, projection: this.place.projection, loading, offline };
   }
 }
 

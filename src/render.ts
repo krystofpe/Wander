@@ -16,11 +16,14 @@ import {
 import { dropAt, lanternLight, weatherName, windArrow } from './ambient.ts';
 import type { Ambient, Atmosphere } from './ambient.ts';
 import type { Frame } from './frame.ts';
+import type { Projection } from './geo.ts';
 import type { Player } from './player.ts';
-import type { World } from './world.ts';
+import type { ChunkSource } from './world.ts';
 
+/** A real place for the status bar: where you are, what is loading. */
+export type PlaceHud = { readonly name: string; readonly projection: Projection; readonly loading: number; readonly offline: boolean };
 /** What the status bar shows besides the world; null hides the bar. */
-export type Hud = { readonly fps: number } | null;
+export type Hud = { readonly fps: number; readonly place?: PlaceHud | null } | null;
 
 const code = (ch: string): number => ch.codePointAt(0) ?? 32;
 const AT = code('@');
@@ -29,6 +32,7 @@ const BIG_WAVE = code('≈');
 const TROUGH = code('-');
 const SPARKLE = code('·');
 const SPACE = 32;
+const FOG = code('·');
 
 /** Spacing, in map cells, of the coarse grid for slowly varying fields (clouds, gusts). */
 const GRID_X = 4;
@@ -83,12 +87,20 @@ export function statusText(
   weather: string,
   fps: number,
   seed: number,
+  place: PlaceHud | null = null,
 ): string {
   const hh = Math.floor(amb.hour);
   const mm = Math.floor((amb.hour - hh) * 60);
   const clock = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   const wind = windArrow(amb.windX, amb.windY);
-  return ` x ${Math.round(player.x)}  y ${Math.round(player.y)} │ ${biomeName} │ ${clock} ${amb.phase} │ ${weather}, wind ${wind} │ ${fps} fps │ seed ${seed}`;
+  let where = ` x ${Math.round(player.x)}  y ${Math.round(player.y)}`;
+  let tail = `seed ${seed}`;
+  if (place !== null) {
+    const { lat, lon } = place.projection.toLatLon(player.x, player.y);
+    where = ` ${lat.toFixed(4)},${lon.toFixed(4)}`;
+    tail = `${place.name} · © OpenStreetMap${place.loading > 0 ? ' · loading' : ''}${place.offline ? ' · offline' : ''}`;
+  }
+  return `${where} │ ${biomeName} │ ${clock} ${amb.phase} │ ${weather}, wind ${wind} │ ${fps} fps │ ${tail}`;
 }
 
 export class Renderer {
@@ -96,7 +108,7 @@ export class Renderer {
   private gusts = new Float32Array(0);
 
   /** Fills every cell of `frame`. */
-  render(frame: Frame, world: World, atm: Atmosphere, amb: Ambient, player: Player, hud: Hud): void {
+  render(frame: Frame, world: ChunkSource, atm: Atmosphere, amb: Ambient, player: Player, hud: Hud): void {
     if (frame.width < MIN_COLS || frame.height < MIN_ROWS) {
       drawTooSmall(frame);
       return;
@@ -134,6 +146,10 @@ export class Renderer {
         const mx = left + c;
         const cx = Math.floor(mx / CHUNK_SIZE);
         if (cx !== chunk.cx) chunk = world.chunk(cx, cy);
+        if (!chunk.ready) {
+          frame.set(c, r, FOG, COLORS.fogFg, COLORS.fogBg);
+          continue;
+        }
         const o = rowStart + (mx - cx * CHUNK_SIZE);
         const biome = chunk.biome[o];
         const def = BIOMES[biome];
@@ -206,7 +222,7 @@ export class Renderer {
       const pmy = Math.floor(player.y / ASPECT);
       const cold = world.temperatureAt(pmx, pmy) < WEATHER.snowBelow;
       const name = BIOMES[world.biomeAt(pmx, pmy)].name;
-      const text = statusText(player, name, amb, weatherName(amb, cold), hud.fps, world.seed);
+      const text = statusText(player, name, amb, weatherName(amb, cold), hud.fps, world.seed, hud.place ?? null);
       const row = frame.height - 1;
       for (let c = 0; c < cols; c++) frame.set(c, row, SPACE, COLORS.hudFg, COLORS.hudBg);
       frame.text(0, row, text, COLORS.hudFg, COLORS.hudBg);

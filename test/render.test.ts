@@ -41,14 +41,19 @@ function grassRun(world: World): { mx: number; my: number } {
   throw new Error('no grassland run near the origin');
 }
 
-/** You on a grass run at noon, with the given wind. */
+/**
+ * You five columns west of a grass run at noon, with the given wind. The run's centre is at world
+ * (runX, runY), screen column 35 of a 60-wide frame, clear of the 3×3 figure drawn around you.
+ */
 function onGrass(windX: number, windStrength: number) {
   const world = new World(1);
   const atm = new Atmosphere(1, { startHour: 12, forceFront: 0 });
   const spot = grassRun(world);
-  const player = { x: spot.mx + 0.5, y: (spot.my + 0.5) * ASPECT, vx: 0, vy: 0 };
+  const runX = spot.mx + 0.5;
+  const runY = (spot.my + 0.5) * ASPECT;
+  const player = { x: runX - 5, y: runY, vx: 0, vy: 0 };
   const amb: Ambient = { ...atm.snapshot(), realTime: 0.1, windX, windY: 0, windStrength };
-  return { world, atm, player, amb };
+  return { world, atm, player, amb, runX, runY };
 }
 
 test('quantize keeps the ends and rounds to 2^COLOR_BITS levels', () => {
@@ -65,18 +70,28 @@ test('the view is centred on you', () => {
   assert.deepEqual(viewOrigin({ x: 100.7, y: 41, vx: 0, vy: 0 }, 60, 19), { left: 70, top: 11 });
 });
 
-test('you are drawn at the centre of the map, and every cell is filled', () => {
+test('you are a figure with your name above, it walks, and every cell is filled', () => {
   const { world, atm, player, trail } = scene(12);
   const frame = new Frame(60, 20);
-  new Renderer().render(frame, world, atm, atm.snapshot(), player, trail, { fps: 60 });
-  assert.equal(frame.glyph[(19 >> 1) * 60 + 30], '@'.codePointAt(0));
+  const pr = 19 >> 1;
+  const at = (col: number, row: number): string => String.fromCodePoint(frame.glyph[row * 60 + col]);
+  new Renderer('Elowen').render(frame, world, atm, atm.snapshot(), player, trail, { fps: 60 });
+  assert.equal(at(30, pr - 1), 'o');
+  assert.equal(at(29, pr) + at(30, pr) + at(31, pr), '/|\\');
+  assert.equal(at(29, pr + 1) + at(31, pr + 1), '/\\');
+  assert.equal(frame.rowText(pr - 2).slice(27, 33), 'Elowen');
   assert.ok(frame.glyph.every((g) => g !== 0));
+  const moving = { ...player, vx: 12 };
+  new Renderer('Elowen').render(frame, world, atm, { ...atm.snapshot(), realTime: 0.2 }, moving, trail, { fps: 60 });
+  assert.equal(at(29, pr + 1) + at(31, pr + 1), '||', 'the legs take a step');
+  new Renderer('Elowen').render(frame, world, atm, { ...atm.snapshot(), realTime: 0.35 }, moving, trail, { fps: 60 });
+  assert.equal(at(29, pr + 1) + at(31, pr + 1), '/\\', 'and step back');
 });
 
 test('every map cell has a black background', () => {
   const { world, atm, player, trail } = scene(12);
   const frame = new Frame(60, 20);
-  new Renderer().render(frame, world, atm, atm.snapshot(), player, trail, { fps: 60 });
+  new Renderer('you').render(frame, world, atm, atm.snapshot(), player, trail, { fps: 60 });
   for (let i = 0; i < 19 * 60; i++) assert.equal(frame.bg[i], COLORS.ground, `cell ${i}`);
   assert.equal(frame.bg[19 * 60], COLORS.hudBg);
 });
@@ -84,7 +99,7 @@ test('every map cell has a black background', () => {
 test('the status bar shows position, time, fps and seed, and can be hidden', () => {
   const { world, atm, player, trail } = scene(12);
   const frame = new Frame(120, 20);
-  const renderer = new Renderer();
+  const renderer = new Renderer('you');
   renderer.render(frame, world, atm, atm.snapshot(), player, trail, { fps: 57 });
   const bar = frame.rowText(19);
   assert.match(bar, /x 41 {2}y 81 │/);
@@ -97,7 +112,7 @@ test('the status bar shows position, time, fps and seed, and can be hidden', () 
 test('a window below 40×12 asks to be made bigger', () => {
   const { world, atm, player, trail } = scene(12);
   const frame = new Frame(30, 10);
-  new Renderer().render(frame, world, atm, atm.snapshot(), player, trail, { fps: 60 });
+  new Renderer('you').render(frame, world, atm, atm.snapshot(), player, trail, { fps: 60 });
   assert.ok(frame.rowText(5).includes('Make the window bigger'));
 });
 
@@ -106,8 +121,8 @@ test('night is darker than noon, and the lantern lights your surroundings', () =
   const night = scene(23);
   const a = new Frame(80, 24);
   const b = new Frame(80, 24);
-  new Renderer().render(a, noon.world, noon.atm, noon.atm.snapshot(), noon.player, noon.trail, null);
-  new Renderer().render(b, night.world, night.atm, night.atm.snapshot(), night.player, night.trail, null);
+  new Renderer('you').render(a, noon.world, noon.atm, noon.atm.snapshot(), noon.player, noon.trail, null);
+  new Renderer('you').render(b, night.world, night.atm, night.atm.snapshot(), night.player, night.trail, null);
   assert.ok(averageForeground(b) < averageForeground(a) * 0.6);
   // Same world and spot in both scenes, so the night/noon ratio isolates the light.
   const ratio = (from: number, to: number): number => averageForeground(b, from, to) / averageForeground(a, from, to);
@@ -119,24 +134,24 @@ test('night is darker than noon, and the lantern lights your surroundings', () =
 test('the screen edges are darker than the centre at noon', () => {
   const { world, atm, player, trail } = scene(12);
   const frame = new Frame(80, 24);
-  new Renderer().render(frame, world, atm, atm.snapshot(), player, trail, null);
+  new Renderer('you').render(frame, world, atm, atm.snapshot(), player, trail, null);
   const corner = averageForeground(frame, 0, 8);
   const centre = averageForeground(frame, 12 * 80 + 36, 12 * 80 + 44);
   assert.ok(corner < centre * 0.5, `corner ${corner} vs centre ${centre}`);
 });
 
-test('blades bend away from your trail and stand farther off', () => {
-  const { world, atm, player, amb } = onGrass(0, 0);
+test('blades bend away from a trail and stand farther off', () => {
+  const { world, atm, player, amb, runX, runY } = onGrass(0, 0);
   const trail = new Trail();
-  trail.push(player.x - 1, player.y, 0); // one step ago, one column west
-  trail.push(player.x, player.y, 0.1);
+  trail.push(runX - 1, runY, 0); // one step ago, one column west of the run's centre
+  trail.push(runX, runY, 0.1);
   const frame = new Frame(60, 20);
-  new Renderer().render(frame, world, atm, amb, player, trail, null);
+  new Renderer('you').render(frame, world, atm, amb, player, trail, null);
   const row = 20 >> 1;
   const at = (col: number): number => frame.glyph[row * 60 + col];
-  assert.ok(at(29) === BLADES.flat || at(29) === BLADES.shortFlat, 'the blade you just stepped off lies flat');
-  assert.equal(at(31), BLADES.right, 'the blade ahead of you leans away');
-  assert.ok(at(32) === BLADES.upright || at(32) === BLADES.short, 'two columns on, blades stand');
+  assert.ok(at(34) === BLADES.flat || at(34) === BLADES.shortFlat, 'the blade just stepped off lies flat');
+  assert.equal(at(36), BLADES.right, 'the blade ahead leans away');
+  assert.ok(at(37) === BLADES.upright || at(37) === BLADES.short, 'two columns on, blades stand');
 });
 
 test('blades still show with an empty trail, without asking it to bend', () => {
@@ -147,9 +162,19 @@ test('blades still show with an empty trail, without asking it to bend', () => {
     }
   }
   const frame = new Frame(60, 20);
-  new Renderer().render(frame, world, atm, amb, player, new EmptyTrail(), null);
+  new Renderer('you').render(frame, world, atm, amb, player, new EmptyTrail(), null);
   const row = 20 >> 1;
   const at = (col: number): number => frame.glyph[row * 60 + col];
-  assert.ok(at(31) === BLADES.upright || at(31) === BLADES.right, 'a tall blade stands or leans with the east wind');
-  for (const col of [28, 29, 32]) assert.ok(BLADE_GLYPHS.has(at(col)), `column ${col}`);
+  assert.ok(at(36) === BLADES.upright || at(36) === BLADES.right, 'a tall blade stands or leans with the east wind');
+  for (const col of [33, 34, 37]) assert.ok(BLADE_GLYPHS.has(at(col)), `column ${col}`);
+});
+
+test('a long name fits in the smallest window', () => {
+  const { world, atm, player, trail } = scene(12);
+  const frame = new Frame(40, 12);
+  new Renderer('abcdefghijklmnop').render(frame, world, atm, atm.snapshot(), player, trail, { fps: 60 });
+  const pr = 11 >> 1;
+  assert.ok(frame.rowText(pr - 2).includes('abcdefghijklmnop'));
+  assert.equal(String.fromCodePoint(frame.glyph[(pr - 1) * 40 + 20]), 'o');
+  assert.match(frame.rowText(11), /^ x 41 {2}y 81 │/, 'the status bar is drawn, clipped at 40 columns');
 });

@@ -1,9 +1,19 @@
 // Entry point: `node src/main.ts [--seed N]` to play, `node src/main.ts --bench` to measure.
+import { userInfo } from 'node:os';
 import { FRAME_DT, FRAME_MS, MAX_CATCH_UP_STEPS, PREFETCH_BUDGET_MS } from './config.ts';
 import { Game, parseOptions, randomSeed, runBench } from './game.ts';
 import type { Options } from './game.ts';
 import { InputState } from './input.ts';
 import { SYNC_BEGIN, SYNC_END, Terminal } from './terminal.ts';
+
+/** Your login name, or `you` when the system cannot say. */
+function defaultName(): string {
+  try {
+    return userInfo().username;
+  } catch {
+    return 'you';
+  }
+}
 
 async function play(options: Options): Promise<void> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
@@ -12,7 +22,7 @@ async function play(options: Options): Promise<void> {
   }
   const term = new Terminal({ stdin: process.stdin, stdout: process.stdout, stderr: process.stderr, proc: process });
   await term.open();
-  const game = new Game(options.seed ?? randomSeed(), term.cols, term.rows);
+  const game = new Game(options.seed ?? randomSeed(), term.cols, term.rows, { name: options.name ?? defaultName() });
   game.prefetch(Infinity);
   const input = new InputState(term.kitty);
   term.onData((text) => input.feed(text, performance.now()));

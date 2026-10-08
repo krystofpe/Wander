@@ -6,6 +6,7 @@ import {
   CHUNK_SIZE,
   COLOR_BITS,
   COLORS,
+  FIGURE,
   LANTERN_GAIN,
   LANTERN_RGB,
   MIN_COLS,
@@ -25,7 +26,6 @@ import type { World } from './world.ts';
 export type Hud = { readonly fps: number } | null;
 
 const code = (ch: string): number => ch.codePointAt(0) ?? 32;
-const AT = code('@');
 const WAVE = code('~');
 const BIG_WAVE = code('≈');
 const TROUGH = code('-');
@@ -94,8 +94,14 @@ export function statusText(
 }
 
 export class Renderer {
+  private readonly name: string;
   private clouds = new Float32Array(0);
   private gusts = new Float32Array(0);
+
+  /** `name` is drawn above your figure. */
+  constructor(name: string) {
+    this.name = name;
+  }
 
   /** Fills every cell of `frame`. `trail` is where you have walked lately, for the grass. */
   render(frame: Frame, world: World, atm: Atmosphere, amb: Ambient, player: Player, trail: Trail, hud: Hud): void {
@@ -219,10 +225,22 @@ export class Renderer {
       }
     }
 
-    // You, on black.
+    // You: a small figure whose legs alternate while you move, with your name above it.
     const pc = cols >> 1;
     const pr = mapRows >> 1;
-    frame.set(pc, pr, AT, COLORS.player, COLORS.ground);
+    const moving = Math.hypot(player.vx, player.vy) > 1;
+    const rows = moving && Math.floor(amb.realTime / FIGURE.stepTime) % 2 === 1 ? FIGURE.walk : FIGURE.stand;
+    for (let i = 0; i < rows.length; i++) {
+      const row = pr - 1 + i;
+      if (row < 0 || row >= mapRows) continue;
+      let c = pc - 1;
+      for (const ch of rows[i]) {
+        if (ch !== ' ' && c >= 0 && c < cols) frame.set(c, row, code(ch), COLORS.player, COLORS.ground);
+        c++;
+      }
+    }
+    const nameRow = pr - 2;
+    if (nameRow >= 0) frame.text(pc - (this.name.length >> 1), nameRow, this.name, COLORS.name, COLORS.ground);
 
     if (hud !== null) {
       const pmx = Math.floor(player.x);

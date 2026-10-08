@@ -10,7 +10,9 @@ Needs Node 25 or newer. There is nothing to install.
 node src/main.ts
 ```
 
-`--seed 42` (or any word) brings the same world back; the seed is shown in the status bar.
+`--seed 42` (or any word) brings the same world back; the seed is shown in the status bar. `--name Elowen` sets the name above your figure; without it, your login name is used.
+
+The map is drawn as coloured glyphs on black. Grass is blades that lean with the wind and part around you as you walk; the view is lit around you and fades to black at the edges.
 
 Wander is made for [Ghostty](https://ghostty.org). Ghostty reports when keys are held and released, so movement is smooth. Other terminals work too, but movement follows ordinary key repeat.
 

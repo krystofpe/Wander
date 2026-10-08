@@ -1,22 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ASPECT, BIOMES, Water } from '../src/config.ts';
-import { Game, benchIntent, parseOptions, seedFrom } from '../src/game.ts';
+import { Game, benchIntent, cleanName, parseOptions, seedFrom } from '../src/game.ts';
 
 const idle = { dx: 0, dy: 0, run: false, fastTime: false };
 
-test('parseOptions reads seed, bench, size and frames', () => {
-  assert.deepEqual(parseOptions(['--seed', '42', '--bench', '--size', '80x24', '--frames', '30']), {
+test('parseOptions reads seed, bench, size, frames and name', () => {
+  assert.deepEqual(parseOptions(['--seed', '42', '--bench', '--size', '80x24', '--frames', '30', '--name', 'Senje']), {
     seed: 42,
     bench: true,
     cols: 80,
     rows: 24,
     frames: 30,
+    name: 'Senje',
   });
 });
 
 test('parseOptions has defaults and rejects bad input', () => {
-  assert.deepEqual(parseOptions([]), { seed: null, bench: false, cols: 200, rows: 60, frames: 600 });
+  assert.deepEqual(parseOptions([]), { seed: null, bench: false, cols: 200, rows: 60, frames: 600, name: null });
   assert.throws(() => parseOptions(['--size', 'big']), /--size must look like 200x60/);
   assert.throws(() => parseOptions(['--frames', '0']), /--frames must be a positive whole number/);
   assert.throws(() => parseOptions(['--nope']));
@@ -74,4 +75,14 @@ test('each update records your position in the trail', () => {
   assert.equal(game.trail.bounds(0), null);
   for (let i = 0; i < 12; i++) game.update({ ...idle, dx: 1 }, 1 / 60);
   assert.notEqual(game.trail.bounds(game.atm.realTime), null);
+});
+
+test('your name is cleaned: trimmed, control characters removed, cut to 16, never empty', () => {
+  assert.equal(cleanName('  Elowen  '), 'Elowen');
+  assert.equal(cleanName('a\x1bb\x07c\x7fd'), 'abcd');
+  assert.equal(cleanName('abcdefghijklmnopqrstuvwxyz'), 'abcdefghijklmnop');
+  assert.equal(cleanName('   '), 'you');
+  assert.equal(cleanName('\x1b[31m'), '[31m');
+  assert.equal(new Game(3, 80, 24, { name: ' Senje ' }).name, 'Senje');
+  assert.equal(new Game(3, 80, 24).name, 'you');
 });

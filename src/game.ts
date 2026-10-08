@@ -20,6 +20,8 @@ export type Options = {
   readonly cols: number;
   readonly rows: number;
   readonly frames: number;
+  /** null when no --name was given. */
+  readonly name: string | null;
 };
 
 export function parseOptions(argv: readonly string[]): Options {
@@ -30,6 +32,7 @@ export function parseOptions(argv: readonly string[]): Options {
       bench: { type: 'boolean', default: false },
       size: { type: 'string', default: '200x60' },
       frames: { type: 'string', default: '600' },
+      name: { type: 'string' },
     },
   });
   const size = /^(\d+)x(\d+)$/.exec(values.size);
@@ -46,6 +49,7 @@ export function parseOptions(argv: readonly string[]): Options {
     cols: Number(size[1]),
     rows: Number(size[2]),
     frames,
+    name: values.name ?? null,
   };
 }
 
@@ -61,7 +65,20 @@ export function randomSeed(): number {
   return Math.floor(Math.random() * 100000);
 }
 
-export type GameOptions = AtmosphereOptions & { readonly spawn?: 'land' | 'coast' };
+/** Trims, drops control characters, and cuts to 16 characters; an empty name becomes `you`. */
+export function cleanName(text: string): string {
+  const kept = Array.from(text.trim())
+    .filter((ch) => {
+      const cp = ch.codePointAt(0) ?? 0;
+      return cp >= 0x20 && cp !== 0x7f;
+    })
+    .slice(0, 16)
+    .join('')
+    .trim();
+  return kept.length > 0 ? kept : 'you';
+}
+
+export type GameOptions = AtmosphereOptions & { readonly spawn?: 'land' | 'coast'; readonly name?: string };
 
 /** World, sky and you, advanced one fixed step at a time and drawn one frame at a time. */
 export class Game {
@@ -72,11 +89,15 @@ export class Game {
   fps = 0;
   /** Where you have walked lately, for the grass. */
   readonly trail = new Trail();
-  private readonly renderer = new Renderer();
+  /** Shown above your figure. */
+  readonly name: string;
+  private readonly renderer: Renderer;
   private frames: [Frame, Frame];
   private previous: Frame | null = null;
 
   constructor(seed: number, cols: number, rows: number, options: GameOptions = {}) {
+    this.name = cleanName(options.name ?? 'you');
+    this.renderer = new Renderer(this.name);
     this.world = new World(seed);
     this.atm = new Atmosphere(seed, options);
     // Start on land; the bench starts on the land nearest a sea, so water is in view.

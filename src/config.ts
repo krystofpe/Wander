@@ -194,6 +194,13 @@ export const BLADES = {
 } as const;
 /** The lit radius: full light inside `inner` of the view's half extents, fading to `edge` at the screen edge. */
 export const VIGNETTE = { inner: 0.45, edge: 0.06 } as const;
+/** You: three rows, centred on your cell (the middle row). Spaces are transparent. */
+export const FIGURE = {
+  stand: [' o ', '/|\\', '/ \\'],
+  walk: [' o ', '/|\\', '| |'],
+  /** Seconds per leg frame while moving. */
+  stepTime: 0.15,
+} as const;
 
 // ── Screen ─────────────────────────────────────────────────────────────────
 export const MIN_COLS = 40;
@@ -204,6 +211,8 @@ export const COLORS = {
   /** Every map cell's background. */
   ground: 0x000000,
   player: 0xfff2c8,
+  /** Your name above the figure. */
+  name: 0xffffff,
   /** Bright blade tips. */
   tip: 0xeaffe0,
   hudFg: 0xd6d9de,

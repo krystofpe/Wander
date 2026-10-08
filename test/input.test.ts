@@ -115,3 +115,17 @@ test('detection replies', () => {
   assert.equal(readDetection('\x1b[?62;22c'), 'unsupported');
   assert.equal(readDetection('\x1b[?62;22c\x1b[?1u'), 'unsupported');
 });
+
+test('in kitty mode, plain text never holds a key for good', () => {
+  const input = new InputState(true);
+  input.feed('w', 0); // pasted or plain text: no release will ever come
+  assert.equal(input.intent(10).dy, -1);
+  assert.equal(input.intent(600).dy, 0);
+  input.feed('D', 1000);
+  assert.equal(input.intent(1010).run, true);
+  assert.equal(input.intent(1600).run, false);
+  input.feed('h', 2000);
+  assert.deepEqual(input.takeActions(), ['toggleHud']);
+  input.feed('\x1b[104u', 2700); // a real press after the guessed hold has lapsed toggles again
+  assert.deepEqual(input.takeActions(), ['toggleHud']);
+});

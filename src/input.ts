@@ -2,7 +2,8 @@
 import { LEGACY_FIRST_HOLD_MS, LEGACY_REPEAT_HOLD_MS } from './config.ts';
 
 export type KeyType = 'press' | 'repeat' | 'release';
-export type KeyEvent = { readonly key: string; readonly type: KeyType; readonly shift: boolean };
+/** `text` is true for keys that arrived as plain text, so no release event will ever follow. */
+export type KeyEvent = { readonly key: string; readonly type: KeyType; readonly shift: boolean; readonly text: boolean };
 export type Intent = { readonly dx: number; readonly dy: number; readonly run: boolean; readonly fastTime: boolean };
 export type Action = 'quit' | 'toggleHud';
 export type Detection = 'supported' | 'unsupported' | 'waiting';
@@ -18,7 +19,7 @@ export function parseKeys(text: string): { events: KeyEvent[]; rest: string } {
     if (ch === '\x1b') {
       const next = text[i + 1];
       if (next === undefined || next === '\x1b') {
-        events.push({ key: 'escape', type: 'press', shift: false });
+        events.push({ key: 'escape', type: 'press', shift: false, text: true });
         i += 1;
       } else if (next === '[') {
         // CSI: parameter bytes, intermediate bytes, then one final byte.
@@ -30,18 +31,18 @@ export function parseKeys(text: string): { events: KeyEvent[]; rest: string } {
         i = j + 1;
       } else if (next === 'O' && i + 2 < text.length) {
         const key = ARROWS[text[i + 2]]; // arrows in application cursor mode
-        if (key !== undefined) events.push({ key, type: 'press', shift: false });
+        if (key !== undefined) events.push({ key, type: 'press', shift: false, text: true });
         i += 3;
       } else {
         i += 2; // Alt+key: ignored, so it never counts as Esc
       }
       continue;
     }
-    if (ch === '\x03') events.push({ key: 'ctrl-c', type: 'press', shift: false });
-    else if (ch === '\x1a') events.push({ key: 'ctrl-z', type: 'press', shift: false });
+    if (ch === '\x03') events.push({ key: 'ctrl-c', type: 'press', shift: false, text: true });
+    else if (ch === '\x1a') events.push({ key: 'ctrl-z', type: 'press', shift: false, text: true });
     else {
       const lower = ch.toLowerCase();
-      events.push({ key: lower, type: 'press', shift: ch !== lower });
+      events.push({ key: lower, type: 'press', shift: ch !== lower, text: true });
     }
     i += 1;
   }
@@ -58,7 +59,7 @@ function csi(params: string, final: string, events: KeyEvent[]): void {
   const shift = (bits & 1) !== 0;
   if (final !== 'u') {
     const arrow = ARROWS[final];
-    if (arrow !== undefined) events.push({ key: arrow, type, shift });
+    if (arrow !== undefined) events.push({ key: arrow, type, shift, text: false });
     return;
   }
   const code = Number((fields[0] ?? '').split(':')[0]);
@@ -72,7 +73,7 @@ function csi(params: string, final: string, events: KeyEvent[]): void {
     else if (key === 'z') key = 'ctrl-z';
     else return; // other Ctrl combinations mean nothing here
   }
-  events.push({ key, type, shift });
+  events.push({ key, type, shift, text: false });
 }
 
 /** Physical keys → logical keys. */
@@ -132,20 +133,23 @@ export class InputState {
     if (key === undefined) return;
     if (key === 'hud' && event.type === 'press' && !this.isHeld('hud', now)) this.actions.push('toggleHud');
     if (event.type === 'release') this.held.delete(key);
-    else this.hold(key, now);
+    else this.hold(key, now, event.text);
     if (MOVES.has(key)) {
       // Shift on a movement key means run; a movement key without it means walk.
-      if (event.shift && event.type !== 'release') this.held.set('shift', this.kitty ? Infinity : (this.held.get(key) ?? now));
+      if (event.shift && event.type !== 'release') {
+        this.held.set('shift', this.kitty && !event.text ? Infinity : (this.held.get(key) ?? now));
+      }
       else if (!event.shift) this.held.delete('shift');
     }
   }
 
-  private hold(key: string, now: number): void {
-    if (this.kitty) {
+  private hold(key: string, now: number, text: boolean): void {
+    if (this.kitty && !text) {
       this.held.set(key, Infinity);
       return;
     }
-    // No release events: guess generously after the first press, then from each auto-repeat.
+    // No release event will come (plain terminal, or pasted text): guess generously after the
+    // first press, then from each auto-repeat.
     const extra = this.isHeld(key, now) ? LEGACY_REPEAT_HOLD_MS : LEGACY_FIRST_HOLD_MS;
     this.held.set(key, Math.max(this.held.get(key) ?? 0, now + extra));
   }

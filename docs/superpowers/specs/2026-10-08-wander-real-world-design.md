@@ -204,7 +204,7 @@ Tests use `node:test`, run offline, and never touch the real network or the real
 
 | File | Checks |
 |---|---|
-| `geo.test.ts` | Projection round trip; 1 unit east is `scale` metres at the origin's latitude; Mercator and tile maths against known values (Prague at zoom 13 is tile 4424, 2774); `tileBounds` contains the tile's centre. |
+| `geo.test.ts` | Projection round trip; 1 unit east is `scale` metres at the origin's latitude; Mercator and tile maths against known values (Prague's centre at zoom 13 is tile 4424, 2775); `tileBounds` contains the tile's centre. |
 | `png.test.ts` | A PNG built in the test with `node:zlib` using every filter type decodes to the original pixels, for RGB and RGBA; a 16-bit PNG is rejected with a clear error. |
 | `osm.test.ts` | The query names every tag family; a closed way becomes a polygon and an open one a line; a relation's outer and inner members fill with a hole; cover priority (a road paints over grass, water over a road, a bridge over water); road widths by class; river flow is painted around a waterway; a building inside residential land is Building, the land around it Town. |
 | `net.test.ts` | A cached file is returned without calling the fetcher; a fetch writes the cache; a non-2xx response throws; `inFlight` rises and falls. |

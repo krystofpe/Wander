@@ -109,6 +109,8 @@ export class Terrain {
 export type Chunk = {
   readonly cx: number;
   readonly cy: number;
+  /** False while a real place's data is still loading; generated chunks are always ready. */
+  readonly ready: boolean;
   readonly biome: Uint8Array;
   readonly height: Float32Array;
   readonly temperature: Float32Array;
@@ -121,6 +123,17 @@ export type Chunk = {
   readonly flowY: Float32Array;
   /** 1 for sea cells next to land. */
   readonly shore: Uint8Array;
+};
+
+/** What the renderer and game need from a world, generated or real. */
+export type ChunkSource = {
+  readonly seed: number;
+  readonly generated: number;
+  chunk(cx: number, cy: number): Chunk;
+  chunkAt(mx: number, my: number): Chunk;
+  biomeAt(mx: number, my: number): BiomeId;
+  temperatureAt(mx: number, my: number): number;
+  prefetch(left: number, top: number, cols: number, rows: number, budgetMs: number, now?: () => number): number;
 };
 
 // Slope light comes from the north-west, fairly high in the sky.
@@ -153,6 +166,7 @@ export function generateChunk(terrain: Terrain, cx: number, cy: number): Chunk {
   const chunk: Chunk = {
     cx,
     cy,
+    ready: true,
     biome: new Uint8Array(n),
     height: new Float32Array(n),
     temperature: new Float32Array(n),

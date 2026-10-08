@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ASPECT, BIOMES, Biome, CHUNK_CACHE_LIMIT, Water } from '../src/config.ts';
+import { ASPECT, BIOMES, Biome, CHUNK_CACHE_LIMIT, GENERATED_BIOMES, Water } from '../src/config.ts';
 import { Terrain, World, biomeOf, chunkKey, classify, findLand, findSea, isWater } from '../src/world.ts';
 import { rng } from '../src/noise.ts';
 
@@ -40,15 +40,16 @@ test('rivers and lakes override land below the hills', () => {
   assert.equal(biomeOf({ ...base, lake: 0.6, moisture: 0.3 }), Biome.Grassland);
 });
 
-test('every biome appears in a large sample of a fixed seed', () => {
+test('every generated biome appears in a large sample of a fixed seed', () => {
   const terrain = new Terrain(1);
   const r = rng(5);
   const seen = new Set<number>();
-  for (let i = 0; i < 40000 && seen.size < BIOMES.length; i++) {
+  for (let i = 0; i < 40000 && seen.size < GENERATED_BIOMES; i++) {
     seen.add(biomeOf(terrain.fields(r() * 40000 - 20000, r() * 40000 - 20000)));
   }
-  const missing = BIOMES.filter((_, id) => !seen.has(id)).map((b) => b.name);
+  const missing = BIOMES.slice(0, GENERATED_BIOMES).filter((_, id) => !seen.has(id)).map((b) => b.name);
   assert.deepEqual(missing, []);
+  assert.equal(BIOMES.length, GENERATED_BIOMES + 5, 'five real-world biomes follow the generated ones');
 });
 
 test('a chunk holds the same biomes as computing each cell directly', () => {
@@ -136,4 +137,8 @@ test('findLand and findSea find what they are asked for', () => {
     const sea = findSea(world, 0, 0);
     assert.equal(BIOMES[world.biomeAt(sea.mx, sea.my)].water, Water.Sea);
   }
+});
+
+test('generated chunks are always ready', () => {
+  assert.equal(new World(2).chunk(0, 0).ready, true);
 });

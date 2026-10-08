@@ -68,8 +68,15 @@ export const Biome = {
   Hills: 11,
   Mountains: 12,
   SnowyPeaks: 13,
+  Field: 14,
+  Town: 15,
+  Building: 16,
+  Road: 17,
+  Railway: 18,
 } as const;
 export type BiomeId = (typeof Biome)[keyof typeof Biome];
+/** How many biomes the generated world uses; the rest come only from map data. */
+export const GENERATED_BIOMES = 14;
 
 export const Water = { None: 0, Sea: 1, River: 2, Lake: 3 } as const;
 export type WaterKind = (typeof Water)[keyof typeof Water];
@@ -106,6 +113,11 @@ export const BIOMES: readonly BiomeDef[] = [
   { name: 'Hills', glyphs: glyphs('∩n'), fg: 0x9a8650, bg: 0x667438, speed: 0.65, water: Water.None, sways: false },
   { name: 'Mountains', glyphs: glyphs('▲^'), fg: 0xc4c0bc, bg: 0x6c6862, speed: 0.45, water: Water.None, sways: false },
   { name: 'Snowy peaks', glyphs: glyphs('▲^'), fg: 0xffffff, bg: 0xd4dbe6, speed: 0.4, water: Water.None, sways: false },
+  { name: 'Field', glyphs: glyphs('",'), fg: 0xd2c070, bg: 0x6e6a2a, speed: 0.9, water: Water.None, sways: false },
+  { name: 'Town', glyphs: glyphs('.·'), fg: 0x8a8378, bg: 0x55504a, speed: 1.0, water: Water.None, sways: false },
+  { name: 'Building', glyphs: glyphs('#▪'), fg: 0x9a9aa0, bg: 0x3a3a40, speed: 0.6, water: Water.None, sways: false },
+  { name: 'Road', glyphs: glyphs('·'), fg: 0xc8c8c8, bg: 0x5e5e62, speed: 1.0, water: Water.None, sways: false },
+  { name: 'Railway', glyphs: glyphs('+='), fg: 0xb0a890, bg: 0x3c3836, speed: 0.8, water: Water.None, sways: false },
 ];
 
 // ── Day, night and weather ─────────────────────────────────────────────────
@@ -162,6 +174,53 @@ export const WEATHER = {
   snowBelow: 0.25,
 } as const;
 
+// ── Real places ────────────────────────────────────────────────────────────
+/** Drawing a real place from elevation tiles and OpenStreetMap. */
+export const REAL = {
+  /** Metres per column by default; --scale overrides. */
+  scale: 3,
+  elevationZoom: 13,
+  /** One Overpass query per tile of this zoom. */
+  regionZoom: 14,
+  /** Columns beyond the view and its chunk ring whose data is fetched ahead. */
+  lookahead: 100,
+  maxInFlight: 4,
+  /** Milliseconds before retrying a failed fetch; the last value repeats. */
+  retryMs: [5000, 15000, 60000],
+  /** Multiplies the dimensionless slope for shading. */
+  relief: 3,
+  /** Columns either side of a mapped waterway that take its flow direction. */
+  flowHalo: 8,
+  userAgent: 'wander/0.1 (terminal landscape toy)',
+  terrariumUrl: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium',
+  overpassUrl: 'https://overpass-api.de/api/interpreter',
+  nominatimUrl: 'https://nominatim.openstreetmap.org/search',
+  /** Road width in columns by highway class. */
+  roadWidths: {
+    motorway: 5,
+    trunk: 5,
+    primary: 4,
+    secondary: 3,
+    tertiary: 2,
+    residential: 2,
+    living_street: 2,
+    pedestrian: 2,
+    unclassified: 1,
+    service: 1,
+  },
+  /** Metres: below seaLevel with no map cover is sea, split by depth. */
+  seaLevel: -0.5,
+  shallowsAbove: -5,
+  oceanAbove: -50,
+  /** Land with no map cover: snow when colder than this or higher than snowAbove (metres). */
+  snowTemperature: 0.15,
+  snowAbove: 2500,
+  /** Dimensionless slope thresholds. */
+  mountainSlope: 0.45,
+  hillSlope: 0.2,
+  tundraTemperature: 0.25,
+} as const;
+
 // ── Screen ─────────────────────────────────────────────────────────────────
 export const MIN_COLS = 40;
 export const MIN_ROWS = 12;
@@ -174,6 +233,9 @@ export const COLORS = {
   rain: 0xa9c4e8,
   snow: 0xf4f8ff,
   foam: 0xf0f6ff,
+  /** Chunks whose map data has not arrived yet. */
+  fogFg: 0x3a3f46,
+  fogBg: 0x14171b,
 } as const;
 
 // ── Keyboard ───────────────────────────────────────────────────────────────

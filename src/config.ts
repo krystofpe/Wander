@@ -1,255 +1,339 @@
-// Tunable constants and the biome table: change the look and feel of Wander here.
+// Tunable constants, palettes and the biome table: change the look and feel of Wander here.
 
-// ── Space and time ─────────────────────────────────────────────────────────
-/** World units per map row: a character is about twice as tall as it is wide. */
-export const ASPECT = 2;
-export const FPS = 60;
+// ── Time ───────────────────────────────────────────────────────────────────
+export const FPS = 30;
 /** Seconds per simulation step. */
 export const FRAME_DT = 1 / FPS;
 /** Milliseconds per frame. */
 export const FRAME_MS = 1000 / FPS;
 /** Most simulation steps run before one render when the loop falls behind. */
 export const MAX_CATCH_UP_STEPS = 4;
+/** Seconds between autosaves. */
+export const SAVE_EVERY_SEC = 60;
 
-// ── Movement ───────────────────────────────────────────────────────────────
-/** World units per second when walking: 12 columns or 6 rows. */
-export const WALK_SPEED = 12;
-export const RUN_MULTIPLIER = 2;
-/** Seconds for your velocity to close ~63% of the gap to where the keys point. */
-export const VELOCITY_TIME_CONSTANT = 0.12;
-/** With no keys held, below this speed you stop. */
-export const STOP_SPEED = 0.05;
-
-// ── World ──────────────────────────────────────────────────────────────────
-export const CHUNK_SIZE = 64;
-export const CHUNK_CACHE_LIMIT = 256;
-export const PREFETCH_BUDGET_MS = 3;
-
-/** The terrain recipe. Wavelengths are in world units. Calibrated on 2026-10-08 for biome shares. */
-export const TERRAIN = {
-  warpAmplitude: 60,
-  warpWavelength: 500,
-  continentWavelength: 1600,
-  continentWeight: 1.0,
-  detailWavelength: 350,
-  detailWeight: 0.75,
-  heightBias: 0.11,
-  moistureWavelength: 600,
-  moistureContrast: 1.0,
-  temperatureWavelength: 1500,
-  temperatureContrast: 0.8,
-  lapseRate: 0.2,
-  riverWavelength: 400,
-  riverWidthInland: 0.01,
-  riverWidthCoast: 0.025,
-  riverMinHeight: 0.02,
-  riverMaxHeight: 0.55,
-  lakeWavelength: 120,
-  lakeThreshold: 0.5,
-  lakeMinHeight: 0.04,
-  lakeMaxHeight: 0.4,
-  lakeMinMoisture: 0.4,
-  /** Scales height into world units for slope shading. */
-  relief: 80,
+// ── Needs and bond ─────────────────────────────────────────────────────────
+/** World seconds for a need to drain from full to empty while awake. */
+export const DRAIN_SEC = { food: 6 * 3600, rest: 16 * 3600, fun: 3 * 3600, love: 5 * 3600 } as const;
+/** While asleep, food, fun and love drain at this share of their waking speed. */
+export const SLEEP_DRAIN = 0.4;
+/** While asleep, rest refills from empty to full in this many world seconds. */
+export const SLEEP_REFILL_SEC = 6 * 3600;
+/** What it can do for itself: foraging fills food up to this, playing alone fills fun up to this. */
+export const SELF_FEED_CAP = 0.6;
+export const SELF_PLAY_CAP = 0.55;
+export const BOND = {
+  start: 0.15,
+  /** Share of the remaining gap closed by one kind act. */
+  gain: 0.04,
+  /** Lost per full day without you, beyond the first. */
+  dailyDecay: 0.03,
+  /** Kind acts within a minute beyond this count as too much. */
+  perMinute: 4,
 } as const;
 
-export const Biome = {
-  DeepOcean: 0,
-  Ocean: 1,
-  Shallows: 2,
-  River: 3,
-  Lake: 4,
-  Beach: 5,
-  Grassland: 6,
-  Forest: 7,
-  Swamp: 8,
-  Desert: 9,
-  Tundra: 10,
-  Hills: 11,
-  Mountains: 12,
-  SnowyPeaks: 13,
-  Field: 14,
-  Town: 15,
-  Building: 16,
-  Road: 17,
-  Railway: 18,
+// ── Brain ──────────────────────────────────────────────────────────────────
+export const BRAIN = {
+  /** Lower is more predictable: picks are weighted by exp(score / temperature). */
+  temperature: 0.12,
+  /** Share of picks that ignore the scores and follow a whim. */
+  whim: 0.08,
+  /** Each recent repeat of an activity scales its score by 1 / (1 + novelty × repeats). */
+  novelty: 0.5,
+  /** How many past activities count as recent. */
+  memory: 6,
+  /** Columns per real second when walking, and when running. */
+  walkSpeed: 7,
+  runSpeed: 14,
+  /** Rows per real second when moving towards or away from the front. */
+  depthSpeed: 2.2,
+  /** Seconds of a pending thought bubble before giving up on Claude. */
+  thinkTimeoutSec: 20,
 } as const;
-export type BiomeId = (typeof Biome)[keyof typeof Biome];
-/** How many biomes the generated world uses; the rest come only from map data. */
-export const GENERATED_BIOMES = 14;
+/** Hours it falls asleep and wakes up, before the night-owl trait shifts them by up to 3 hours. */
+export const BEDTIME = 21.5;
+export const WAKE_TIME = 7;
 
-export const Water = { None: 0, Sea: 1, River: 2, Lake: 3 } as const;
-export type WaterKind = (typeof Water)[keyof typeof Water];
+/** Real seconds between visits, gifts, questions, knocks, wander-offs. */
+export const COOLDOWN_SEC = {
+  visit: 240,
+  gift: 300,
+  ask: 600,
+  knock: 300,
+  wanderOff: 1800,
+  dig: 60,
+  stack: 240,
+  thought: 90,
+} as const;
+/** Seconds without input after which you count as away; and how long a knock waits. */
+export const PRESENT_SEC = 300;
+export const IDLE_KNOCK_SEC = 600;
 
-export type BiomeDef = {
-  readonly name: string;
-  /** Code points; a cell's variant picks one. */
-  readonly glyphs: readonly number[];
-  /** Daylight colours, 0xRRGGBB. */
-  readonly fg: number;
-  readonly bg: number;
-  /** Multiplies walking speed. */
-  readonly speed: number;
-  readonly water: WaterKind;
-  /** Grass and trees move when a gust passes. */
-  readonly sways: boolean;
-};
+// ── Claude ─────────────────────────────────────────────────────────────────
+export const AI = {
+  model: 'claude-opus-5-5',
+  effort: 'low',
+  maxTokens: 16000,
+  timeoutMs: 20000,
+  /** At most one unprompted Claude line per this many seconds. */
+  spontaneousEverySec: 150,
+  /** Exchanges kept as conversation context. */
+  historyTurns: 8,
+  /** Diary entries and facts sent as context. */
+  diaryLines: 8,
+} as const;
 
-const glyphs = (text: string): number[] => Array.from(text, (ch) => ch.codePointAt(0) ?? 32);
+// ── Scene ──────────────────────────────────────────────────────────────────
+export const MIN_COLS = 50;
+export const MIN_ROWS = 16;
+/** Share of the scene's rows that is sky. */
+export const SKY_SHARE = 0.5;
+/** Steps per second of the scenery's own motion (grass, clouds, stars, water, lantern flicker); less means less output. */
+export const AMBIENT_HZ = 8;
+/** Bits kept per colour channel: 5 gives 32 levels. Lower means less output per frame. */
+export const COLOR_BITS = 5;
+/** Columns, horizontally, the lantern reaches (rows count double). */
+export const LANTERN_RADIUS = 11;
+export const LANTERN_RGB: readonly [number, number, number] = [1.0, 0.72, 0.42];
+export const LANTERN_GAIN = 1.25;
 
-/** One entry per Biome id, in id order. All glyphs are single-width. */
-export const BIOMES: readonly BiomeDef[] = [
-  { name: 'Deep ocean', glyphs: glyphs('≈~'), fg: 0x3b64a8, bg: 0x0c2148, speed: 0.45, water: Water.Sea, sways: false },
-  { name: 'Ocean', glyphs: glyphs('~≈'), fg: 0x5b8fd6, bg: 0x163b78, speed: 0.45, water: Water.Sea, sways: false },
-  { name: 'Shallows', glyphs: glyphs('~·'), fg: 0x9ee0e0, bg: 0x2b7f91, speed: 0.55, water: Water.Sea, sways: false },
-  { name: 'River', glyphs: glyphs('~≈'), fg: 0xa8d8ff, bg: 0x2f6fb5, speed: 0.55, water: Water.River, sways: false },
-  { name: 'Lake', glyphs: glyphs('~≈'), fg: 0x96cdf5, bg: 0x2a5d9c, speed: 0.55, water: Water.Lake, sways: false },
-  { name: 'Beach', glyphs: glyphs('.:·'), fg: 0xb39a5f, bg: 0xdfca92, speed: 0.9, water: Water.None, sways: false },
-  { name: 'Grassland', glyphs: glyphs(',.\'"'), fg: 0xa6dc72, bg: 0x4a8a34, speed: 1.0, water: Water.None, sways: true },
-  { name: 'Forest', glyphs: glyphs('♣♠'), fg: 0x5fae4e, bg: 0x1c4a22, speed: 0.6, water: Water.None, sways: true },
-  { name: 'Swamp', glyphs: glyphs('",~'), fg: 0x8fa05c, bg: 0x3a4628, speed: 0.5, water: Water.None, sways: true },
-  { name: 'Desert', glyphs: glyphs('.·:'), fg: 0xb98f4c, bg: 0xe0bd78, speed: 0.8, water: Water.None, sways: false },
-  { name: 'Tundra', glyphs: glyphs(".'·"), fg: 0xd2dbd2, bg: 0x8d9c8f, speed: 0.85, water: Water.None, sways: false },
-  { name: 'Hills', glyphs: glyphs('∩n'), fg: 0x9a8650, bg: 0x667438, speed: 0.65, water: Water.None, sways: false },
-  { name: 'Mountains', glyphs: glyphs('▲^'), fg: 0xc4c0bc, bg: 0x6c6862, speed: 0.45, water: Water.None, sways: false },
-  { name: 'Snowy peaks', glyphs: glyphs('▲^'), fg: 0xffffff, bg: 0xd4dbe6, speed: 0.4, water: Water.None, sways: false },
-  { name: 'Field', glyphs: glyphs('",'), fg: 0xd2c070, bg: 0x6e6a2a, speed: 0.9, water: Water.None, sways: false },
-  { name: 'Town', glyphs: glyphs('.·'), fg: 0x8a8378, bg: 0x55504a, speed: 1.0, water: Water.None, sways: false },
-  { name: 'Building', glyphs: glyphs('#▪'), fg: 0x9a9aa0, bg: 0x3a3a40, speed: 0.6, water: Water.None, sways: false },
-  { name: 'Road', glyphs: glyphs('·'), fg: 0xc8c8c8, bg: 0x5e5e62, speed: 1.0, water: Water.None, sways: false },
-  { name: 'Railway', glyphs: glyphs('+='), fg: 0xb0a890, bg: 0x3c3836, speed: 0.8, water: Water.None, sways: false },
-];
+export const WEATHER = {
+  /** World minutes per weather slot. */
+  slotMinutes: 25,
+  /** World minutes to fade between slots. */
+  fadeMinutes: 5,
+  /** Share of light lost in full rain. */
+  dimming: 0.35,
+  /** Share of rain slots that are storms with lightning. */
+  storms: 0.25,
+  /** Drops per column at full strength, and rows per second they fall. */
+  dropDensity: 0.22,
+  rainSpeed: 22,
+  snowSpeed: 3,
+} as const;
 
-// ── Day, night and weather ─────────────────────────────────────────────────
-/** Game seconds per day. */
-export const DAY_LENGTH = 480;
-export const DAY_START_HOUR = 8;
-/** How much faster the clock and weather run while T is held. */
-export const TIME_LAPSE = 20;
 /** Sunlight through the day: [hour, red, green, blue, daylight], interpolated linearly. */
 export const LIGHT_KEYS: readonly (readonly [number, number, number, number, number])[] = [
-  [0, 0.16, 0.2, 0.4, 0],
-  [4.5, 0.16, 0.2, 0.4, 0],
+  [0, 0.22, 0.26, 0.45, 0],
+  [4.5, 0.22, 0.26, 0.45, 0],
   [6, 1.0, 0.62, 0.55, 0.5],
   [7.5, 1.0, 0.92, 0.84, 0.9],
   [12, 1.0, 1.0, 1.0, 1],
   [16.5, 1.0, 0.96, 0.9, 0.95],
   [18.5, 1.0, 0.6, 0.38, 0.5],
-  [20, 0.38, 0.33, 0.55, 0.15],
-  [21, 0.16, 0.2, 0.4, 0],
-  [24, 0.16, 0.2, 0.4, 0],
+  [20, 0.42, 0.37, 0.58, 0.15],
+  [21, 0.22, 0.26, 0.45, 0],
+  [24, 0.22, 0.26, 0.45, 0],
 ];
-/** World units the lantern reaches: 10 columns or 5 rows. */
-export const LANTERN_RADIUS = 10;
-export const LANTERN_RGB: readonly [number, number, number] = [1.0, 0.72, 0.42];
-export const LANTERN_GAIN = 1.2;
+/** Sky colours through the day: [hour, zenith, horizon], interpolated linearly. */
+export const SKY_KEYS: readonly (readonly [number, number, number])[] = [
+  [0, 0x05070f, 0x0f1830],
+  [4.5, 0x05070f, 0x0f1830],
+  [5.6, 0x26305a, 0xd0806a],
+  [6.6, 0x3a5a98, 0xf0b080],
+  [8, 0x3d7bd0, 0xa8d0f0],
+  [12, 0x2f6fd0, 0x9cc8f0],
+  [16.5, 0x3a72c8, 0xb0d0ea],
+  [18.4, 0x34407a, 0xf08a50],
+  [19.6, 0x1a2048, 0x6a3a5a],
+  [20.8, 0x070a16, 0x182040],
+  [24, 0x05070f, 0x0f1830],
+];
 
-export const WEATHER = {
-  firstFrontMin: 60,
-  firstFrontMax: 120,
-  gapMin: 120,
-  gapMax: 300,
-  durationMin: 30,
-  durationMax: 90,
-  /** Seconds a front takes to fade in, and to fade out. */
-  fade: 10,
-  /** Share of light lost under a full front. */
-  dimming: 0.35,
-  /** Game seconds per wind wobble. */
-  windPeriod: 300,
-  cloudWavelength: 180,
-  /** Share of light a full cloud blocks. */
-  cloudShadow: 0.35,
-  /** World units per game second at full wind. */
-  cloudSpeed: 6,
-  gustWavelength: 30,
-  /** World units per real second. */
-  gustSpeed: 18,
-  /** Share of cells showing a drop at full strength. */
-  dropChance: 0.1,
-  /** New drop patterns per second. */
-  rainRate: 12,
-  snowRate: 4,
-  /** Cells colder than this get snow instead of rain. */
-  snowBelow: 0.25,
-} as const;
-
-// ── Real places ────────────────────────────────────────────────────────────
-/** Drawing a real place from elevation tiles and OpenStreetMap. */
-export const REAL = {
-  /** Metres per column by default; --scale overrides. */
-  scale: 3,
-  elevationZoom: 13,
-  /** One Overpass query per tile of this zoom. */
-  regionZoom: 14,
-  /** Columns beyond the view and its chunk ring whose data is fetched ahead. */
-  lookahead: 100,
-  maxInFlight: 4,
-  /** Overpass answers concurrent queries from one address with 504s, so regions load one at a time. */
-  maxRegionsInFlight: 1,
-  /** Milliseconds before retrying a failed fetch; the last value repeats. */
-  retryMs: [5000, 15000, 60000],
-  /** Multiplies the dimensionless slope for shading. */
-  relief: 3,
-  /** Columns either side of a mapped waterway that take its flow direction. */
-  flowHalo: 8,
-  userAgent: 'wander/0.1 (terminal landscape toy)',
-  terrariumUrl: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium',
-  /** Overpass instances, tried in turn: each failed query moves to the next. */
-  overpassUrls: [
-    'https://overpass-api.de/api/interpreter',
-    'https://overpass.private.coffee/api/interpreter',
-    'https://overpass.kumi.systems/api/interpreter',
-  ],
-  /** A fetch slower than this is abandoned and counts as failed. */
-  fetchTimeoutMs: 20000,
-  nominatimUrl: 'https://nominatim.openstreetmap.org/search',
-  /** Road width in columns by highway class. */
-  roadWidths: {
-    motorway: 5,
-    trunk: 5,
-    primary: 4,
-    secondary: 3,
-    tertiary: 2,
-    residential: 2,
-    living_street: 2,
-    pedestrian: 2,
-    unclassified: 1,
-    service: 1,
-  },
-  /** Metres: below seaLevel with no map cover is sea, split by depth. */
-  seaLevel: -0.5,
-  shallowsAbove: -5,
-  oceanAbove: -50,
-  /** Land with no map cover: snow when colder than this or higher than snowAbove (metres). */
-  snowTemperature: 0.15,
-  snowAbove: 2500,
-  /** Dimensionless slope thresholds. */
-  mountainSlope: 0.45,
-  hillSlope: 0.2,
-  tundraTemperature: 0.25,
-} as const;
-
-// ── Screen ─────────────────────────────────────────────────────────────────
-export const MIN_COLS = 40;
-export const MIN_ROWS = 12;
-/** Bits kept per colour channel: 5 gives 32 levels. Lower means less output per frame. */
-export const COLOR_BITS = 5;
 export const COLORS = {
-  player: 0xfff2c8,
   hudFg: 0xd6d9de,
+  hudDim: 0x7d848e,
   hudBg: 0x12161c,
+  hudAccent: 0xf2c46d,
+  bubbleFg: 0x1c1d22,
+  bubbleBg: 0xf2efe6,
+  bubbleEdge: 0x9b978c,
+  thinkFg: 0x5a5d66,
+  face: 0x07070b,
+  lantern: 0xffd27a,
   rain: 0xa9c4e8,
   snow: 0xf4f8ff,
-  foam: 0xf0f6ff,
-  /** Chunks whose map data has not arrived yet. */
-  fogFg: 0x3a3f46,
-  fogBg: 0x14171b,
+  star: 0xf4f0d8,
+  moon: 0xf2ecd0,
+  sun: 0xfff2b0,
+  cloud: 0xe8ecf2,
+  stormCloud: 0x6a7280,
+  aurora: 0x5cf0b0,
+  toy: 0x8fe8ff,
+  heart: 0xff7fb0,
+  note: 0xffe08a,
+  spark: 0xfff4c0,
+  dirt: 0x8a6a40,
+  firefly: 0xd8ff70,
 } as const;
 
-// ── Keyboard ───────────────────────────────────────────────────────────────
-export const DETECT_TIMEOUT_MS = 200;
-/** Without release events: how long a key counts as held after its first press… */
-export const LEGACY_FIRST_HOLD_MS = 550;
-/** …and after each auto-repeat. */
-export const LEGACY_REPEAT_HOLD_MS = 120;
+/** Mysterious cloak colours; a creature's seed picks one. */
+export const CLOAKS: readonly number[] = [0x3a3470, 0x2f5040, 0x6a3a30, 0x44506a, 0x5a3060, 0x6a5a3a];
+
+/** Eye glow by mood. */
+export const EYE_GLOW: Readonly<Record<string, number>> = {
+  joyful: 0xfff0a0,
+  content: 0xffd27a,
+  calm: 0xf0d8a0,
+  curious: 0x9ff0ff,
+  sleepy: 0xa08850,
+  hungry: 0xffb060,
+  bored: 0xc8c0a0,
+  lonely: 0x9cb8ff,
+  grumpy: 0xff7050,
+  scared: 0xffffff,
+  love: 0xff8fc8,
+  sad: 0x7fb2ff,
+};
+
+// ── Biomes ─────────────────────────────────────────────────────────────────
+export const BIOME_NAMES = ['forest', 'meadow', 'shore', 'tundra', 'desert', 'swamp'] as const;
+export type BiomeName = (typeof BIOME_NAMES)[number];
+
+export type PropKind =
+  | 'tree'
+  | 'pine'
+  | 'bush'
+  | 'rock'
+  | 'pond'
+  | 'cactus'
+  | 'palm'
+  | 'reeds'
+  | 'stump'
+  | 'deadtree'
+  | 'driftwood'
+  | 'snowdrift'
+  | 'ruin'
+  | 'mushrooms'
+  | 'tidepool'
+  | 'oasis'
+  | 'home';
+export type CritterKind = 'butterfly' | 'bird' | 'firefly' | 'crab' | 'frog' | 'gull' | 'lizard' | 'moth';
+
+export type BiomeDef = {
+  readonly title: string;
+  /** Ground texture glyphs, how many cells carry one, and the daylight colours. */
+  readonly ground: { readonly glyphs: string; readonly density: number; readonly fg: number; readonly bg: number };
+  /** The distant ridge: its glyphs, near and far colours, and how high it rises (share of the sky). */
+  readonly ridge: { readonly glyphs: string; readonly near: number; readonly far: number; readonly height: number; readonly smooth: boolean };
+  /** True when the horizon is open sea instead of a ridge. */
+  readonly sea: boolean;
+  /** Share of weather slots with rain (or snow). */
+  readonly rain: number;
+  /** Snow instead of rain all year. */
+  readonly cold: boolean;
+  /** Props besides the home: kind and how many. */
+  readonly props: readonly (readonly [PropKind, number])[];
+  /** Where it finds food for itself. */
+  readonly forage: PropKind;
+  /** Where it drinks, if anywhere besides the sea. */
+  readonly water: PropKind | null;
+  readonly dayCritters: readonly CritterKind[];
+  readonly nightCritters: readonly CritterKind[];
+  /** Things it can find by digging or wandering. */
+  readonly finds: readonly string[];
+  /** What it forages, for its words and diary. */
+  readonly forageFood: string;
+};
+
+export const BIOMES: Readonly<Record<BiomeName, BiomeDef>> = {
+  forest: {
+    title: 'Forest',
+    ground: { glyphs: `,.'"♣`, density: 0.32, fg: 0x6fae4e, bg: 0x2c5424 },
+    ridge: { glyphs: '♠♣', near: 0x1f3f2a, far: 0x3c5a6a, height: 0.4, smooth: false },
+    sea: false,
+    rain: 0.25,
+    cold: false,
+    props: [['tree', 3], ['pine', 2], ['bush', 2], ['mushrooms', 1], ['stump', 1], ['rock', 1]],
+    forage: 'bush',
+    water: 'pond',
+    dayCritters: ['butterfly', 'bird'],
+    nightCritters: ['firefly', 'moth'],
+    finds: ['an acorn cap', 'a jay feather', 'a beetle shell', 'a perfectly round pebble', 'a pinecone', 'a ring of bark', 'a key to nothing'],
+    forageFood: 'berries',
+  },
+  meadow: {
+    title: 'Meadow',
+    ground: { glyphs: `,.'"`, density: 0.4, fg: 0xa6dc72, bg: 0x4a8a34 },
+    ridge: { glyphs: '∩n', near: 0x4f7a48, far: 0x7a98a8, height: 0.3, smooth: true },
+    sea: false,
+    rain: 0.2,
+    cold: false,
+    props: [['tree', 1], ['bush', 2], ['rock', 2], ['mushrooms', 1]],
+    forage: 'bush',
+    water: 'pond',
+    dayCritters: ['butterfly', 'bird'],
+    nightCritters: ['firefly', 'moth'],
+    finds: ['a four-leaf clover', 'a snail shell', 'a blue feather', 'a smooth stone', 'a dandelion clock', 'a lost button', 'a star fragment'],
+    forageFood: 'wild strawberries',
+  },
+  shore: {
+    title: 'Shore',
+    ground: { glyphs: '.:·', density: 0.3, fg: 0xb39a5f, bg: 0xdfca92 },
+    ridge: { glyphs: '~≈', near: 0x2b6f91, far: 0x163b78, height: 0.12, smooth: true },
+    sea: true,
+    rain: 0.2,
+    cold: false,
+    props: [['palm', 2], ['driftwood', 1], ['rock', 2], ['tidepool', 1]],
+    forage: 'tidepool',
+    water: null,
+    dayCritters: ['gull', 'crab'],
+    nightCritters: ['crab'],
+    finds: ['a spiral shell', 'a piece of sea glass', 'a crab claw', 'a bottle cap', 'a pearl', 'a message with no words', 'a sand dollar'],
+    forageFood: 'seaweed',
+  },
+  tundra: {
+    title: 'Tundra',
+    ground: { glyphs: `.'·`, density: 0.25, fg: 0x8d9caa, bg: 0xc9d3dc },
+    ridge: { glyphs: '▲^', near: 0xd4dbe6, far: 0x8a9ab8, height: 0.55, smooth: false },
+    sea: false,
+    rain: 0.3,
+    cold: true,
+    props: [['pine', 3], ['snowdrift', 2], ['rock', 1]],
+    forage: 'pine',
+    water: 'pond',
+    dayCritters: ['bird'],
+    nightCritters: [],
+    finds: ['an ice crystal that will not melt', 'a white feather', 'a frozen berry', 'a reindeer bell', 'a smooth grey stone', 'a shard of the aurora'],
+    forageFood: 'pine nuts',
+  },
+  desert: {
+    title: 'Desert',
+    ground: { glyphs: '.·:~', density: 0.25, fg: 0xb98f4c, bg: 0xe0bd78 },
+    ridge: { glyphs: '∩', near: 0xc89858, far: 0xd8b48a, height: 0.28, smooth: true },
+    sea: false,
+    rain: 0.04,
+    cold: false,
+    props: [['cactus', 3], ['rock', 2], ['ruin', 1]],
+    forage: 'cactus',
+    water: 'oasis',
+    dayCritters: ['lizard', 'bird'],
+    nightCritters: ['moth'],
+    finds: ['a sun-bleached bone', 'an old coin', 'a scarab', 'a shard of green glass', 'a rose of sand', 'a compass that points home'],
+    forageFood: 'cactus fruit',
+  },
+  swamp: {
+    title: 'Swamp',
+    ground: { glyphs: `",~.`, density: 0.35, fg: 0x8fa05c, bg: 0x3a4628 },
+    ridge: { glyphs: '♣♠', near: 0x2c3626, far: 0x56645a, height: 0.35, smooth: false },
+    sea: false,
+    rain: 0.3,
+    cold: false,
+    props: [['deadtree', 2], ['reeds', 3], ['mushrooms', 2], ['stump', 1]],
+    forage: 'mushrooms',
+    water: 'pond',
+    dayCritters: ['frog', 'bird'],
+    nightCritters: ['firefly', 'frog'],
+    finds: ['a frog-shaped stone', 'glowing moss', 'a lily seed', 'a bent spoon', 'a tooth of something', 'a bubble that will not pop'],
+    forageFood: 'mushrooms',
+  },
+};
+
+/** Leaf colours by season: [light, dark]. Winter means snow on the branches. */
+export const LEAVES: Readonly<Record<string, readonly [number, number]>> = {
+  spring: [0x9be070, 0x4f9a3a],
+  summer: [0x6fbf4e, 0x2f6e2a],
+  autumn: [0xe0962e, 0x9a4a22],
+  winter: [0xe8eef4, 0x9aa8b4],
+};
+/** Ground in winter, for biomes that get snow then. */
+export const WINTER_GROUND = { fg: 0x9aa6b4, bg: 0xd2dae2 } as const;

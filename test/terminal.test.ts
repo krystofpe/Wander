@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { ENTER, LEAVE, POP_KEYS, PUSH_KEYS, QUERY, Terminal } from '../src/terminal.ts';
+import { ENTER, LEAVE, Terminal } from '../src/terminal.ts';
 
 class FakeIn extends EventEmitter {
   raw: boolean[] = [];
@@ -38,92 +38,57 @@ function fake() {
   return { stdin, stdout, stderr, proc, term: new Terminal({ stdin, stdout, stderr, proc }) };
 }
 
-test('open enters full screen, asks about held keys and turns them on when supported', async () => {
+test('open enters full screen with mouse and focus reports, in raw mode', () => {
   const { stdin, stdout, term } = fake();
-  const opening = term.open(500);
-  stdin.emit('data', '\x1b[?0u\x1b[?62;22c');
-  await opening;
-  assert.equal(term.kitty, true);
-  assert.equal(stdout.written, ENTER + QUERY + PUSH_KEYS);
+  term.open();
+  assert.equal(stdout.written, ENTER);
+  assert.ok(ENTER.includes('\x1b[?1003h') && ENTER.includes('\x1b[?1006h') && ENTER.includes('\x1b[?1004h'));
   assert.deepEqual(stdin.raw, [true]);
   assert.equal(term.cols, 100);
   assert.equal(term.rows, 30);
 });
 
-test('a device-attributes reply alone means no held-key support', async () => {
+test('restore runs once and turns everything back off', () => {
   const { stdin, stdout, term } = fake();
-  const opening = term.open(500);
-  stdin.emit('data', '\x1b[?62;22c');
-  await opening;
-  assert.equal(term.kitty, false);
-  assert.equal(stdout.written, ENTER + QUERY);
-});
-
-test('no reply at all falls back after the timeout', async () => {
-  const { term } = fake();
-  await term.open(20);
-  assert.equal(term.kitty, false);
-});
-
-test('a reply split across reads is still understood', async () => {
-  const { stdin, term } = fake();
-  const opening = term.open(500);
-  stdin.emit('data', '\x1b[?');
-  stdin.emit('data', '1u');
-  await opening;
-  assert.equal(term.kitty, true);
-});
-
-test('restore runs once and puts everything back', async () => {
-  const { stdin, stdout, term } = fake();
-  const opening = term.open(500);
-  stdin.emit('data', '\x1b[?1u');
-  await opening;
+  term.open();
   term.restore();
   term.restore();
   assert.equal(stdout.written.split(LEAVE).length - 1, 1);
-  assert.ok(stdout.written.endsWith(POP_KEYS + LEAVE));
+  assert.ok(LEAVE.includes('\x1b[?1003l') && LEAVE.includes('\x1b[?1006l') && LEAVE.includes('\x1b[?1004l'));
   assert.deepEqual(stdin.raw, [true, false]);
   term.write('late frame');
   assert.ok(stdout.written.endsWith(LEAVE), 'nothing is drawn after restoring');
 });
 
-test('a kill signal restores the terminal and exits with 143', async () => {
-  const { stdin, stdout, proc, term } = fake();
-  const opening = term.open(500);
-  stdin.emit('data', '\x1b[?62c');
-  await opening;
+test('a kill signal restores the terminal and exits with 143', () => {
+  const { stdout, proc, term } = fake();
+  term.open();
   proc.emit('SIGTERM');
   assert.ok(stdout.written.endsWith(LEAVE));
   assert.deepEqual(proc.codes, [143]);
 });
 
-test('a crash while waiting for the reply restores the terminal and exits with 1', async () => {
+test('a crash restores the terminal, reports the error and exits with 1', () => {
   const { stdout, stderr, proc, term } = fake();
-  const opening = term.open(30);
+  term.open();
   proc.emit('uncaughtException', new Error('boom'));
   assert.ok(LEAVE.startsWith('\x1b[?2026l'), 'a half-sent frame is ended');
   assert.ok(stdout.written.endsWith(LEAVE));
   assert.match(stderr.written, /boom/);
   assert.deepEqual(proc.codes, [1]);
-  await opening;
 });
 
-test('leaving through process exit restores the terminal', async () => {
+test('leaving through process exit restores the terminal', () => {
   const { stdin, stdout, proc, term } = fake();
-  const opening = term.open(500);
-  stdin.emit('data', '\x1b[?62c');
-  await opening;
+  term.open();
   proc.emit('exit', 0);
   assert.ok(stdout.written.endsWith(LEAVE));
   assert.deepEqual(stdin.raw, [true, false]);
 });
 
-test('a terminal that disappears ends the game quietly', async () => {
-  const { stdin, stdout, proc, term } = fake();
-  const opening = term.open(500);
-  stdin.emit('data', '\x1b[?62c');
-  await opening;
+test('a terminal that disappears ends the game quietly', () => {
+  const { stdout, proc, term } = fake();
+  term.open();
   stdout.write = () => {
     throw new Error('EIO');
   };

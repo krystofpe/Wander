@@ -1,13 +1,18 @@
 {
   "name": "wander",
-  "version": "0.1.0",
-  "description": "Walk through an endless landscape drawn in coloured text, at 60 FPS, in your terminal",
+  "version": "0.2.0",
+  "description": "A small hooded creature that lives its own life in your terminal, drawn in coloured ASCII",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=25" },
+  "engines": {
+    "node": ">=25"
+  },
   "scripts": {
     "start": "node src/main.ts",
     "test": "node --test",
     "bench": "node src/main.ts --bench"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.132.1"
   }
 }

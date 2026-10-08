@@ -1,127 +1,84 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Atmosphere } from '../src/ambient.ts';
-import { COLORS, COLOR_BITS } from '../src/config.ts';
+import { BIOME_NAMES } from '../src/config.ts';
+import type { BiomeName } from '../src/config.ts';
 import { Frame } from '../src/frame.ts';
-import { Renderer, quantize, viewOrigin } from '../src/render.ts';
-import { World } from '../src/world.ts';
-import type { ChunkSource } from '../src/world.ts';
-import { Projection } from '../src/geo.ts';
+import { Game } from '../src/game.ts';
+import { newLife } from '../src/creature.ts';
+import { rng } from '../src/noise.ts';
+import { displayText, wrap } from '../src/render.ts';
 
-function scene(startHour: number) {
-  return {
-    world: new World(1),
-    atm: new Atmosphere(1, { startHour, forceFront: 0 }),
-    player: { x: 40.5, y: 80.5, vx: 0, vy: 0 },
-  };
+function rendered(biome: BiomeName, hour: number, cols = 120, rows = 40): { game: Game; frame: Frame } {
+  const now = new Date(2026, 9, 8, hour).getTime();
+  const life = newLife(5, now - 86400000, { biome, name: 'Ulo' });
+  life.userName = 'Tester';
+  life.cairn = 3;
+  const game = new Game(life, { cols, rows, now, random: rng(5), away: null });
+  for (let i = 0; i < 30; i++) game.update(1 / 30);
+  game.draw();
+  return { game, frame: (game as unknown as { previous: Frame }).previous };
 }
 
-function averageBackground(frame: Frame, from = 0, to = frame.bg.length): number {
+const brightness = (frame: Frame, rows: number): number => {
   let sum = 0;
-  for (let i = from; i < to; i++) {
+  for (let i = 0; i < frame.width * rows; i++) {
     const c = frame.bg[i];
     sum += (c >> 16) + ((c >> 8) & 255) + (c & 255);
   }
-  return sum / (to - from);
-}
+  return sum / (frame.width * rows);
+};
 
-test('quantize keeps the ends and rounds to 2^COLOR_BITS levels', () => {
-  assert.equal(quantize(0), 0);
-  assert.equal(quantize(255), 255);
-  assert.equal(quantize(-4), 0);
-  assert.equal(quantize(300), 255);
-  const levels = new Set<number>();
-  for (let c = 0; c < 256; c++) levels.add(quantize(c));
-  assert.equal(levels.size, 1 << COLOR_BITS);
+test('text is wrapped at spaces, and long words are split', () => {
+  assert.deepEqual(wrap('the moon is thin tonight', 10), ['the moon', 'is thin', 'tonight']);
+  assert.deepEqual(wrap('abcdefghijkl', 5), ['abcde', 'fghij', 'kl']);
+  assert.deepEqual(wrap('   ', 5), []);
 });
 
-test('the view is centred on you', () => {
-  assert.deepEqual(viewOrigin({ x: 100.7, y: 41, vx: 0, vy: 0 }, 60, 19), { left: 70, top: 11 });
+test('text for the screen keeps Czech and drops what takes two columns or none', () => {
+  assert.equal(displayText('Kryštof 😀'), 'Kryštof ?');
+  assert.equal(displayText('é​'), 'é');
+  assert.equal(displayText('東'), '?');
 });
 
-test('you are drawn at the centre of the map, and every cell is filled', () => {
-  const { world, atm, player } = scene(12);
-  const frame = new Frame(60, 20);
-  new Renderer().render(frame, world, atm, atm.snapshot(), player, { fps: 60 });
-  assert.equal(frame.glyph[(19 >> 1) * 60 + 30], '@'.codePointAt(0));
-  assert.ok(frame.glyph.every((g) => g !== 0));
-});
-
-test('the status bar shows position, time, fps and seed, and can be hidden', () => {
-  const { world, atm, player } = scene(12);
-  const frame = new Frame(120, 20);
-  const renderer = new Renderer();
-  renderer.render(frame, world, atm, atm.snapshot(), player, { fps: 57 });
-  const bar = frame.rowText(19);
-  assert.match(bar, /x 41 {2}y 81 │/);
-  assert.match(bar, /12:00 afternoon/);
-  assert.match(bar, /57 fps │ seed 1/);
-  renderer.render(frame, world, atm, atm.snapshot(), player, null);
-  assert.ok(!frame.rowText(19).includes('fps'));
-});
-
-test('a window below 40×12 asks to be made bigger', () => {
-  const { world, atm, player } = scene(12);
-  const frame = new Frame(30, 10);
-  new Renderer().render(frame, world, atm, atm.snapshot(), player, { fps: 60 });
-  assert.ok(frame.rowText(5).includes('Make the window bigger'));
-});
-
-test('night is darker than noon, and the lantern lights your surroundings', () => {
-  const noon = scene(12);
-  const night = scene(23);
-  const a = new Frame(80, 24);
-  const b = new Frame(80, 24);
-  new Renderer().render(a, noon.world, noon.atm, noon.atm.snapshot(), noon.player, null);
-  new Renderer().render(b, night.world, night.atm, night.atm.snapshot(), night.player, null);
-  assert.ok(averageBackground(b) < averageBackground(a) * 0.6);
-  // Same world and spot in both scenes, so the night/noon ratio isolates the light.
-  const ratio = (from: number, to: number): number => averageBackground(b, from, to) / averageBackground(a, from, to);
-  const nearYou = ratio(12 * 80 + 36, 12 * 80 + 44);
-  const farAway = ratio(0, 8);
-  assert.ok(nearYou > farAway, `near ${nearYou} vs far ${farAway}`);
-});
-
-test('a chunk still loading draws as fog, with no drops', () => {
-  const { world, atm, player } = scene(12);
-  const fog = { ...world.chunk(0, 0), ready: false };
-  const loading: ChunkSource = {
-    seed: 1,
-    generated: 0,
-    chunk: () => fog,
-    chunkAt: () => fog,
-    biomeAt: () => 6,
-    temperatureAt: () => 0.5,
-    prefetch: () => 0,
-  };
-  const frame = new Frame(60, 20);
-  const raining = { ...new Atmosphere(1, { startHour: 12, forceFront: 1 }).snapshot() };
-  new Renderer().render(frame, loading, atm, raining, player, { fps: 60 });
-  for (let i = 0; i < 19 * 60; i++) {
-    if (i === 9 * 60 + 30) continue; // you
-    assert.equal(frame.glyph[i], '·'.codePointAt(0), `cell ${i}`);
-    assert.equal(frame.fg[i], COLORS.fogFg);
-    assert.equal(frame.bg[i], COLORS.fogBg);
+test('every cell of every biome is drawn, by day and by night', () => {
+  for (const biome of BIOME_NAMES) {
+    for (const hour of [13, 23]) {
+      const { frame } = rendered(biome, hour);
+      assert.ok(frame.glyph.every((g) => g !== 0), `${biome} at ${hour}`);
+    }
   }
 });
 
-test('the real-world status bar shows coordinates, the place, attribution and the loading state', () => {
-  const { world, atm } = scene(12);
-  const frame = new Frame(140, 20);
-  const place = { name: 'Prague', projection: new Projection(50.088, 14.414, 3), loading: 2, offline: true, busy: true };
-  new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place });
-  const bar = frame.rowText(19);
-  assert.match(bar, /^ Prague · © OpenStreetMap │ 50\.0880,14\.4140 · loading · server busy · offline │ /, bar);
-  assert.ok(!bar.includes('seed'));
-  new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place: { ...place, loading: 0, offline: false, busy: false } });
-  assert.ok(!frame.rowText(19).includes('loading') && !frame.rowText(19).includes('offline') && !frame.rowText(19).includes('busy'));
+test('night is darker than day', () => {
+  const day = rendered('meadow', 12).frame;
+  const night = rendered('meadow', 1).frame;
+  assert.ok(brightness(night, 38) < brightness(day, 38) / 2);
 });
 
-test('at 80 columns the place, attribution and loading state are still visible', () => {
-  const { world, atm } = scene(12);
-  const frame = new Frame(80, 20);
-  const place = { name: 'Prague', projection: new Projection(50.088, 14.414, 3), loading: 1, offline: false, busy: true };
-  new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place });
-  const bar = frame.rowText(19);
-  assert.ok(bar.includes('Prague · © OpenStreetMap') && bar.includes('loading') && bar.includes('server busy'), bar);
+test('the status bar names it and shows its needs; the hints follow', () => {
+  const { frame } = rendered('forest', 13);
+  const bar = frame.rowText(38);
+  assert.match(bar, /^ Ulo, 1 day · /);
+  assert.match(bar, /food [■·]{5}/);
+  assert.match(bar, /mind: local/);
+  assert.match(frame.rowText(39), /F feed {2}P play {2}E pet {2}T talk/);
+});
+
+test('its words appear in a bubble, and the journal over everything', () => {
+  const { game } = rendered('desert', 10);
+  game.sayText('The sand remembers every step.');
+  game.draw();
+  const frame = (game as unknown as { previous: Frame }).previous;
+  const text = Array.from({ length: frame.height }, (_, r) => frame.rowText(r)).join('\n');
+  assert.match(text, /The sand remembers every step\./);
+  assert.match(text, /╭─+╮/);
+  game.mode = 'journal';
+  game.draw();
+  const after = (game as unknown as { previous: Frame }).previous;
+  assert.match(Array.from({ length: after.height }, (_, r) => after.rowText(r)).join('\n'), /Ulo, of the desert/);
+});
+
+test('a window too small says so', () => {
+  const { frame } = rendered('meadow', 12, 30, 10);
+  assert.match(frame.rowText(5), /Make the window bigger/);
 });

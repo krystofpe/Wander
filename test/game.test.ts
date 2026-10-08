@@ -107,8 +107,15 @@ test('the status bar of a game with a place reports loading and offline from the
   let loading = 1;
   const game = new Game(5, 120, 24, { world, place: { name: 'Prague', projection: new Projection(50.088, 14.414, 3), status: () => ({ loading, offline: false, busy: false }) } });
   game.prefetch(Infinity);
-  assert.ok(game.draw().includes('Prague · © OpenStreetMap · loading'));
+  const bar = game.draw();
+  assert.ok(bar.includes('Prague · © OpenStreetMap') && bar.includes('· loading'), bar.slice(-200));
   loading = 0;
   game.update(idle, 1 / 60);
   assert.ok(!game.draw().includes('loading'));
+});
+
+test('--at accepts negative latitudes and a space after the comma', () => {
+  assert.deepEqual(parseOptions(['--at', '-33.87,151.21']).at, { lat: -33.87, lon: 151.21 });
+  assert.deepEqual(parseOptions(['--at=-33.87,151.21']).at, { lat: -33.87, lon: 151.21 });
+  assert.deepEqual(parseOptions(['--at', '50.08804, 14.42076']).at, { lat: 50.08804, lon: 14.42076 });
 });

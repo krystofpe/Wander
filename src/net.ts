@@ -61,6 +61,11 @@ export class Net {
     }
   }
 
+  /** Whether a cached file exists, so a `get` would not fetch. */
+  has(cacheFile: string): boolean {
+    return existsSync(join(this.cacheDir, cacheFile));
+  }
+
   /** Deletes a cached file, so the next `get` fetches it again. */
   forget(cacheFile: string): void {
     rmSync(join(this.cacheDir, cacheFile), { force: true });

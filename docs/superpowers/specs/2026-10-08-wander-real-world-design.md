@@ -56,9 +56,11 @@ Town is built-up land between buildings. None of these ever appears in the gener
 
 In the real world the status bar replaces `x`/`y` with your latitude and longitude to four decimals, and the seed with the place name and the attribution the data licence requires:
 
-`50.0881,14.4139 │ Grassland │ 07:42 morning │ Rain, wind ↘ │ 60 fps │ Prague · © OpenStreetMap`
+`Prague · © OpenStreetMap │ 50.0881,14.4139 │ Grassland │ 07:42 morning │ Rain, wind ↘ │ 60 fps`
 
-`· loading` is appended while fetches are in flight; after a failed fetch, until one succeeds, `· offline` when the connection failed or `· server busy` when the server answered with an error, timed out, or sent unreadable data.
+The place, the attribution and the loading state come first, so they survive a narrow window.
+
+`· loading` is appended after the coordinates while fetches are in flight; while any fetch has failed and waits for its retry, `· offline` when the latest failure was a lost connection or `· server busy` when the server answered with an error, timed out, or sent unreadable data.
 
 ### Fog
 
@@ -105,7 +107,7 @@ Web Mercator, also in `geo.ts`, with 256-pixel tiles at zoom `z`: `px = (lon + 1
   out geom;
   ```
 
-  `out geom` returns each way's coordinates and each relation member's coordinates.
+  `out geom` returns each way's coordinates and each relation member's coordinates. The `timeout` is the client's fetch timeout in seconds, so an abandoned query doesn't keep running against the address's quota. A reply with a `remark` (Overpass reports a timed-out or out-of-memory query as HTTP 200 with a remark and partial data) counts as a failed fetch and is never cached.
 - Every request sends `User-Agent: wander/0.1 (terminal landscape toy)`.
 - **Cache.** Responses are stored as files under `$XDG_CACHE_HOME/wander` or `~/.cache/wander`: `terrarium/13/{x}/{y}.png`, `osm/14/{x}/{y}.json`, `places/{hash of the query}.json`. A cached file is used without any request, so cached areas work offline.
 - **Retries.** A failed, non-2xx or slower-than-20-second fetch is retried after 5 s, then 15 s, then every 60 s, and each Overpass retry moves to the next instance in the list, since the public servers throttle an address after heavy queries. At most four fetches are in flight at once, and at most one Overpass query among them.
@@ -162,8 +164,8 @@ The chunk stores `height = e` (metres), `temperature = t`, `variant = hash2(mx, 
 - `RealWorld` (in `realworld.ts`) implements `ChunkSource`:
   - A chunk needs the regions and elevation tiles that its cells touch (a chunk on a region border needs both). Building a chunk whose inputs are present yields a ready chunk. Otherwise it yields a fog chunk (`ready: false`, all cells Grassland, shade 1) and starts the missing fetches.
   - A fog chunk is rebuilt on the next access once its inputs are present, so the renderer, which reads chunks every frame, shows terrain on the frame after data lands.
-  - `prefetch(left, top, cols, rows, budgetMs)` grows the view by one chunk on every side plus `REAL.lookahead = 100` cells (300 m at the default scale), starts fetches for every region and tile it touches that is missing and not in flight (never more than `REAL.maxInFlight = 4` at once; fetches due for retry are started when their time comes), then builds missing ready chunks nearest the centre first until the budget is spent, exactly like the generated world.
-  - `status()` returns `{ loading, offline, busy }`: fetches in flight, and whether the latest fetch failed to connect (`offline`) or connected but failed (`busy`), with its retry still pending.
+  - `prefetch(left, top, cols, rows, budgetMs)` grows the view by one chunk on every side plus `REAL.lookahead = 100` cells (300 m at the default scale), starts fetches for every region and tile it touches that is missing and not in flight (never more than `REAL.maxInFlight = 4` at once; fetches due for retry are started when their time comes), then builds missing ready chunks nearest the centre first until the budget is spent, exactly like the generated world. Regions load strictly nearest first: only the nearest region the last prefetch found missing may start a fetch, whoever asks for it, and only one region fetch runs at a time. An input already on disk loads at once, outside the fetch slots and that order, so cached areas draw while a slow fetch is still running.
+  - `status()` returns `{ loading, offline, busy }`: fetches in flight, and, while any fetch has failed and waits for its retry, whether the latest failure was a lost connection (`offline`) or a server problem (`busy`).
 - Elevation tiles and regions arrive independently; chunk readiness waits for both.
 
 ## 7. Options and command line

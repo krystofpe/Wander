@@ -31,8 +31,13 @@ export type Options = {
 };
 
 export function parseOptions(argv: readonly string[]): Options {
+  // `--at -33.87,151.21` would read as two options to parseArgs; join a coordinate value onto its flag.
+  const args = [...argv];
+  for (let i = 0; i + 1 < args.length; i++) {
+    if (args[i] === '--at' && /^-?\d/.test(args[i + 1])) args.splice(i, 2, `--at=${args[i + 1]}`);
+  }
   const { values } = parseArgs({
-    args: [...argv],
+    args,
     options: {
       seed: { type: 'string' },
       bench: { type: 'boolean', default: false },
@@ -53,7 +58,7 @@ export function parseOptions(argv: readonly string[]): Options {
   }
   let at: { lat: number; lon: number } | null = null;
   if (values.at !== undefined) {
-    const m = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(values.at);
+    const m = /^(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)$/.exec(values.at);
     const lat = m === null ? NaN : Number(m[1]);
     const lon = m === null ? NaN : Number(m[2]);
     if (m === null || lat < -85 || lat > 85 || lon < -180 || lon > 180) throw new Error(`--at must look like 50.088,14.414, not "${values.at}"`);

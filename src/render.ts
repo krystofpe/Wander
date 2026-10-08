@@ -99,14 +99,12 @@ export function statusText(
   const mm = Math.floor((amb.hour - hh) * 60);
   const clock = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   const wind = windArrow(amb.windX, amb.windY);
-  let where = ` x ${Math.round(player.x)}  y ${Math.round(player.y)}`;
-  let tail = `seed ${seed}`;
-  if (place !== null) {
-    const { lat, lon } = place.projection.toLatLon(player.x, player.y);
-    where = ` ${lat.toFixed(4)},${lon.toFixed(4)}`;
-    tail = `${place.name} · © OpenStreetMap${place.loading > 0 ? ' · loading' : ''}${place.busy ? ' · server busy' : ''}${place.offline ? ' · offline' : ''}`;
-  }
-  return `${where} │ ${biomeName} │ ${clock} ${amb.phase} │ ${weather}, wind ${wind} │ ${fps} fps │ ${tail}`;
+  const rest = `${biomeName} │ ${clock} ${amb.phase} │ ${weather}, wind ${wind} │ ${fps} fps`;
+  if (place === null) return ` x ${Math.round(player.x)}  y ${Math.round(player.y)} │ ${rest} │ seed ${seed}`;
+  // The place, the attribution and the loading state come first, so they survive a narrow window.
+  const { lat, lon } = place.projection.toLatLon(player.x, player.y);
+  const state = `${place.loading > 0 ? ' · loading' : ''}${place.busy ? ' · server busy' : ''}${place.offline ? ' · offline' : ''}`;
+  return ` ${place.name} · © OpenStreetMap │ ${lat.toFixed(4)},${lon.toFixed(4)}${state} │ ${rest}`;
 }
 
 export class Renderer {

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ASPECT, Water } from '../src/config.ts';
+import { ASPECT, REAL, Water } from '../src/config.ts';
 import { Projection } from '../src/geo.ts';
 import type { LatLon } from '../src/geo.ts';
 import { Cover, classifyTags, overpassQuery, parseFeatures, rasterise, stitchRings } from '../src/osm.ts';
@@ -17,7 +17,7 @@ const coverAt = (raster: { cover: Uint8Array }, col: number, row: number): numbe
 
 test('the query names every tag family and the bounds', () => {
   const q = overpassQuery({ south: 50, west: 14, north: 50.1, east: 14.1 });
-  for (const needle of ['natural"="water', 'waterway', 'landuse', 'leisure', 'building', 'highway', 'railway', 'out geom', '(50,14,50.1,14.1)', 'timeout:180']) {
+  for (const needle of ['natural"="water', 'waterway', 'landuse', 'leisure', 'building', 'highway', 'railway', 'out geom', '(50,14,50.1,14.1)', `[timeout:${Math.ceil(REAL.fetchTimeoutMs / 1000)}]`]) {
     assert.ok(q.includes(needle), needle);
   }
 });

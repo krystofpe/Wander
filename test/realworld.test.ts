@@ -51,7 +51,7 @@ const region = {
   ],
 };
 
-type Mode = 'ok' | 'fail' | 'hang' | 'throw';
+type Mode = 'ok' | 'fail' | 'hang' | 'throw' | 'remark' | 'failRegions' | 'hangRegions';
 function fakeFetcher(log: { url: string; body: string }[], state: { mode: Mode }): Fetcher {
   return async (url: string, init: FetchInit) => {
     log.push({ url, body: init.body ?? '' });
@@ -60,7 +60,15 @@ function fakeFetcher(log: { url: string; body: string }[], state: { mode: Mode }
     if (state.mode === 'fail') return { ok: false, status: 503, bytes: async () => new Uint8Array(0) };
     const tile = /terrarium\/(\d+)\/(\d+)\/(\d+)\.png$/.exec(url);
     if (tile !== null) return { ok: true, status: 200, bytes: async () => terrariumTile(Number(tile[1]), Number(tile[2]), Number(tile[3])) };
-    if (url.endsWith('/api/interpreter')) return { ok: true, status: 200, bytes: async () => new TextEncoder().encode(JSON.stringify(region)) };
+    if (url.endsWith('/api/interpreter')) {
+      if (state.mode === 'hangRegions') return new Promise(() => {});
+      if (state.mode === 'failRegions') return { ok: false, status: 503, bytes: async () => new Uint8Array(0) };
+      if (state.mode === 'remark') {
+        const body = JSON.stringify({ elements: [], remark: 'runtime error: Query timed out in "query" at line 3 after 26 seconds.' });
+        return { ok: true, status: 200, bytes: async () => new TextEncoder().encode(body) };
+      }
+      return { ok: true, status: 200, bytes: async () => new TextEncoder().encode(JSON.stringify(region)) };
+    }
     return { ok: false, status: 404, bytes: async () => new Uint8Array(0) };
   };
 }
@@ -260,25 +268,49 @@ test('each failed Overpass query moves to the next instance', async () => {
 });
 
 test('regions load strictly nearest first: a failing region is not jumped by farther ones', async () => {
-  const { net, world, log, state, clock } = setup('fail');
+  const { net, world, log, state, clock } = setup('failRegions'); // tiles arrive; the nearest region keeps failing
   const regions = () => new Set(log.filter((l) => l.url.endsWith('/api/interpreter')).map((l) => l.body));
-  world.prefetch(-600, -600, 1200, 1200, Infinity);
-  await settle(net);
-  assert.equal(regions().size, 1, 'the nearest region is tried first');
-  clock.now = 1000; // a frame between the failure and its retry: the slot is free, but the nearest region still comes first
-  world.prefetch(-600, -600, 1200, 1200, Infinity);
-  await settle(net);
-  assert.equal(regions().size, 1, 'while the nearest region waits for its retry, no farther region takes the slot');
-  clock.now = 5001;
-  world.prefetch(-600, -600, 1200, 1200, Infinity);
-  await settle(net);
-  assert.equal(regions().size, 1, 'while it keeps failing, no farther region takes the slot');
-  state.mode = 'ok';
-  clock.now = 5001 + 15001;
-  for (let i = 0; i < 4; i++) {
+  const frame = async (now: number): Promise<void> => {
+    clock.now = now;
     world.prefetch(-600, -600, 1200, 1200, Infinity);
     await settle(net);
-  }
+  };
+  await frame(0);
+  assert.equal(regions().size, 1, 'the nearest region is tried first');
+  for (let t = 1000; t < 5000; t += 500) await frame(t); // between the failure and its retry the slot is free and the tiles are in
+  assert.equal(regions().size, 1, 'while the nearest region waits for its retry, no farther region takes the slot');
+  await frame(5001);
+  assert.equal(regions().size, 1, 'the retry goes to the same region');
+  state.mode = 'ok';
+  await frame(5001 + 15001);
+  for (let i = 0; i < 6; i++) await frame(clock.now + 100);
   assert.ok(regions().size >= 2, 'once it succeeds, the next region follows');
   assert.equal(world.chunk(0, 0).ready, true);
+});
+
+test('an Overpass reply with a remark is an error: not cached, retried, and the chunk stays fog', async () => {
+  const { dir, net, world, clock, state } = setup('remark');
+  const { tx, ty } = tileOf(ORIGIN.lat, ORIGIN.lon, REAL.regionZoom);
+  world.chunk(0, 0);
+  await settle(net);
+  assert.equal(world.chunk(0, 0).ready, false);
+  assert.equal(world.status().busy, true);
+  assert.equal(existsSync(join(dir, 'osm', String(REAL.regionZoom), String(tx), `${ty}.json`)), false, 'a remark is never cached');
+  state.mode = 'ok';
+  clock.now = 5001;
+  for (let i = 0; i < 6 && !world.chunk(0, 0).ready; i++) await settle(net);
+  assert.equal(world.chunk(0, 0).ready, true);
+});
+
+test('a region already on disk draws at once, even while another region is still being fetched', async () => {
+  const { dir, net, world } = setup('hangRegions'); // tiles arrive; region fetches never answer
+  const { tx, ty } = tileOf(ORIGIN.lat, ORIGIN.lon, REAL.regionZoom);
+  mkdirSync(join(dir, 'osm', String(REAL.regionZoom), String(tx + 1)), { recursive: true });
+  writeFileSync(join(dir, 'osm', String(REAL.regionZoom), String(tx + 1), `${ty}.json`), JSON.stringify(region));
+  const edge = projection.toWorld(ORIGIN.lat, tileBounds(REAL.regionZoom, tx, ty).east).x;
+  const cx = Math.floor(edge / CHUNK_SIZE) + 1; // a chunk wholly inside the cached eastern region
+  world.prefetch(0, 0, 200, 60, Infinity); // the nearest region starts fetching and hangs
+  for (let i = 0; i < 6 && !world.chunk(cx, 0).ready; i++) await settle(net);
+  assert.equal(world.chunk(cx, 0).ready, true, 'the cached region does not wait for the slot');
+  assert.equal(world.chunk(0, 0).ready, false, 'the origin still waits for its region');
 });

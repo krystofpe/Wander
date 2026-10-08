@@ -69,11 +69,11 @@ export class RealWorld implements ChunkSource {
   readonly seed: number;
   /** Chunks built with their data present; read by tests and the bench. */
   generated = 0;
-  /** The last fetch failed to connect at all. */
-  private offline = false;
-  /** The last fetch connected but the server answered with an error, timed out, or sent something unreadable. */
-  private busy = false;
+  /** How the latest failed fetch failed: no connection (offline), or the server answered with an error, timed out, or sent something unreadable (busy). */
+  private lastFailure: 'offline' | 'busy' | null = null;
   private regionsInFlight = 0;
+  /** The nearest region the last prefetch found missing: the only region allowed to start a fetch. Undefined before the first prefetch. */
+  private nextRegion: string | null | undefined = undefined;
   private readonly net: Net;
   private readonly now: () => number;
   private readonly chunks = new Map<number, Chunk>();
@@ -86,9 +86,16 @@ export class RealWorld implements ChunkSource {
     this.now = now;
   }
 
-  /** Fetches in flight, and how the latest fetch failed, if it did: no connection (offline) or a server problem (busy). */
+  /** Fetches in flight, and, while any fetch has failed and waits for its retry, how the latest one failed: no connection (offline) or a server problem (busy). */
   status(): { loading: number; offline: boolean; busy: boolean } {
-    return { loading: this.net.inFlight, offline: this.offline, busy: this.busy };
+    let failing = false;
+    for (const entry of this.inputs.values()) {
+      if (entry.state === 'failed') {
+        failing = true;
+        break;
+      }
+    }
+    return { loading: this.net.inFlight, offline: failing && this.lastFailure === 'offline', busy: failing && this.lastFailure === 'busy' };
   }
 
   /** The chunk at (cx, cy): fog until its tiles and regions have arrived, rebuilt on the first access after that. */
@@ -137,7 +144,11 @@ export class RealWorld implements ChunkSource {
   ): number {
     const S = CHUNK_SIZE;
     const ahead = REAL.lookahead;
-    this.wantAll(this.inputsIn(left - S - ahead, top - S - ahead / ASPECT, cols + 2 * S + 2 * ahead, rows + 2 * S + (2 * ahead) / ASPECT));
+    const inputs = this.inputsIn(left - S - ahead, top - S - ahead / ASPECT, cols + 2 * S + 2 * ahead, rows + 2 * S + (2 * ahead) / ASPECT);
+    // Regions load strictly nearest first: only the nearest one that is not ready may start, whoever asks.
+    const nearest = inputs.find((input) => input.kind === 'region' && this.inputs.get(input.key)?.state !== 'ready');
+    this.nextRegion = nearest === undefined ? null : nearest.key;
+    this.wantAll(inputs);
     const cx0 = Math.floor(left / S) - 1;
     const cy0 = Math.floor(top / S) - 1;
     const cx1 = Math.floor((left + cols - 1) / S) + 1;
@@ -196,28 +207,23 @@ export class RealWorld implements ChunkSource {
     return this.wantAll(this.inputsIn(cx * S - 1, cy * S - 1, S + 2, S + 2));
   }
 
-  /**
-   * Wants every input, nearest first. Regions load strictly in that order: while the nearest missing
-   * region is loading or waiting for its retry, no farther region takes the single Overpass slot, so
-   * the ground under you is never queued behind the horizon. Tiles are cheap and load freely.
-   */
+  /** Wants every input; true when all are present. */
   private wantAll(inputs: readonly Input[]): boolean {
     let ready = true;
-    let regionsBlocked = false;
-    for (const input of inputs) {
-      if (input.kind === 'region' && regionsBlocked) {
-        ready = false;
-        continue;
-      }
-      if (!this.want(input)) {
-        ready = false;
-        if (input.kind === 'region') regionsBlocked = true;
-      }
-    }
+    for (const input of inputs) if (!this.want(input)) ready = false;
     return ready;
   }
 
-  /** True when the input is present; otherwise starts or retries its fetch when due and allowed. */
+  private static cacheFile(input: Input): string {
+    return input.kind === 'tile' ? `terrarium/${input.z}/${input.tx}/${input.ty}.png` : `osm/${input.z}/${input.tx}/${input.ty}.json`;
+  }
+
+  /**
+   * True when the input is present; otherwise starts or retries its load when due and allowed. An input
+   * already on disk loads at once, outside the fetch slots and the nearest-first order. A region fetch
+   * starts only for the nearest region the last prefetch found missing, and only in the single Overpass
+   * slot, so the ground under you is never queued behind the horizon. Tiles are cheap and fetch freely.
+   */
   private want(input: Input): boolean {
     let entry = this.inputs.get(input.key);
     if (entry === undefined) {
@@ -226,15 +232,20 @@ export class RealWorld implements ChunkSource {
     }
     if (entry.state === 'ready') return true;
     const due = entry.state === 'missing' || (entry.state === 'failed' && this.now() >= entry.retryAt);
-    const slot = this.net.inFlight < REAL.maxInFlight && (input.kind !== 'region' || this.regionsInFlight < REAL.maxRegionsInFlight);
-    if (due && slot) void this.load(input, entry);
+    if (!due) return false;
+    if (this.net.has(RealWorld.cacheFile(input))) {
+      void this.load(input, entry, true);
+      return false;
+    }
+    const allowed = input.kind !== 'region' || ((this.nextRegion === undefined || this.nextRegion === input.key) && this.regionsInFlight < REAL.maxRegionsInFlight);
+    if (allowed && this.net.inFlight < REAL.maxInFlight) void this.load(input, entry, false);
     return false;
   }
 
-  private async load(input: Input, entry: Loadable): Promise<void> {
+  private async load(input: Input, entry: Loadable, fromDisk: boolean): Promise<void> {
     entry.state = 'loading';
-    const cacheFile =
-      input.kind === 'tile' ? `terrarium/${input.z}/${input.tx}/${input.ty}.png` : `osm/${input.z}/${input.tx}/${input.ty}.json`;
+    const cacheFile = RealWorld.cacheFile(input);
+    const countsAsFetch = input.kind === 'region' && !fromDisk;
     try {
       if (input.kind === 'tile') {
         const bytes = await this.net.get(`${REAL.terrariumUrl}/${input.z}/${input.tx}/${input.ty}.png`, cacheFile);
@@ -243,7 +254,7 @@ export class RealWorld implements ChunkSource {
         const bounds = tileBounds(input.z, input.tx, input.ty);
         // Each failure moves to the next instance: the public servers throttle an address after heavy queries.
         const url = REAL.overpassUrls[entry.failures % REAL.overpassUrls.length];
-        this.regionsInFlight++;
+        if (countsAsFetch) this.regionsInFlight++;
         let bytes: Uint8Array;
         try {
           bytes = await this.net.get(url, cacheFile, {
@@ -252,18 +263,17 @@ export class RealWorld implements ChunkSource {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           });
         } finally {
-          this.regionsInFlight--;
+          if (countsAsFetch) this.regionsInFlight--;
         }
-        entry.value = rasterise(parseFeatures(JSON.parse(new TextDecoder().decode(bytes))), this.projection, this.regionRect(bounds));
+        const json = JSON.parse(new TextDecoder().decode(bytes)) as { readonly remark?: unknown } | null;
+        // Overpass reports a query that timed out or ran out of memory as HTTP 200 with a remark and partial data.
+        if (json !== null && typeof json.remark === 'string') throw new Error(json.remark);
+        entry.value = rasterise(parseFeatures(json), this.projection, this.regionRect(bounds));
       }
       entry.state = 'ready';
-      this.offline = false;
-      this.busy = false;
     } catch (err) {
       // `fetch` throws a TypeError when it cannot connect; anything else is the server's answer, a timeout, or unreadable data.
-      const connectionFailed = err instanceof TypeError;
-      this.offline = connectionFailed;
-      this.busy = !connectionFailed;
+      this.lastFailure = err instanceof TypeError ? 'offline' : 'busy';
       // A download that cannot be read must not be read back from the cache on the retry.
       this.net.forget(cacheFile);
       entry.failures++;

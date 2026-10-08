@@ -26,7 +26,8 @@ export type Feature = Polygon | Line;
 
 export function overpassQuery(b: Bounds): string {
   const box = `(${b.south},${b.west},${b.north},${b.east})`;
-  return `[out:json][timeout:180];
+  // The server-side timeout matches the client's, so an abandoned query doesn't keep running against the address's quota.
+  return `[out:json][timeout:${Math.ceil(REAL.fetchTimeoutMs / 1000)}];
 (
   way["natural"="water"]${box};
   relation["natural"="water"]${box};

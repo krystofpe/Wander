@@ -111,9 +111,17 @@ test('the real-world status bar shows coordinates, the place, attribution and th
   const place = { name: 'Prague', projection: new Projection(50.088, 14.414, 3), loading: 2, offline: true, busy: true };
   new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place });
   const bar = frame.rowText(19);
-  assert.match(bar, /^ 50\.0880,14\.4140 │/);
-  assert.ok(bar.includes('Prague · © OpenStreetMap · loading · server busy · offline'), bar);
+  assert.match(bar, /^ Prague · © OpenStreetMap │ 50\.0880,14\.4140 · loading · server busy · offline │ /, bar);
   assert.ok(!bar.includes('seed'));
   new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place: { ...place, loading: 0, offline: false, busy: false } });
   assert.ok(!frame.rowText(19).includes('loading') && !frame.rowText(19).includes('offline') && !frame.rowText(19).includes('busy'));
+});
+
+test('at 80 columns the place, attribution and loading state are still visible', () => {
+  const { world, atm } = scene(12);
+  const frame = new Frame(80, 20);
+  const place = { name: 'Prague', projection: new Projection(50.088, 14.414, 3), loading: 1, offline: false, busy: true };
+  new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place });
+  const bar = frame.rowText(19);
+  assert.ok(bar.includes('Prague · © OpenStreetMap') && bar.includes('loading') && bar.includes('server busy'), bar);
 });

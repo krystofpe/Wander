@@ -1,5 +1,5 @@
 // The sky: two clocks, sunlight, rain and snow fronts, wind, clouds, gusts, water motion, the lantern.
-import { DAY_LENGTH, DAY_START_HOUR, LANTERN_RADIUS, LIGHT_KEYS, WEATHER } from './config.ts';
+import { DAY_LENGTH, DAY_START_HOUR, LANTERN_RADIUS, LIGHT_KEYS, VIGNETTE, WEATHER } from './config.ts';
 import { fbm, hash2, makeNoise, rng } from './noise.ts';
 import type { Noise2D } from './noise.ts';
 
@@ -221,6 +221,17 @@ export function lanternLight(dx: number, dy: number, amb: Ambient): number {
   if (d >= 1) return 0;
   const flicker = 1 + 0.06 * Math.sin(amb.realTime * 13) * Math.sin(amb.realTime * 7.3 + 1);
   return (1 - d) * (1 - d) * night * flicker;
+}
+
+/**
+ * Light multiplier for the lit radius: 1 near you, fading to VIGNETTE.edge at the screen edge and beyond.
+ * `dx`, `dy` are world units from your exact position; `halfWidth`, `halfHeight` are the view's half extents in world units.
+ */
+export function vignette(dx: number, dy: number, halfWidth: number, halfHeight: number): number {
+  const ex = dx / halfWidth;
+  const ey = dy / halfHeight;
+  const e = Math.sqrt(ex * ex + ey * ey);
+  return 1 - (1 - VIGNETTE.edge) * smoothstep(VIGNETTE.inner, 1, e);
 }
 
 const STAR = 0x2a;

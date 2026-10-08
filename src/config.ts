@@ -193,6 +193,8 @@ export const BLADES = {
   short: codePoint("'"),
   shortFlat: codePoint('.'),
 } as const;
+/** The lit radius: full light inside `inner` of the view's half extents, fading to `edge` at the screen edge. */
+export const VIGNETTE = { inner: 0.45, edge: 0.06 } as const;
 
 // ── Screen ─────────────────────────────────────────────────────────────────
 export const MIN_COLS = 40;

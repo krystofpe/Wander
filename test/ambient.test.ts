@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DAY_LENGTH, LANTERN_RADIUS } from '../src/config.ts';
+import { DAY_LENGTH, LANTERN_RADIUS, VIGNETTE } from '../src/config.ts';
 import {
   Atmosphere,
   Fronts,
@@ -9,6 +9,7 @@ import {
   lanternLight,
   phaseName,
   sunlight,
+  vignette,
   weatherName,
   windArrow,
 } from '../src/ambient.ts';
@@ -167,4 +168,18 @@ test('weather names', () => {
   assert.equal(weatherName(amb({ front: 0.5 }), false), 'Rain');
   assert.equal(weatherName(amb({ cloudCover: 0.8 }), false), 'Cloudy');
   assert.equal(weatherName(amb(), false), 'Clear');
+});
+
+test('the lit radius is full near you and fades to the edge level, never brightening outward', () => {
+  assert.equal(vignette(0, 0, 100, 60), 1);
+  assert.equal(vignette(40, 0, 100, 60), 1);
+  assert.equal(vignette(0, 24, 100, 60), 1);
+  assert.ok(Math.abs(vignette(100, 0, 100, 60) - VIGNETTE.edge) < 1e-9);
+  assert.ok(Math.abs(vignette(0, 90, 100, 60) - VIGNETTE.edge) < 1e-9, 'beyond the edge stays at the edge level');
+  let previous = 1;
+  for (let x = 0; x <= 100; x++) {
+    const v = vignette(x, 0, 100, 60);
+    assert.ok(v <= previous + 1e-12, `brighter at ${x}`);
+    previous = v;
+  }
 });

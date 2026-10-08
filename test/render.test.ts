@@ -107,13 +107,13 @@ test('a chunk still loading draws as fog, with no drops', () => {
 
 test('the real-world status bar shows coordinates, the place, attribution and the loading state', () => {
   const { world, atm } = scene(12);
-  const frame = new Frame(120, 20);
-  const place = { name: 'Prague', projection: new Projection(50.088, 14.414, 3), loading: 2, offline: true };
+  const frame = new Frame(140, 20);
+  const place = { name: 'Prague', projection: new Projection(50.088, 14.414, 3), loading: 2, offline: true, busy: true };
   new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place });
   const bar = frame.rowText(19);
   assert.match(bar, /^ 50\.0880,14\.4140 │/);
-  assert.ok(bar.includes('Prague · © OpenStreetMap · loading · offline'), bar);
+  assert.ok(bar.includes('Prague · © OpenStreetMap · loading · server busy · offline'), bar);
   assert.ok(!bar.includes('seed'));
-  new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place: { ...place, loading: 0, offline: false } });
-  assert.ok(!frame.rowText(19).includes('loading') && !frame.rowText(19).includes('offline'));
+  new Renderer().render(frame, world, atm, atm.snapshot(), { x: 0.5, y: 1, vx: 0, vy: 0 }, { fps: 60, place: { ...place, loading: 0, offline: false, busy: false } });
+  assert.ok(!frame.rowText(19).includes('loading') && !frame.rowText(19).includes('offline') && !frame.rowText(19).includes('busy'));
 });

@@ -118,7 +118,7 @@ export function cleanLabel(text: string): string {
 export type GamePlace = {
   readonly name: string;
   readonly projection: Projection;
-  status(): { readonly loading: number; readonly offline: boolean };
+  status(): { readonly loading: number; readonly offline: boolean; readonly busy: boolean };
 };
 
 export type GameOptions = AtmosphereOptions & {
@@ -194,8 +194,8 @@ export class Game {
 
   private placeHud(): PlaceHud | null {
     if (this.place === null) return null;
-    const { loading, offline } = this.place.status();
-    return { name: this.place.name, projection: this.place.projection, loading, offline };
+    const { loading, offline, busy } = this.place.status();
+    return { name: this.place.name, projection: this.place.projection, loading, offline, busy };
   }
 }
 

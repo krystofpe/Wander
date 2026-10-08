@@ -21,7 +21,13 @@ import type { Player } from './player.ts';
 import type { ChunkSource } from './world.ts';
 
 /** A real place for the status bar: where you are, what is loading. */
-export type PlaceHud = { readonly name: string; readonly projection: Projection; readonly loading: number; readonly offline: boolean };
+export type PlaceHud = {
+  readonly name: string;
+  readonly projection: Projection;
+  readonly loading: number;
+  readonly offline: boolean;
+  readonly busy: boolean;
+};
 /** What the status bar shows besides the world; null hides the bar. */
 export type Hud = { readonly fps: number; readonly place?: PlaceHud | null } | null;
 
@@ -98,7 +104,7 @@ export function statusText(
   if (place !== null) {
     const { lat, lon } = place.projection.toLatLon(player.x, player.y);
     where = ` ${lat.toFixed(4)},${lon.toFixed(4)}`;
-    tail = `${place.name} · © OpenStreetMap${place.loading > 0 ? ' · loading' : ''}${place.offline ? ' · offline' : ''}`;
+    tail = `${place.name} · © OpenStreetMap${place.loading > 0 ? ' · loading' : ''}${place.busy ? ' · server busy' : ''}${place.offline ? ' · offline' : ''}`;
   }
   return `${where} │ ${biomeName} │ ${clock} ${amb.phase} │ ${weather}, wind ${wind} │ ${fps} fps │ ${tail}`;
 }

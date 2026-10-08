@@ -51,11 +51,12 @@ const region = {
   ],
 };
 
-type Mode = 'ok' | 'fail' | 'hang';
+type Mode = 'ok' | 'fail' | 'hang' | 'throw';
 function fakeFetcher(log: { url: string; body: string }[], state: { mode: Mode }): Fetcher {
   return async (url: string, init: FetchInit) => {
     log.push({ url, body: init.body ?? '' });
     if (state.mode === 'hang') return new Promise(() => {});
+    if (state.mode === 'throw') throw new TypeError('fetch failed');
     if (state.mode === 'fail') return { ok: false, status: 503, bytes: async () => new Uint8Array(0) };
     const tile = /terrarium\/(\d+)\/(\d+)\/(\d+)\.png$/.exec(url);
     if (tile !== null) return { ok: true, status: 200, bytes: async () => terrariumTile(Number(tile[1]), Number(tile[2]), Number(tile[3])) };
@@ -114,7 +115,7 @@ test('the first chunk is fog and starts the fetches; once the data lands it draw
   assert.equal(first.ready, false);
   assert.equal(first.biome[0], Biome.Grassland, 'fog chunks read as grassland underfoot');
   assert.ok(net.inFlight > 0 && net.inFlight <= REAL.maxInFlight);
-  assert.deepEqual(world.status(), { loading: net.inFlight, offline: false });
+  assert.deepEqual(world.status(), { loading: net.inFlight, offline: false, busy: false });
   await settle(net);
   assert.equal(net.inFlight, 0);
   assert.ok(log.some((l) => l.url.startsWith(REAL.terrariumUrl)) && log.some((l) => l.url.endsWith('/api/interpreter')));
@@ -158,7 +159,7 @@ test('a failing fetch sets offline and retries after 5 s, 15 s and 60 s, then re
   await settle(net);
   const n = log.length;
   assert.ok(n > 0);
-  assert.equal(world.status().offline, true);
+  assert.deepEqual(world.status(), { loading: 0, offline: false, busy: true }, 'an answer that is an error means the server is busy, not that we are offline');
   clock.now = 4999;
   world.chunk(0, 0);
   await settle(net);
@@ -185,7 +186,18 @@ test('a failing fetch sets offline and retries after 5 s, 15 s and 60 s, then re
   await settle(net);
   assert.equal(log.length, 4 * n);
   assert.equal(world.chunk(0, 0).ready, true);
-  assert.equal(world.status().offline, false);
+  assert.deepEqual(world.status(), { loading: 0, offline: false, busy: false });
+});
+
+test('a network error means offline, until a fetch succeeds', async () => {
+  const { net, world, state, clock } = setup('throw');
+  world.chunk(0, 0);
+  await settle(net);
+  assert.deepEqual(world.status(), { loading: 0, offline: true, busy: false });
+  state.mode = 'ok';
+  clock.now = 5001;
+  for (let i = 0; i < 6 && !world.chunk(0, 0).ready; i++) await settle(net);
+  assert.deepEqual(world.status(), { loading: 0, offline: false, busy: false });
 });
 
 test('a corrupt cached tile is forgotten and fetched again on the retry', async () => {

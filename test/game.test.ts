@@ -105,7 +105,7 @@ test('place names are cleaned to characters the status bar can draw one per colu
 test('the status bar of a game with a place reports loading and offline from the world', () => {
   const world = new World(1);
   let loading = 1;
-  const game = new Game(5, 120, 24, { world, place: { name: 'Prague', projection: new Projection(50.088, 14.414, 3), status: () => ({ loading, offline: false }) } });
+  const game = new Game(5, 120, 24, { world, place: { name: 'Prague', projection: new Projection(50.088, 14.414, 3), status: () => ({ loading, offline: false, busy: false }) } });
   game.prefetch(Infinity);
   assert.ok(game.draw().includes('Prague · © OpenStreetMap · loading'));
   loading = 0;

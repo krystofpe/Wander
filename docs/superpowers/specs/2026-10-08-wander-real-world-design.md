@@ -58,7 +58,7 @@ In the real world the status bar replaces `x`/`y` with your latitude and longitu
 
 `50.0881,14.4139 │ Grassland │ 07:42 morning │ Rain, wind ↘ │ 60 fps │ Prague · © OpenStreetMap`
 
-`· loading` is appended while fetches are in flight, `· offline` after a failed fetch until one succeeds.
+`· loading` is appended while fetches are in flight; after a failed fetch, until one succeeds, `· offline` when the connection failed or `· server busy` when the server answered with an error, timed out, or sent unreadable data.
 
 ### Fog
 
@@ -163,7 +163,7 @@ The chunk stores `height = e` (metres), `temperature = t`, `variant = hash2(mx, 
   - A chunk needs the regions and elevation tiles that its cells touch (a chunk on a region border needs both). Building a chunk whose inputs are present yields a ready chunk. Otherwise it yields a fog chunk (`ready: false`, all cells Grassland, shade 1) and starts the missing fetches.
   - A fog chunk is rebuilt on the next access once its inputs are present, so the renderer, which reads chunks every frame, shows terrain on the frame after data lands.
   - `prefetch(left, top, cols, rows, budgetMs)` grows the view by one chunk on every side plus `REAL.lookahead = 100` cells (300 m at the default scale), starts fetches for every region and tile it touches that is missing and not in flight (never more than `REAL.maxInFlight = 4` at once; fetches due for retry are started when their time comes), then builds missing ready chunks nearest the centre first until the budget is spent, exactly like the generated world.
-  - `status()` returns `{ loading, offline }`: fetches in flight, and whether the latest fetch failed with its retry still pending.
+  - `status()` returns `{ loading, offline, busy }`: fetches in flight, and whether the latest fetch failed to connect (`offline`) or connected but failed (`busy`), with its retry still pending.
 - Elevation tiles and regions arrive independently; chunk readiness waits for both.
 
 ## 7. Options and command line

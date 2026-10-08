@@ -69,7 +69,10 @@ export class RealWorld implements ChunkSource {
   readonly seed: number;
   /** Chunks built with their data present; read by tests and the bench. */
   generated = 0;
+  /** The last fetch failed to connect at all. */
   private offline = false;
+  /** The last fetch connected but the server answered with an error, timed out, or sent something unreadable. */
+  private busy = false;
   private regionsInFlight = 0;
   private readonly net: Net;
   private readonly now: () => number;
@@ -83,9 +86,9 @@ export class RealWorld implements ChunkSource {
     this.now = now;
   }
 
-  /** Fetches in flight, and whether the latest fetch failed with its retry still pending. */
-  status(): { loading: number; offline: boolean } {
-    return { loading: this.net.inFlight, offline: this.offline };
+  /** Fetches in flight, and how the latest fetch failed, if it did: no connection (offline) or a server problem (busy). */
+  status(): { loading: number; offline: boolean; busy: boolean } {
+    return { loading: this.net.inFlight, offline: this.offline, busy: this.busy };
   }
 
   /** The chunk at (cx, cy): fog until its tiles and regions have arrived, rebuilt on the first access after that. */
@@ -255,14 +258,18 @@ export class RealWorld implements ChunkSource {
       }
       entry.state = 'ready';
       this.offline = false;
-    } catch {
+      this.busy = false;
+    } catch (err) {
+      // `fetch` throws a TypeError when it cannot connect; anything else is the server's answer, a timeout, or unreadable data.
+      const connectionFailed = err instanceof TypeError;
+      this.offline = connectionFailed;
+      this.busy = !connectionFailed;
       // A download that cannot be read must not be read back from the cache on the retry.
       this.net.forget(cacheFile);
       entry.failures++;
       const delays = REAL.retryMs;
       entry.retryAt = this.now() + delays[Math.min(entry.failures - 1, delays.length - 1)];
       entry.state = 'failed';
-      this.offline = true;
     }
   }
 

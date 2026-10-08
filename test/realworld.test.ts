@@ -246,3 +246,27 @@ test('each failed Overpass query moves to the next instance', async () => {
   for (let i = 0; i < 6 && !world.chunk(0, 0).ready; i++) await settle(net);
   assert.equal(world.chunk(0, 0).ready, true);
 });
+
+test('regions load strictly nearest first: a failing region is not jumped by farther ones', async () => {
+  const { net, world, log, state, clock } = setup('fail');
+  const regions = () => new Set(log.filter((l) => l.url.endsWith('/api/interpreter')).map((l) => l.body));
+  world.prefetch(-600, -600, 1200, 1200, Infinity);
+  await settle(net);
+  assert.equal(regions().size, 1, 'the nearest region is tried first');
+  clock.now = 1000; // a frame between the failure and its retry: the slot is free, but the nearest region still comes first
+  world.prefetch(-600, -600, 1200, 1200, Infinity);
+  await settle(net);
+  assert.equal(regions().size, 1, 'while the nearest region waits for its retry, no farther region takes the slot');
+  clock.now = 5001;
+  world.prefetch(-600, -600, 1200, 1200, Infinity);
+  await settle(net);
+  assert.equal(regions().size, 1, 'while it keeps failing, no farther region takes the slot');
+  state.mode = 'ok';
+  clock.now = 5001 + 15001;
+  for (let i = 0; i < 4; i++) {
+    world.prefetch(-600, -600, 1200, 1200, Infinity);
+    await settle(net);
+  }
+  assert.ok(regions().size >= 2, 'once it succeeds, the next region follows');
+  assert.equal(world.chunk(0, 0).ready, true);
+});

@@ -134,9 +134,7 @@ export class RealWorld implements ChunkSource {
   ): number {
     const S = CHUNK_SIZE;
     const ahead = REAL.lookahead;
-    for (const input of this.inputsIn(left - S - ahead, top - S - ahead / ASPECT, cols + 2 * S + 2 * ahead, rows + 2 * S + (2 * ahead) / ASPECT)) {
-      this.want(input);
-    }
+    this.wantAll(this.inputsIn(left - S - ahead, top - S - ahead / ASPECT, cols + 2 * S + 2 * ahead, rows + 2 * S + (2 * ahead) / ASPECT));
     const cx0 = Math.floor(left / S) - 1;
     const cy0 = Math.floor(top / S) - 1;
     const cx1 = Math.floor((left + cols - 1) / S) + 1;
@@ -192,8 +190,27 @@ export class RealWorld implements ChunkSource {
   /** Whether every input of the chunk (grown by one cell for slopes and shores) is present; starts the missing fetches. */
   private inputsReady(cx: number, cy: number): boolean {
     const S = CHUNK_SIZE;
+    return this.wantAll(this.inputsIn(cx * S - 1, cy * S - 1, S + 2, S + 2));
+  }
+
+  /**
+   * Wants every input, nearest first. Regions load strictly in that order: while the nearest missing
+   * region is loading or waiting for its retry, no farther region takes the single Overpass slot, so
+   * the ground under you is never queued behind the horizon. Tiles are cheap and load freely.
+   */
+  private wantAll(inputs: readonly Input[]): boolean {
     let ready = true;
-    for (const input of this.inputsIn(cx * S - 1, cy * S - 1, S + 2, S + 2)) if (!this.want(input)) ready = false;
+    let regionsBlocked = false;
+    for (const input of inputs) {
+      if (input.kind === 'region' && regionsBlocked) {
+        ready = false;
+        continue;
+      }
+      if (!this.want(input)) {
+        ready = false;
+        if (input.kind === 'region') regionsBlocked = true;
+      }
+    }
     return ready;
   }
 

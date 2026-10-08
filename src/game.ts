@@ -5,6 +5,7 @@ import { ASPECT, BIOMES, FRAME_DT, PREFETCH_BUDGET_MS, TIME_LAPSE } from './conf
 import { Atmosphere } from './ambient.ts';
 import type { AtmosphereOptions } from './ambient.ts';
 import { Frame } from './frame.ts';
+import { Trail } from './grass.ts';
 import type { Intent } from './input.ts';
 import { stepPlayer } from './player.ts';
 import type { Player } from './player.ts';
@@ -69,6 +70,8 @@ export class Game {
   player: Player;
   showHud = true;
   fps = 0;
+  /** Where you have walked lately, for the grass. */
+  readonly trail = new Trail();
   private readonly renderer = new Renderer();
   private frames: [Frame, Frame];
   private previous: Frame | null = null;
@@ -97,6 +100,7 @@ export class Game {
     this.atm.step(dt, intent.fastTime ? TIME_LAPSE : 1);
     const here = this.world.biomeAt(Math.floor(this.player.x), Math.floor(this.player.y / ASPECT));
     this.player = stepPlayer(this.player, intent, BIOMES[here].speed, dt);
+    this.trail.push(this.player.x, this.player.y, this.atm.realTime);
   }
 
   /** Generates chunks in and around the view for up to `budgetMs`. */
@@ -111,7 +115,7 @@ export class Game {
   draw(): string {
     const next = this.previous === this.frames[0] ? this.frames[1] : this.frames[0];
     const hud = this.showHud ? { fps: this.fps } : null;
-    this.renderer.render(next, this.world, this.atm, this.atm.snapshot(), this.player, hud);
+    this.renderer.render(next, this.world, this.atm, this.atm.snapshot(), this.player, this.trail, hud);
     const out = diffFrames(this.previous, next);
     this.previous = next;
     return out;

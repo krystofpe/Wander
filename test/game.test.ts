@@ -68,3 +68,10 @@ test('the bench walk has five two-second legs, some running', () => {
   assert.deepEqual(benchIntent(120), { dx: 1, dy: 1, run: true, fastTime: false });
   assert.deepEqual(benchIntent(600), benchIntent(0));
 });
+
+test('each update records your position in the trail', () => {
+  const game = new Game(3, 80, 24);
+  assert.equal(game.trail.bounds(0), null);
+  for (let i = 0; i < 12; i++) game.update({ ...idle, dx: 1 }, 1 / 60);
+  assert.notEqual(game.trail.bounds(game.atm.realTime), null);
+});

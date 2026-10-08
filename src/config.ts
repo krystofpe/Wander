@@ -78,9 +78,8 @@ export type BiomeDef = {
   readonly name: string;
   /** Code points; a cell's variant picks one. */
   readonly glyphs: readonly number[];
-  /** Daylight colours, 0xRRGGBB. */
+  /** Daylight foreground colour on black, 0xRRGGBB. */
   readonly fg: number;
-  readonly bg: number;
   /** Multiplies walking speed. */
   readonly speed: number;
   readonly water: WaterKind;
@@ -92,22 +91,22 @@ export type BiomeDef = {
 
 const glyphs = (text: string): number[] => Array.from(text, (ch) => ch.codePointAt(0) ?? 32);
 
-/** One entry per Biome id, in id order. All glyphs are single-width. */
+/** One entry per Biome id, in id order. All glyphs are single-width; colours are tuned for a black background. */
 export const BIOMES: readonly BiomeDef[] = [
-  { name: 'Deep ocean', glyphs: glyphs('≈~'), fg: 0x3b64a8, bg: 0x0c2148, speed: 0.45, water: Water.Sea, sways: false, blades: false },
-  { name: 'Ocean', glyphs: glyphs('~≈'), fg: 0x5b8fd6, bg: 0x163b78, speed: 0.45, water: Water.Sea, sways: false, blades: false },
-  { name: 'Shallows', glyphs: glyphs('~·'), fg: 0x9ee0e0, bg: 0x2b7f91, speed: 0.55, water: Water.Sea, sways: false, blades: false },
-  { name: 'River', glyphs: glyphs('~≈'), fg: 0xa8d8ff, bg: 0x2f6fb5, speed: 0.55, water: Water.River, sways: false, blades: false },
-  { name: 'Lake', glyphs: glyphs('~≈'), fg: 0x96cdf5, bg: 0x2a5d9c, speed: 0.55, water: Water.Lake, sways: false, blades: false },
-  { name: 'Beach', glyphs: glyphs('.:·'), fg: 0xb39a5f, bg: 0xdfca92, speed: 0.9, water: Water.None, sways: false, blades: false },
-  { name: 'Grassland', glyphs: glyphs(',.\'"'), fg: 0xa6dc72, bg: 0x4a8a34, speed: 1.0, water: Water.None, sways: false, blades: true },
-  { name: 'Forest', glyphs: glyphs('♣♠'), fg: 0x5fae4e, bg: 0x1c4a22, speed: 0.6, water: Water.None, sways: true, blades: false },
-  { name: 'Swamp', glyphs: glyphs('",~'), fg: 0x8fa05c, bg: 0x3a4628, speed: 0.5, water: Water.None, sways: false, blades: true },
-  { name: 'Desert', glyphs: glyphs('.·:'), fg: 0xb98f4c, bg: 0xe0bd78, speed: 0.8, water: Water.None, sways: false, blades: false },
-  { name: 'Tundra', glyphs: glyphs(".'·"), fg: 0xd2dbd2, bg: 0x8d9c8f, speed: 0.85, water: Water.None, sways: false, blades: false },
-  { name: 'Hills', glyphs: glyphs('∩n'), fg: 0x9a8650, bg: 0x667438, speed: 0.65, water: Water.None, sways: false, blades: false },
-  { name: 'Mountains', glyphs: glyphs('▲^'), fg: 0xc4c0bc, bg: 0x6c6862, speed: 0.45, water: Water.None, sways: false, blades: false },
-  { name: 'Snowy peaks', glyphs: glyphs('▲^'), fg: 0xffffff, bg: 0xd4dbe6, speed: 0.4, water: Water.None, sways: false, blades: false },
+  { name: 'Deep ocean', glyphs: glyphs('≈~'), fg: 0x2f5aa8, speed: 0.45, water: Water.Sea, sways: false, blades: false },
+  { name: 'Ocean', glyphs: glyphs('~≈'), fg: 0x4a8be0, speed: 0.45, water: Water.Sea, sways: false, blades: false },
+  { name: 'Shallows', glyphs: glyphs('~·'), fg: 0x8fe3e3, speed: 0.55, water: Water.Sea, sways: false, blades: false },
+  { name: 'River', glyphs: glyphs('~≈'), fg: 0x9fd4ff, speed: 0.55, water: Water.River, sways: false, blades: false },
+  { name: 'Lake', glyphs: glyphs('~≈'), fg: 0x8cc8f0, speed: 0.55, water: Water.Lake, sways: false, blades: false },
+  { name: 'Beach', glyphs: glyphs('.:·'), fg: 0xe3cf93, speed: 0.9, water: Water.None, sways: false, blades: false },
+  { name: 'Grassland', glyphs: glyphs(',.\'"'), fg: 0x62d45e, speed: 1.0, water: Water.None, sways: false, blades: true },
+  { name: 'Forest', glyphs: glyphs('♣♠'), fg: 0x4db35a, speed: 0.6, water: Water.None, sways: true, blades: false },
+  { name: 'Swamp', glyphs: glyphs('",~'), fg: 0x9cb064, speed: 0.5, water: Water.None, sways: false, blades: true },
+  { name: 'Desert', glyphs: glyphs('.·:'), fg: 0xe6c070, speed: 0.8, water: Water.None, sways: false, blades: false },
+  { name: 'Tundra', glyphs: glyphs(".'·"), fg: 0xcfd9cf, speed: 0.85, water: Water.None, sways: false, blades: false },
+  { name: 'Hills', glyphs: glyphs('∩n'), fg: 0xb49a5a, speed: 0.65, water: Water.None, sways: false, blades: false },
+  { name: 'Mountains', glyphs: glyphs('▲^'), fg: 0xc8c4bf, speed: 0.45, water: Water.None, sways: false, blades: false },
+  { name: 'Snowy peaks', glyphs: glyphs('▲^'), fg: 0xffffff, speed: 0.4, water: Water.None, sways: false, blades: false },
 ];
 
 // ── Day, night and weather ─────────────────────────────────────────────────
@@ -202,7 +201,11 @@ export const MIN_ROWS = 12;
 /** Bits kept per colour channel: 5 gives 32 levels. Lower means less output per frame. */
 export const COLOR_BITS = 5;
 export const COLORS = {
+  /** Every map cell's background. */
+  ground: 0x000000,
   player: 0xfff2c8,
+  /** Bright blade tips. */
+  tip: 0xeaffe0,
   hudFg: 0xd6d9de,
   hudBg: 0x12161c,
   rain: 0xa9c4e8,

@@ -1,4 +1,4 @@
-// Builds a frame: terrain, moving water and weather, light, you, and the status bar.
+// Builds a frame: terrain on black, blades, moving water and weather, light, you, and the status bar.
 import {
   ASPECT,
   BIOMES,
@@ -13,9 +13,11 @@ import {
   WEATHER,
   Water,
 } from './config.ts';
-import { dropAt, lanternLight, weatherName, windArrow } from './ambient.ts';
+import { dropAt, lanternLight, vignette, weatherName, windArrow } from './ambient.ts';
 import type { Ambient, Atmosphere } from './ambient.ts';
 import type { Frame } from './frame.ts';
+import { bladeGlyph, windLean } from './grass.ts';
+import type { Trail } from './grass.ts';
 import type { Player } from './player.ts';
 import type { World } from './world.ts';
 
@@ -95,8 +97,8 @@ export class Renderer {
   private clouds = new Float32Array(0);
   private gusts = new Float32Array(0);
 
-  /** Fills every cell of `frame`. */
-  render(frame: Frame, world: World, atm: Atmosphere, amb: Ambient, player: Player, hud: Hud): void {
+  /** Fills every cell of `frame`. `trail` is where you have walked lately, for the grass. */
+  render(frame: Frame, world: World, atm: Atmosphere, amb: Ambient, player: Player, trail: Trail, hud: Hud): void {
     if (frame.width < MIN_COLS || frame.height < MIN_ROWS) {
       drawTooSmall(frame);
       return;
@@ -104,6 +106,9 @@ export class Renderer {
     const cols = frame.width;
     const mapRows = hud === null ? frame.height : frame.height - 1;
     const { left, top } = viewOrigin(player, cols, mapRows);
+    const halfWidth = cols / 2;
+    const halfHeight = (mapRows * ASPECT) / 2;
+    const bendBox = trail.bounds(amb.realTime);
 
     // Clouds and gusts on a coarse grid aligned to the map, so the grid doesn't swim as you move.
     const gx0 = Math.floor(left / GRID_X);
@@ -142,8 +147,8 @@ export class Renderer {
         const gx = mx / GRID_X - gx0;
         let glyph = def.glyphs[variant % def.glyphs.length];
         let fg = def.fg;
-        let bg = def.bg;
-        let bright = chunk.shade[o];
+        // Land gets its slope shade and a per-cell speckle; water and blades set their own brightness below.
+        let bright = chunk.shade[o] * (0.85 + (0.3 * (variant >> 2)) / 63);
 
         if (def.water === Water.Sea) {
           const v = atm.seaWave(wx, wy);
@@ -156,7 +161,6 @@ export class Renderer {
             const foam = s > 0 ? s * s * s * s : 0;
             if (foam > 0.05) {
               fg = mix(fg, COLORS.foam, foam * 0.8);
-              bg = mix(bg, COLORS.foam, foam * 0.45);
               glyph = WAVE;
             }
           }
@@ -169,6 +173,24 @@ export class Renderer {
           const v = atm.lakeRipple(wx, wy);
           glyph = v > 0.45 ? BIG_WAVE : WAVE;
           bright = 1 + 0.06 * v;
+        } else if (def.blades) {
+          // Blades lean with the wind and gusts, and bend away from where you have just walked.
+          const g = sample(this.gusts, gw, gx, gy);
+          let leanX = windLean(amb, g);
+          let leanY = 0;
+          if (bendBox !== null && wx >= bendBox[0] && wx <= bendBox[2] && wy >= bendBox[1] && wy <= bendBox[3]) {
+            const [bx, by] = trail.bendAt(wx, wy, amb.realTime);
+            leanX += bx;
+            leanY += by;
+          }
+          glyph = bladeGlyph(leanX, leanY, variant);
+          const m = Math.min(1, Math.sqrt(leanX * leanX + leanY * leanY));
+          bright = (0.8 + (0.35 * ((variant >> 2) & 63)) / 63) * (1 + 0.15 * g) * (1 + 0.25 * m);
+          if (variant >= 248) {
+            // A few bright tips that twinkle.
+            fg = COLORS.tip;
+            bright *= 0.7 + 0.3 * Math.sin(5 * amb.realTime + variant);
+          }
         } else if (def.sways) {
           const g = sample(this.gusts, gw, gx, gy);
           if (g > 0.5) {
@@ -177,13 +199,14 @@ export class Renderer {
           }
         }
 
-        const sun = 1 - sample(this.clouds, gw, gx, gy) * WEATHER.cloudShadow;
-        const lamp = lanternLight(wx - player.x, wy - player.y, amb) * LANTERN_GAIN;
+        const dx = wx - player.x;
+        const dy = wy - player.y;
+        const sun = (1 - sample(this.clouds, gw, gx, gy) * WEATHER.cloudShadow) * vignette(dx, dy, halfWidth, halfHeight);
+        const lamp = lanternLight(dx, dy, amb) * LANTERN_GAIN;
         const lr = amb.lightR * sun + lamp * LANTERN_RGB[0];
         const lg = amb.lightG * sun + lamp * LANTERN_RGB[1];
         const lb = amb.lightB * sun + lamp * LANTERN_RGB[2];
         let outFg = lit(fg, bright, lr, lg, lb);
-        const outBg = lit(bg, bright, lr, lg, lb);
         if (amb.front > 0) {
           const cold = chunk.temperature[o] < WEATHER.snowBelow;
           const drop = dropAt(mx, my, amb, cold, world.seed);
@@ -192,14 +215,14 @@ export class Renderer {
             outFg = lit(cold ? COLORS.snow : COLORS.rain, 1, lr, lg, lb);
           }
         }
-        frame.set(c, r, glyph, outFg, outBg);
+        frame.set(c, r, glyph, outFg, COLORS.ground);
       }
     }
 
-    // You, on the terrain's background.
+    // You, on black.
     const pc = cols >> 1;
     const pr = mapRows >> 1;
-    frame.set(pc, pr, AT, COLORS.player, frame.bg[pr * cols + pc]);
+    frame.set(pc, pr, AT, COLORS.player, COLORS.ground);
 
     if (hud !== null) {
       const pmx = Math.floor(player.x);

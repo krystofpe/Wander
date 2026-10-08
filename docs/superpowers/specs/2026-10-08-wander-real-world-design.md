@@ -80,7 +80,7 @@ Web Mercator, also in `geo.ts`, with 256-pixel tiles at zoom `z`: `px = (lon + 1
 | Source | What | Where | Unit |
 |---|---|---|---|
 | Terrarium tiles | Elevation, about 12 m per pixel at zoom 13 | `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/13/{x}/{y}.png` | one PNG tile per zoom-13 tile |
-| Overpass | Land cover, water, buildings, roads, railways | `POST https://overpass-api.de/api/interpreter` | one query per zoom-14 tile, the *region* |
+| Overpass | Land cover, water, buildings, roads, railways | `POST https://overpass-api.de/api/interpreter`, then `overpass.private.coffee` and `overpass.kumi.systems` on failure | one query per zoom-14 tile, the *region* |
 | Nominatim | Place name → coordinates | `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=…` | one request per start |
 
 - Terrarium pixels decode as `elevation = R · 256 + G + B / 256 − 32768` metres. Tiles are 8-bit RGB or RGBA PNGs, decoded by `png.ts`: zlib inflate from `node:zlib`, then the five PNG filters (none, sub, up, average, Paeth).
@@ -108,7 +108,7 @@ Web Mercator, also in `geo.ts`, with 256-pixel tiles at zoom `z`: `px = (lon + 1
   `out geom` returns each way's coordinates and each relation member's coordinates.
 - Every request sends `User-Agent: wander/0.1 (terminal landscape toy)`.
 - **Cache.** Responses are stored as files under `$XDG_CACHE_HOME/wander` or `~/.cache/wander`: `terrarium/13/{x}/{y}.png`, `osm/14/{x}/{y}.json`, `places/{hash of the query}.json`. A cached file is used without any request, so cached areas work offline.
-- **Retries.** A failed or non-2xx fetch is retried after 5 s, then 15 s, then every 60 s. At most four fetches are in flight at once, and at most one Overpass query among them: the public Overpass server answers concurrent queries from one address with 504s.
+- **Retries.** A failed, non-2xx or slower-than-20-second fetch is retried after 5 s, then 15 s, then every 60 s, and each Overpass retry moves to the next instance in the list, since the public servers throttle an address after heavy queries. At most four fetches are in flight at once, and at most one Overpass query among them.
 
 ## 5. From data to cells
 

@@ -195,7 +195,14 @@ export const REAL = {
   flowHalo: 8,
   userAgent: 'wander/0.1 (terminal landscape toy)',
   terrariumUrl: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium',
-  overpassUrl: 'https://overpass-api.de/api/interpreter',
+  /** Overpass instances, tried in turn: each failed query moves to the next. */
+  overpassUrls: [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.private.coffee/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+  ],
+  /** A fetch slower than this is abandoned and counts as failed. */
+  fetchTimeoutMs: 20000,
   nominatimUrl: 'https://nominatim.openstreetmap.org/search',
   /** Road width in columns by highway class. */
   roadWidths: {

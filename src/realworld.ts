@@ -221,10 +221,12 @@ export class RealWorld implements ChunkSource {
         entry.value = decodePng(bytes);
       } else {
         const bounds = tileBounds(input.z, input.tx, input.ty);
+        // Each failure moves to the next instance: the public servers throttle an address after heavy queries.
+        const url = REAL.overpassUrls[entry.failures % REAL.overpassUrls.length];
         this.regionsInFlight++;
         let bytes: Uint8Array;
         try {
-          bytes = await this.net.get(REAL.overpassUrl, cacheFile, {
+          bytes = await this.net.get(url, cacheFile, {
             method: 'POST',
             body: `data=${encodeURIComponent(overpassQuery(bounds))}`,
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

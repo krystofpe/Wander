@@ -84,3 +84,16 @@ test('the default cache directory follows XDG_CACHE_HOME and falls back to ~/.ca
   assert.equal(defaultCacheDir({ XDG_CACHE_HOME: '/tmp/xdg' }), join('/tmp/xdg', 'wander'));
   assert.ok(defaultCacheDir({}).endsWith(join('.cache', 'wander')));
 });
+
+test('a fetch that takes longer than the timeout is abandoned and counts as failed', { timeout: 2000 }, async () => {
+  const dir = freshDir();
+  const stuck: Fetcher = (url, init) =>
+    new Promise((_, reject) => {
+      init.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+    });
+  const net = new Net(dir, stuck, 50);
+  const started = performance.now();
+  await assert.rejects(net.get('https://example.test/slow', 'slow.json'), /aborted/);
+  assert.ok(performance.now() - started < 2000);
+  assert.equal(net.inFlight, 0);
+});

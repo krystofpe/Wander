@@ -59,7 +59,7 @@ function fakeFetcher(log: { url: string; body: string }[], state: { mode: Mode }
     if (state.mode === 'fail') return { ok: false, status: 503, bytes: async () => new Uint8Array(0) };
     const tile = /terrarium\/(\d+)\/(\d+)\/(\d+)\.png$/.exec(url);
     if (tile !== null) return { ok: true, status: 200, bytes: async () => terrariumTile(Number(tile[1]), Number(tile[2]), Number(tile[3])) };
-    if (url === REAL.overpassUrl) return { ok: true, status: 200, bytes: async () => new TextEncoder().encode(JSON.stringify(region)) };
+    if (url.endsWith('/api/interpreter')) return { ok: true, status: 200, bytes: async () => new TextEncoder().encode(JSON.stringify(region)) };
     return { ok: false, status: 404, bytes: async () => new Uint8Array(0) };
   };
 }
@@ -117,7 +117,7 @@ test('the first chunk is fog and starts the fetches; once the data lands it draw
   assert.deepEqual(world.status(), { loading: net.inFlight, offline: false });
   await settle(net);
   assert.equal(net.inFlight, 0);
-  assert.ok(log.some((l) => l.url.startsWith(REAL.terrariumUrl)) && log.some((l) => l.url === REAL.overpassUrl));
+  assert.ok(log.some((l) => l.url.startsWith(REAL.terrariumUrl)) && log.some((l) => l.url.endsWith('/api/interpreter')));
   const chunk = world.chunk(0, 0);
   assert.equal(chunk.ready, true);
   assert.equal(world.generated, 1);
@@ -211,7 +211,7 @@ test('prefetch never starts more than four fetches at once, and only one Overpas
   world.prefetch(-600, -600, 1200, 1200, Infinity);
   assert.equal(net.inFlight, REAL.maxInFlight);
   assert.equal(log.length, REAL.maxInFlight);
-  assert.equal(log.filter((l) => l.url === REAL.overpassUrl).length, 1, 'Overpass answers concurrent queries with 504s, so regions load one at a time');
+  assert.equal(log.filter((l) => l.url.endsWith('/api/interpreter')).length, 1, 'Overpass answers concurrent queries with 504s, so regions load one at a time');
   world.prefetch(-600, -600, 1200, 1200, Infinity);
   assert.equal(log.length, REAL.maxInFlight, 'inputs already loading are not fetched twice');
 });
@@ -223,9 +223,26 @@ test('a chunk on a region border needs both regions and draws both halves', asyn
   const cx = Math.floor(edge / CHUNK_SIZE);
   // Regions load one at a time, so poll like the game's prefetch does, once per frame.
   for (let i = 0; i < 6 && !world.chunk(cx, 0).ready; i++) await settle(net);
-  const bodies = new Set(log.filter((l) => l.url === REAL.overpassUrl).map((l) => l.body));
+  const bodies = new Set(log.filter((l) => l.url.endsWith('/api/interpreter')).map((l) => l.body));
   assert.ok(bodies.size >= 2 && bodies.size <= 4, `${bodies.size} regions were queried: at least the two either side of the edge`);
   const chunk = world.chunk(cx, 0);
   assert.equal(chunk.ready, true);
   assert.ok(chunk.biome.every((b) => b < 19), 'every cell has a biome');
+});
+
+test('each failed Overpass query moves to the next instance', async () => {
+  const { net, world, log, state, clock } = setup('fail');
+  world.chunk(0, 0);
+  await settle(net);
+  const first = log.filter((l) => l.url.endsWith('/api/interpreter')).map((l) => l.url);
+  assert.deepEqual(first, [REAL.overpassUrls[0]]);
+  clock.now = 5001;
+  world.chunk(0, 0);
+  await settle(net);
+  const second = log.filter((l) => l.url.endsWith('/api/interpreter')).map((l) => l.url);
+  assert.deepEqual(second, [REAL.overpassUrls[0], REAL.overpassUrls[1]]);
+  state.mode = 'ok';
+  clock.now = 5001 + 15001;
+  for (let i = 0; i < 6 && !world.chunk(0, 0).ready; i++) await settle(net);
+  assert.equal(world.chunk(0, 0).ready, true);
 });

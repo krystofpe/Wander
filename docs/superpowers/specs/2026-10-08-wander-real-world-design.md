@@ -108,7 +108,7 @@ Web Mercator, also in `geo.ts`, with 256-pixel tiles at zoom `z`: `px = (lon + 1
   `out geom` returns each way's coordinates and each relation member's coordinates.
 - Every request sends `User-Agent: wander/0.1 (terminal landscape toy)`.
 - **Cache.** Responses are stored as files under `$XDG_CACHE_HOME/wander` or `~/.cache/wander`: `terrarium/13/{x}/{y}.png`, `osm/14/{x}/{y}.json`, `places/{hash of the query}.json`. A cached file is used without any request, so cached areas work offline.
-- **Retries.** A failed or non-2xx fetch is retried after 5 s, then 15 s, then every 60 s. At most four fetches are in flight at once.
+- **Retries.** A failed or non-2xx fetch is retried after 5 s, then 15 s, then every 60 s. At most four fetches are in flight at once, and at most one Overpass query among them: the public Overpass server answers concurrent queries from one address with 504s.
 
 ## 5. From data to cells
 

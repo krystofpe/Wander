@@ -206,11 +206,12 @@ test('a corrupt cached tile is forgotten and fetched again on the retry', async 
   assert.equal(log.filter((l) => l.url.endsWith(`/${tx}/${ty}.png`)).length, 1);
 });
 
-test('prefetch never starts more than four fetches at once', async () => {
+test('prefetch never starts more than four fetches at once, and only one Overpass query among them', async () => {
   const { net, world, log } = setup('hang');
   world.prefetch(-600, -600, 1200, 1200, Infinity);
   assert.equal(net.inFlight, REAL.maxInFlight);
   assert.equal(log.length, REAL.maxInFlight);
+  assert.equal(log.filter((l) => l.url === REAL.overpassUrl).length, 1, 'Overpass answers concurrent queries with 504s, so regions load one at a time');
   world.prefetch(-600, -600, 1200, 1200, Infinity);
   assert.equal(log.length, REAL.maxInFlight, 'inputs already loading are not fetched twice');
 });
@@ -220,8 +221,8 @@ test('a chunk on a region border needs both regions and draws both halves', asyn
   const { tx, ty } = tileOf(ORIGIN.lat, ORIGIN.lon, REAL.regionZoom);
   const edge = projection.toWorld(ORIGIN.lat, tileBounds(REAL.regionZoom, tx, ty).east).x;
   const cx = Math.floor(edge / CHUNK_SIZE);
-  world.chunk(cx, 0);
-  await settle(net);
+  // Regions load one at a time, so poll like the game's prefetch does, once per frame.
+  for (let i = 0; i < 6 && !world.chunk(cx, 0).ready; i++) await settle(net);
   const bodies = new Set(log.filter((l) => l.url === REAL.overpassUrl).map((l) => l.body));
   assert.ok(bodies.size >= 2 && bodies.size <= 4, `${bodies.size} regions were queried: at least the two either side of the edge`);
   const chunk = world.chunk(cx, 0);

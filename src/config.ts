@@ -185,6 +185,8 @@ export const REAL = {
   /** Columns beyond the view and its chunk ring whose data is fetched ahead. */
   lookahead: 100,
   maxInFlight: 4,
+  /** Overpass answers concurrent queries from one address with 504s, so regions load one at a time. */
+  maxRegionsInFlight: 1,
   /** Milliseconds before retrying a failed fetch; the last value repeats. */
   retryMs: [5000, 15000, 60000],
   /** Multiplies the dimensionless slope for shading. */

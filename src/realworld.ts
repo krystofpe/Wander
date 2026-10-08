@@ -70,6 +70,7 @@ export class RealWorld implements ChunkSource {
   /** Chunks built with their data present; read by tests and the bench. */
   generated = 0;
   private offline = false;
+  private regionsInFlight = 0;
   private readonly net: Net;
   private readonly now: () => number;
   private readonly chunks = new Map<number, Chunk>();
@@ -205,7 +206,8 @@ export class RealWorld implements ChunkSource {
     }
     if (entry.state === 'ready') return true;
     const due = entry.state === 'missing' || (entry.state === 'failed' && this.now() >= entry.retryAt);
-    if (due && this.net.inFlight < REAL.maxInFlight) void this.load(input, entry);
+    const slot = this.net.inFlight < REAL.maxInFlight && (input.kind !== 'region' || this.regionsInFlight < REAL.maxRegionsInFlight);
+    if (due && slot) void this.load(input, entry);
     return false;
   }
 
@@ -219,11 +221,17 @@ export class RealWorld implements ChunkSource {
         entry.value = decodePng(bytes);
       } else {
         const bounds = tileBounds(input.z, input.tx, input.ty);
-        const bytes = await this.net.get(REAL.overpassUrl, cacheFile, {
-          method: 'POST',
-          body: `data=${encodeURIComponent(overpassQuery(bounds))}`,
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        });
+        this.regionsInFlight++;
+        let bytes: Uint8Array;
+        try {
+          bytes = await this.net.get(REAL.overpassUrl, cacheFile, {
+            method: 'POST',
+            body: `data=${encodeURIComponent(overpassQuery(bounds))}`,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          });
+        } finally {
+          this.regionsInFlight--;
+        }
         entry.value = rasterise(parseFeatures(JSON.parse(new TextDecoder().decode(bytes))), this.projection, this.regionRect(bounds));
       }
       entry.state = 'ready';

@@ -84,28 +84,30 @@ export type BiomeDef = {
   /** Multiplies walking speed. */
   readonly speed: number;
   readonly water: WaterKind;
-  /** Grass and trees move when a gust passes. */
+  /** Trees switch glyph when a gust passes. */
   readonly sways: boolean;
+  /** Drawn as blades that lean with the wind and bend around you. */
+  readonly blades: boolean;
 };
 
 const glyphs = (text: string): number[] => Array.from(text, (ch) => ch.codePointAt(0) ?? 32);
 
 /** One entry per Biome id, in id order. All glyphs are single-width. */
 export const BIOMES: readonly BiomeDef[] = [
-  { name: 'Deep ocean', glyphs: glyphs('≈~'), fg: 0x3b64a8, bg: 0x0c2148, speed: 0.45, water: Water.Sea, sways: false },
-  { name: 'Ocean', glyphs: glyphs('~≈'), fg: 0x5b8fd6, bg: 0x163b78, speed: 0.45, water: Water.Sea, sways: false },
-  { name: 'Shallows', glyphs: glyphs('~·'), fg: 0x9ee0e0, bg: 0x2b7f91, speed: 0.55, water: Water.Sea, sways: false },
-  { name: 'River', glyphs: glyphs('~≈'), fg: 0xa8d8ff, bg: 0x2f6fb5, speed: 0.55, water: Water.River, sways: false },
-  { name: 'Lake', glyphs: glyphs('~≈'), fg: 0x96cdf5, bg: 0x2a5d9c, speed: 0.55, water: Water.Lake, sways: false },
-  { name: 'Beach', glyphs: glyphs('.:·'), fg: 0xb39a5f, bg: 0xdfca92, speed: 0.9, water: Water.None, sways: false },
-  { name: 'Grassland', glyphs: glyphs(',.\'"'), fg: 0xa6dc72, bg: 0x4a8a34, speed: 1.0, water: Water.None, sways: true },
-  { name: 'Forest', glyphs: glyphs('♣♠'), fg: 0x5fae4e, bg: 0x1c4a22, speed: 0.6, water: Water.None, sways: true },
-  { name: 'Swamp', glyphs: glyphs('",~'), fg: 0x8fa05c, bg: 0x3a4628, speed: 0.5, water: Water.None, sways: true },
-  { name: 'Desert', glyphs: glyphs('.·:'), fg: 0xb98f4c, bg: 0xe0bd78, speed: 0.8, water: Water.None, sways: false },
-  { name: 'Tundra', glyphs: glyphs(".'·"), fg: 0xd2dbd2, bg: 0x8d9c8f, speed: 0.85, water: Water.None, sways: false },
-  { name: 'Hills', glyphs: glyphs('∩n'), fg: 0x9a8650, bg: 0x667438, speed: 0.65, water: Water.None, sways: false },
-  { name: 'Mountains', glyphs: glyphs('▲^'), fg: 0xc4c0bc, bg: 0x6c6862, speed: 0.45, water: Water.None, sways: false },
-  { name: 'Snowy peaks', glyphs: glyphs('▲^'), fg: 0xffffff, bg: 0xd4dbe6, speed: 0.4, water: Water.None, sways: false },
+  { name: 'Deep ocean', glyphs: glyphs('≈~'), fg: 0x3b64a8, bg: 0x0c2148, speed: 0.45, water: Water.Sea, sways: false, blades: false },
+  { name: 'Ocean', glyphs: glyphs('~≈'), fg: 0x5b8fd6, bg: 0x163b78, speed: 0.45, water: Water.Sea, sways: false, blades: false },
+  { name: 'Shallows', glyphs: glyphs('~·'), fg: 0x9ee0e0, bg: 0x2b7f91, speed: 0.55, water: Water.Sea, sways: false, blades: false },
+  { name: 'River', glyphs: glyphs('~≈'), fg: 0xa8d8ff, bg: 0x2f6fb5, speed: 0.55, water: Water.River, sways: false, blades: false },
+  { name: 'Lake', glyphs: glyphs('~≈'), fg: 0x96cdf5, bg: 0x2a5d9c, speed: 0.55, water: Water.Lake, sways: false, blades: false },
+  { name: 'Beach', glyphs: glyphs('.:·'), fg: 0xb39a5f, bg: 0xdfca92, speed: 0.9, water: Water.None, sways: false, blades: false },
+  { name: 'Grassland', glyphs: glyphs(',.\'"'), fg: 0xa6dc72, bg: 0x4a8a34, speed: 1.0, water: Water.None, sways: false, blades: true },
+  { name: 'Forest', glyphs: glyphs('♣♠'), fg: 0x5fae4e, bg: 0x1c4a22, speed: 0.6, water: Water.None, sways: true, blades: false },
+  { name: 'Swamp', glyphs: glyphs('",~'), fg: 0x8fa05c, bg: 0x3a4628, speed: 0.5, water: Water.None, sways: false, blades: true },
+  { name: 'Desert', glyphs: glyphs('.·:'), fg: 0xb98f4c, bg: 0xe0bd78, speed: 0.8, water: Water.None, sways: false, blades: false },
+  { name: 'Tundra', glyphs: glyphs(".'·"), fg: 0xd2dbd2, bg: 0x8d9c8f, speed: 0.85, water: Water.None, sways: false, blades: false },
+  { name: 'Hills', glyphs: glyphs('∩n'), fg: 0x9a8650, bg: 0x667438, speed: 0.65, water: Water.None, sways: false, blades: false },
+  { name: 'Mountains', glyphs: glyphs('▲^'), fg: 0xc4c0bc, bg: 0x6c6862, speed: 0.45, water: Water.None, sways: false, blades: false },
+  { name: 'Snowy peaks', glyphs: glyphs('▲^'), fg: 0xffffff, bg: 0xd4dbe6, speed: 0.4, water: Water.None, sways: false, blades: false },
 ];
 
 // ── Day, night and weather ─────────────────────────────────────────────────
@@ -160,6 +162,36 @@ export const WEATHER = {
   snowRate: 4,
   /** Cells colder than this get snow instead of rain. */
   snowBelow: 0.25,
+} as const;
+
+// ── Grass ──────────────────────────────────────────────────────────────────
+/** Blades: how they lean with the wind and bend around you. Distances in world units, times in seconds. */
+export const GRASS = {
+  /** Lean below which a blade stands upright; jittered per blade by −30%…+30%. */
+  leanThreshold: 0.3,
+  /** Lean from which a blade lies flat. */
+  flatThreshold: 0.8,
+  /** Horizontal lean at full wind; below flatThreshold, so wind alone never flattens. */
+  windLean: 0.6,
+  /** How far around you blades bend. */
+  bendRadius: 3,
+  /** Time constant for blades to spring back after you pass. */
+  bendTime: 0.6,
+  /** Trail samples older than this are dropped. */
+  trailAge: 1.5,
+  /** Least time between two trail samples. */
+  sampleEvery: 0.05,
+  maxSamples: 32,
+} as const;
+const codePoint = (ch: string): number => ch.codePointAt(0) ?? 32;
+/** Blade glyphs as code points: tall blades stand, lean or lie flat; short blades stand or lie flat. */
+export const BLADES = {
+  upright: codePoint('|'),
+  right: codePoint('/'),
+  left: codePoint('\\'),
+  flat: codePoint(','),
+  short: codePoint("'"),
+  shortFlat: codePoint('.'),
 } as const;
 
 // ── Screen ─────────────────────────────────────────────────────────────────

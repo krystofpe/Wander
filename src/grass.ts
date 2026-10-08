@@ -24,10 +24,15 @@ export class Trail {
     if (drop > 0) this.samples.splice(0, drop);
   }
 
-  /** Bend vector at world point (x, y) at real time t: the sum of pushes away from each recent sample. */
+  /**
+   * Bend vector at world point (x, y) at real time t. Its magnitude is the sum of the pushes from each
+   * recent sample, so a blade between two samples on your path is trampled rather than left standing;
+   * its direction is that of the vector sum of the pushes, or south when they cancel.
+   */
   bendAt(x: number, y: number, t: number): [number, number] {
     let bx = 0;
     let by = 0;
+    let total = 0;
     for (const s of this.samples) {
       const age = t - s.t;
       if (age > GRASS.trailAge) continue;
@@ -36,13 +41,15 @@ export class Trail {
       const d = Math.sqrt(dx * dx + dy * dy);
       if (d >= GRASS.bendRadius) continue;
       const w = (1 - d / GRASS.bendRadius) ** 2 * Math.exp(-age / GRASS.bendTime);
-      if (d < 0.001) {
-        by += w; // right under you: pushed south
-      } else {
+      total += w;
+      if (d >= 0.001) {
         bx += (w * dx) / d;
         by += (w * dy) / d;
       }
     }
+    const length = Math.sqrt(bx * bx + by * by);
+    if (length < 1e-6) return [0, total];
+    if (length < total) return [(bx * total) / length, (by * total) / length];
     return [bx, by];
   }
 

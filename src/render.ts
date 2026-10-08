@@ -95,12 +95,15 @@ export function statusText(
 
 export class Renderer {
   private readonly name: string;
+  /** Columns the name takes: one per character. */
+  private readonly nameWidth: number;
   private clouds = new Float32Array(0);
   private gusts = new Float32Array(0);
 
   /** `name` is drawn above your figure. */
   constructor(name: string) {
     this.name = name;
+    this.nameWidth = Array.from(name).length;
   }
 
   /** Fills every cell of `frame`. `trail` is where you have walked lately, for the grass. */
@@ -240,7 +243,7 @@ export class Renderer {
       }
     }
     const nameRow = pr - 2;
-    if (nameRow >= 0) frame.text(pc - (this.name.length >> 1), nameRow, this.name, COLORS.name, COLORS.ground);
+    if (nameRow >= 0) frame.text(pc - (this.nameWidth >> 1), nameRow, this.name, COLORS.name, COLORS.ground);
 
     if (hud !== null) {
       const pmx = Math.floor(player.x);

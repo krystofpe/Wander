@@ -86,3 +86,12 @@ test('your name is cleaned: trimmed, control characters removed, cut to 16, neve
   assert.equal(new Game(3, 80, 24, { name: ' Senje ' }).name, 'Senje');
   assert.equal(new Game(3, 80, 24).name, 'you');
 });
+
+test('names keep one column per character and carry no hidden characters', () => {
+  assert.equal(cleanName('\u009b31mX'), '31mX', 'an 8-bit escape introducer is stripped');
+  assert.equal(cleanName('a​b'), 'ab', 'a zero-width space is stripped');
+  assert.equal(cleanName('‮abc'), 'abc', 'a bidi override is stripped');
+  assert.equal(cleanName('é'), 'é', 'a combining accent composes into one character');
+  assert.equal(cleanName('田中'), 'you', 'double-width characters are dropped');
+  assert.equal(cleanName('Zoë😀'), 'Zoë', 'emoji are dropped');
+});

@@ -65,12 +65,30 @@ export function randomSeed(): number {
   return Math.floor(Math.random() * 100000);
 }
 
-/** Trims, drops control characters, and cuts to 16 characters; an empty name becomes `you`. */
+/** Code point ranges that take two terminal columns (East Asian wide and fullwidth, emoji). */
+const WIDE: readonly (readonly [number, number])[] = [
+  [0x1100, 0x115f],
+  [0x2e80, 0xa4cf],
+  [0xac00, 0xd7a3],
+  [0xf900, 0xfaff],
+  [0xfe30, 0xfe4f],
+  [0xff00, 0xff60],
+  [0xffe0, 0xffe6],
+  [0x1f300, 0x1faff],
+  [0x20000, 0x3fffd],
+];
+/** Control and format characters, combining marks, and line and paragraph separators. */
+const HIDDEN = /[\p{Cc}\p{Cf}\p{M}\p{Zl}\p{Zp}]/u;
+
+/**
+ * Makes a name safe to draw one character per column: composes accents, drops hidden and
+ * double-width characters, trims, and cuts to 16 characters. An empty name becomes `you`.
+ */
 export function cleanName(text: string): string {
-  const kept = Array.from(text.trim())
+  const kept = Array.from(text.normalize('NFC').trim())
     .filter((ch) => {
       const cp = ch.codePointAt(0) ?? 0;
-      return cp >= 0x20 && cp !== 0x7f;
+      return !HIDDEN.test(ch) && !WIDE.some(([from, to]) => cp >= from && cp <= to);
     })
     .slice(0, 16)
     .join('')

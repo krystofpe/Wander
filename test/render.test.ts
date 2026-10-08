@@ -2,8 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Atmosphere } from '../src/ambient.ts';
 import type { Ambient } from '../src/ambient.ts';
-import { ASPECT, BLADES, Biome, COLORS, COLOR_BITS } from '../src/config.ts';
+import { ASPECT, BLADES, Biome, COLORS, COLOR_BITS, FRAME_DT } from '../src/config.ts';
 import { Frame } from '../src/frame.ts';
+import { Game } from '../src/game.ts';
 import { Trail } from '../src/grass.ts';
 import { Renderer, quantize, viewOrigin } from '../src/render.ts';
 import { World, cellOffset, findSpot } from '../src/world.ts';
@@ -177,4 +178,41 @@ test('a long name fits in the smallest window', () => {
   assert.ok(frame.rowText(pr - 2).includes('abcdefghijklmnop'));
   assert.equal(String.fromCodePoint(frame.glyph[(pr - 1) * 40 + 20]), 'o');
   assert.match(frame.rowText(11), /^ x 41 {2}y 81 │/, 'the status bar is drawn, clipped at 40 columns');
+});
+
+/** The first run of at least `length` grassland cells in a row near the origin: its western cell. */
+function grassRow(world: World, length: number): { mx: number; my: number } {
+  const near = findSpot(world, 0, 0, (b) => b === Biome.Grassland);
+  for (let my = near.my - 48; my < near.my + 48; my++) {
+    let run = 0;
+    for (let mx = near.mx - 64; mx < near.mx + 64; mx++) {
+      run = world.biomeAt(mx, my) === Biome.Grassland ? run + 1 : 0;
+      if (run === length) return { mx: mx - length + 1, my };
+    }
+  }
+  throw new Error(`no ${length}-cell grassland row near the origin`);
+}
+
+test('walking east along a row leaves a visible trail behind you', () => {
+  const game = new Game(1, 80, 24);
+  const row = grassRow(game.world, 24);
+  game.player = { x: row.mx + 2.5, y: (row.my + 0.5) * ASPECT, vx: 0, vy: 0 }; // a row centre, the spawn state
+  for (let i = 0; i < 60; i++) game.update({ dx: 1, dy: 0, run: false, fastTime: false }, FRAME_DT);
+  const frame = new Frame(80, 24);
+  const amb: Ambient = { ...game.atm.snapshot(), windX: 0, windStrength: 0 };
+  new Renderer('you').render(frame, game.world, game.atm, amb, game.player, game.trail, null);
+  const pr = 24 >> 1;
+  const pc = 80 >> 1;
+  const bent = new Set<number>([BLADES.flat, BLADES.shortFlat, BLADES.right, BLADES.left]);
+  let count = 0;
+  for (let col = pc - 9; col <= pc - 2; col++) if (bent.has(frame.glyph[pr * 80 + col])) count++;
+  assert.ok(count >= 6, `only ${count} of the 8 cells behind you are bent`);
+});
+
+test('a name of non-BMP characters is centred by character, not by UTF-16 unit', () => {
+  const { world, atm, player, trail } = scene(12);
+  const frame = new Frame(60, 20);
+  new Renderer('𝐀𝐁𝐂').render(frame, world, atm, atm.snapshot(), player, trail, { fps: 60 });
+  const pr = 19 >> 1;
+  assert.equal(Array.from(frame.rowText(pr - 2)).slice(29, 32).join(''), '𝐀𝐁𝐂');
 });

@@ -95,7 +95,7 @@ The vignette multiplies the sunlight and cloud light; the lantern is added after
 - Spaces in the figure are transparent: the terrain shows through.
 - The figure is drawn in `COLORS.player` on black, after the terrain and before the status bar.
 - Your name is drawn in `COLORS.name` one row above the head, centred on your column and clipped at the screen edges.
-- The name comes from `--name`. Without it, the operating system's login name is used, and `you` if that cannot be read. Names are trimmed and cut to 16 characters; an empty name becomes `you`.
+- The name comes from `--name`. Without it, the operating system's login name is used, and `you` if that cannot be read. Names are composed (NFC), stripped of control and format characters, combining marks and double-width characters (East Asian wide and fullwidth, emoji), trimmed and cut to 16 characters, so each takes one column and nothing hidden reaches the terminal; an empty name becomes `you`.
 
 ## 3. How it's built
 
@@ -113,7 +113,7 @@ The vignette multiplies the sunlight and cloud light; the lantern is added after
 ### Trail
 
 - `push(x, y, t)` stores a sample unless the last one is younger than `GRASS.sampleEvery = 0.05` s. It drops samples older than `GRASS.trailAge = 1.5` s and keeps at most `GRASS.maxSamples = 32`.
-- `bendAt(x, y, t)`: for each sample with distance `d < GRASS.bendRadius = 3` and age `a = t − sampleTime`, the weight is `(1 − d / bendRadius)² · exp(−a / GRASS.bendTime)` with `bendTime = 0.6` s, and the push is the weight times the unit vector from the sample to the cell. A cell within 0.001 of a sample is pushed south. The result is the sum; it is not clamped.
+- `bendAt(x, y, t)`: for each sample with distance `d < GRASS.bendRadius = 3` and age `a = t − sampleTime`, the weight is `(1 − d / bendRadius)² · exp(−a / GRASS.bendTime)` with `bendTime = 0.6` s, and the push is the weight times the unit vector from the sample to the cell. The result's magnitude is the sum of the weights, so a blade between two samples on your path is trampled rather than left standing where opposite pushes cancel; its direction is that of the vector sum of the pushes, or south when they cancel (including a cell within 0.001 of a sample). It is not clamped.
 - `bounds(t)` returns the samples' bounding box grown by `bendRadius`, or `null` when there are no samples. The renderer calls `bendAt` only for blade cells inside it.
 
 ### Each frame

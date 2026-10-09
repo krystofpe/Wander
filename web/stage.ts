@@ -6,15 +6,18 @@ import { dragging } from '../src/life.ts';
 import type { Life } from '../src/life.ts';
 import { gradeOf, newGrade, newMoment } from '../src/palette.ts';
 import { HORIZON } from '../src/paint/land.ts';
-import { arcX, moonAt, roadMoon, shownHour, sunElevation } from '../src/sky.ts';
+import { BIOMES } from '../src/biomes.ts';
+import { LAYERS, baseline } from '../src/layers.ts';
+import { labToBytes } from '../src/palette.ts';
+import { arcX, flashAt, moonAt, roadMoon, shownHour, sunElevation } from '../src/sky.ts';
 import type { Weather } from '../src/sky.ts';
 import { loopFrame, walkFrame } from '../src/walker.ts';
 import { biomeAt, blended, groundHeight } from '../src/world.ts';
-import { ALBEDO_ROW, paletteRow } from './render.ts';
+import { ALBEDO_ROW, FOG_AFTER, paletteRow } from './render.ts';
 import type { Renderer, View } from './render.ts';
 import type { Atlas } from './sprites.ts';
 
-type Puff = { x: number; y: number; vx: number; vy: number; age: number; life: number; big: boolean };
+type Puff = { x: number; y: number; vx: number; vy: number; age: number; life: number; big: boolean; splash: boolean };
 
 /** Quake's "flicker" light style: base brightness, popping upward now and then, read at 10 Hz (research: Light §6). */
 const FLICKER = 'mmnmmommommnonmmonqnmmo';
@@ -29,9 +32,12 @@ export class Stage {
   /** Where the camera frames him: his share of the screen width, eased between walking and stopped. */
   private framing = HIM_X;
   private camY = Number.NaN;
-  private readonly puffs: Puff[] = Array.from({ length: PUFFS }, () => ({ x: 0, y: 0, vx: 0, vy: 0, age: 0, life: 0, big: false }));
+  private readonly puffs: Puff[] = Array.from({ length: PUFFS }, () => ({ x: 0, y: 0, vx: 0, vy: 0, age: 0, life: 0, big: false, splash: false }));
   private puffAt = 0;
   private fireSmoke = 0;
+  private drift = 0;
+  private splashAt = 0;
+  private readonly bytes = new Uint8Array(3);
   readonly moonStart: number;
 
   constructor(seed: number, moonStart: number) {
@@ -56,6 +62,17 @@ export class Stage {
       moonUp: 0,
       light: { lights: new Float32Array(24), count: 0, color: new Float32Array([1, 0.62, 0.32]), albedoRow: ALBEDO_ROW },
       bloom: 0.5,
+      cover: 0,
+      cloudDrift: 0,
+      fogBase: new Float32Array(4),
+      fogHeight: new Float32Array(4),
+      fogDensity: new Float32Array(4),
+      fogDrift: new Float32Array(4),
+      fogColor: new Float32Array(3),
+      rain: 0,
+      snow: false,
+      rainColor: new Float32Array(3),
+      flash: 0,
     };
   }
 
@@ -70,6 +87,7 @@ export class Stage {
     p.age = 0;
     p.life = big ? 3.2 : 2.4;
     p.big = big;
+    p.splash = false;
   }
 
   /**
@@ -92,6 +110,8 @@ export class Stage {
     m.side = Math.max(-1, Math.min(1, ax * 2 - 1));
     v.moonPhase = roadMoon(l.clock, this.moonStart);
     m.moonlight = 1 - Math.abs(v.moonPhase - 0.5) * 2;
+    m.flash = flashAt(time, l.seed, w) ? 1 : 0;
+    v.flash = m.flash;
     gradeOf(m, this.grade);
 
     // The camera: him left of centre while he walks, eased toward the middle when he stops.
@@ -117,6 +137,33 @@ export class Stage {
     const low = Math.max(0, 1 - Math.abs(m.elevation - 2) / 14);
     v.rimSide = m.side > 0.15 ? 1 : m.side < -0.15 ? -1 : 0;
     v.rimStrength = Math.min(0.85, 0.15 + 0.7 * low) * (1 - this.grade.night) * (1 - w.cloud * 0.8);
+
+    // The air: clouds, fog veils and valley mist, rain or snow.
+    v.cover = w.cloud;
+    v.cloudDrift += dt * (1.2 + 5 * w.wind);
+    this.drift += dt * (2 + 7 * w.wind);
+    labToBytes(this.grade.fog[0] + 0.04, this.grade.fog[1], this.grade.fog[2], this.bytes, 0);
+    v.fogColor[0] = this.bytes[0] / 255;
+    v.fogColor[1] = this.bytes[1] / 255;
+    v.fogColor[2] = this.bytes[2] / 255;
+    const e = m.elevation;
+    // Mist gathers after a clear night, is thickest just after sunrise, burns off by mid-morning (research: Depth §13).
+    const mistTime = m.morning ? Math.max(0.12, Math.min(1, (e + 14) / 12) * (1 - Math.min(1, Math.max(0, (e - 8) / 20)))) : 0.1 + 0.25 * this.grade.night;
+    const mist = blended(biomeAt(l.seed, l.at), (id) => BIOMES[id].air.mist);
+    const yh = v.horizon;
+    for (let i = 0; i < FOG_AFTER.length; i++) {
+      const behind = LAYERS[FOG_AFTER[i] + 1] ?? LAYERS[FOG_AFTER[i]];
+      const z = behind.z;
+      v.fogBase[i] = i === 3 ? extra + WALK_Y + 14 : extra + baseline(z, yh) + this.camY / z + 4;
+      v.fogHeight[i] = i === 3 ? 26 : 6 + 16 / z;
+      v.fogDensity[i] = Math.min(0.9, mist * mistTime * 0.75 + w.fog * 0.8) * [0.95, 0.85, 0.6, 0.35][i];
+      v.fogDrift[i] = (v.camX / z + this.drift * (1.5 - i * 0.3)) % 100000;
+    }
+    v.rain = w.precip;
+    v.snow = w.kind === 'snow';
+    v.rainColor[0] = Math.min(1, v.fogColor[0] * 0.6 + 0.35);
+    v.rainColor[1] = Math.min(1, v.fogColor[1] * 0.6 + 0.38);
+    v.rainColor[2] = Math.min(1, v.fogColor[2] * 0.6 + 0.45);
 
     r.ground.clear();
     const light = v.light;
@@ -221,6 +268,25 @@ export class Stage {
       const ember = stage === 'stand' ? [22, 12] : [22, 12 + (34 - (stage === 'campsit' || stage === 'wake' ? 0 : seat)) - 21];
       this.puff(hx - 14 + ember[0] + 1, hy - 35 + ember[1] - 1, v.wind, false);
     }
+    // Splashes where the rain lands near him.
+    if (v.rain > 0.1 && !v.snow && dt > 0) {
+      this.splashAt += dt * v.rain * 40;
+      while (this.splashAt >= 1) {
+        this.splashAt -= 1;
+        const sx = Math.random() * W;
+        const d = (sx + v.camX) / PX_PER_M;
+        const p = this.puffs[this.puffAt];
+        this.puffAt = (this.puffAt + 1) % PUFFS;
+        p.x = sx;
+        p.y = groundRow(d) - 2;
+        p.vx = 0;
+        p.vy = 0;
+        p.age = 0;
+        p.life = 0.21;
+        p.big = false;
+        p.splash = true;
+      }
+    }
     // The puffs, aging and drifting.
     const puffFrames = fire.puff;
     for (const p of this.puffs) {
@@ -234,6 +300,10 @@ export class Stage {
       p.y += p.vy * dt;
       p.vx += v.wind * dt * 2;
       const k = p.age / p.life;
+      if (p.splash) {
+        r.ground.add(p.x, p.y, fire.splash[Math.min(2, Math.floor(k * 3))], rowA, rowB, b.k, false, 0.8);
+        continue;
+      }
       const fi = Math.min(puffFrames.length - 1, Math.floor((p.big ? 1 : 0) + k * (puffFrames.length - (p.big ? 1 : 0))));
       r.ground.add(p.x, p.y, puffFrames[fi], rowA, rowB, b.k, false, 1 - k * 0.3);
     }

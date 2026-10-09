@@ -10,10 +10,11 @@ import type { Grade } from '../src/palette.ts';
 import { Chunk } from '../src/paint/chunk.ts';
 import { paintLand } from '../src/paint/land.ts';
 import { paintFore, paintGround, paintTrees } from '../src/paint/scene.ts';
+import { paintClouds } from '../src/paint/clouds.ts';
 import { stretchesBetween, WORLD } from '../src/world.ts';
 import { Gpu, QUAD_VS } from './gl.ts';
 import type { Program } from './gl.ts';
-import { COMPOSITE_FS, DOWN_FS, FINAL_FS, GLOWADD_FS, RESOLVE_FS, SKY_FS, UP_FS } from './shaders.ts';
+import { COMPOSITE_FS, DOWN_FS, FINAL_FS, FOG_FS, GLOWADD_FS, RAIN_FS, RESOLVE_FS, SKY_FS, UP_FS } from './shaders.ts';
 import { SpriteBatch } from './sprites.ts';
 import type { Atlas, Light } from './sprites.ts';
 
@@ -66,7 +67,32 @@ export type View = {
   light: Light;
   /** How strongly the glowing things bloom. */
   bloom: number;
+  /** How much of the sky is under cloud (0..1), and how far the clouds have drifted (layer px). */
+  cover: number;
+  cloudDrift: number;
+  /** Fog veils drawn after layers FOG_AFTER[i]: their floor row on screen, thickness, density, drift; colour. */
+  fogBase: Float32Array;
+  fogHeight: Float32Array;
+  fogDensity: Float32Array;
+  fogDrift: Float32Array;
+  fogColor: Float32Array;
+  /** Rain or snow: how much (0..1), snow or not, and the colour of a drop. */
+  rain: number;
+  snow: boolean;
+  rainColor: Float32Array;
+  /** A lightning flash, 0..1. */
+  flash: number;
 };
+
+/** The layers after which a fog veil is drawn (far ridge, far hills, mid, playfield). */
+export const FOG_AFTER = [2, 4, 6, 8] as const;
+
+/** Rain and snow planes: after which layer, cell size, speed, length (native px), alpha, parallax. */
+const RAIN_PLANES = [
+  { after: 4, cell: [5, 14], speed: 90, length: 3, alpha: 0.22, snowCell: [7, 7], snowSpeed: 9, snowSize: 1, z: 5 },
+  { after: 7, cell: [9, 24], speed: 170, length: 6, alpha: 0.32, snowCell: [11, 11], snowSpeed: 16, snowSize: 1.5, z: 1.5 },
+  { after: 8, cell: [14, 40], speed: 330, length: 12, alpha: 0.42, snowCell: [17, 17], snowSpeed: 27, snowSize: 2.5, z: 0.8 },
+] as const;
 
 /** How much a layer takes the local light: fully on the playfield, less the further back it stands. */
 function lightGain(kind: string, z: number): number {
@@ -96,6 +122,8 @@ export class Renderer {
   private readonly sky: Program;
   private readonly final: Program;
   private readonly glowAdd: Program;
+  private readonly fog: Program;
+  private readonly rain: Program;
   private readonly down: Program;
   private readonly up: Program;
   /** The bloom chain: native glow, then halves; level 0 is what the final pass adds. */
@@ -143,6 +171,8 @@ export class Renderer {
     this.final = prog(FINAL_FS, 'final');
     this.ground = new SpriteBatch(this.gpu, quadBuf);
     this.glowAdd = prog(GLOWADD_FS, 'glow');
+    this.fog = prog(FOG_FS, 'fog');
+    this.rain = prog(RAIN_FS, 'rain');
     this.down = prog(DOWN_FS, 'down');
     this.up = prog(UP_FS, 'up');
     const rows = (LAYERS.length + 1) * BIOME_SLOTS;
@@ -220,7 +250,7 @@ export class Renderer {
     const extra = this.nativeH - VIEW_H;
     for (const l of this.layers) {
       const z = l.def.z;
-      const x = v.camX / z;
+      const x = v.camX / z + (l.def.kind === 'clouds' ? v.cloudDrift : 0);
       const y = l.def.top - extra - v.camY / z;
       l.ox = Math.floor(x);
       l.fx = x - l.ox;
@@ -265,7 +295,7 @@ export class Renderer {
     const u0 = c * CHUNK_W;
     switch (l.def.kind) {
       case 'clouds':
-        view.clear(u0);
+        paintClouds(view, seed, l.def, u0);
         return;
       case 'land':
         paintLand(view, seed, l.def, l.index, u0);
@@ -316,6 +346,47 @@ export class Renderer {
     }
   }
 
+  /** The fog veil and rain plane that belong after a layer. */
+  private air(v: View, index: number, vp: readonly number[]): void {
+    const gl = this.gl;
+    const fi = (FOG_AFTER as readonly number[]).indexOf(index);
+    if (fi >= 0 && v.fogDensity[fi] > 0.01) {
+      gl.useProgram(this.fog.program);
+      gl.bindVertexArray(this.quad);
+      gl.uniform4f(this.fog.u('u_rect'), -1, -1, 1, 1);
+      gl.uniform3fv(this.fog.u('u_color'), v.fogColor);
+      gl.uniform1f(this.fog.u('u_density'), v.fogDensity[fi]);
+      gl.uniform1f(this.fog.u('u_base'), v.fogBase[fi]);
+      gl.uniform1f(this.fog.u('u_height'), v.fogHeight[fi]);
+      gl.uniform1f(this.fog.u('u_drift'), v.fogDrift[fi]);
+      gl.uniform1f(this.fog.u('u_time'), v.time % 3600);
+      gl.uniform1f(this.fog.u('u_scale'), this.scale);
+      gl.uniform4f(this.fog.u('u_viewport'), vp[0], vp[1], vp[2], vp[3]);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    if (v.rain <= 0.02) return;
+    for (const p of RAIN_PLANES) {
+      if (p.after !== index) continue;
+      gl.useProgram(this.rain.program);
+      gl.bindVertexArray(this.quad);
+      gl.uniform4f(this.rain.u('u_rect'), -1, -1, 1, 1);
+      gl.uniform1f(this.rain.u('u_amount'), Math.min(0.95, v.rain * (v.snow ? 0.6 : 0.85)));
+      gl.uniform1f(this.rain.u('u_snow'), v.snow ? 1 : 0);
+      gl.uniform1f(this.rain.u('u_wind'), v.wind);
+      gl.uniform1f(this.rain.u('u_time'), v.time % 600);
+      gl.uniform1f(this.rain.u('u_scale'), this.scale);
+      gl.uniform4f(this.rain.u('u_viewport'), vp[0], vp[1], vp[2], vp[3]);
+      gl.uniform2f(this.rain.u('u_cell'), v.snow ? p.snowCell[0] : p.cell[0], v.snow ? p.snowCell[1] : p.cell[1]);
+      gl.uniform1f(this.rain.u('u_speed'), v.snow ? p.snowSpeed : p.speed);
+      gl.uniform1f(this.rain.u('u_length'), v.snow ? p.snowSize : p.length);
+      gl.uniform1f(this.rain.u('u_offset'), (v.camX / p.z) % 10000);
+      gl.uniform3fv(this.rain.u('u_color'), v.rainColor);
+      gl.uniform1f(this.rain.u('u_alpha'), p.alpha * (v.snow ? 1.6 : 1));
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    void RECT;
+  }
+
   private first = true;
 
   /** Draws one frame. `streamBudget` limits lookahead chunks painted this frame. */
@@ -350,6 +421,7 @@ export class Renderer {
     for (const l of this.layers) {
       gl.uniform2f(this.resolve.u('u_frac'), l.fx, l.fy);
       gl.uniform1f(this.resolve.u('u_lightGain'), lightGain(l.def.kind, l.def.z));
+      gl.uniform1f(this.resolve.u('u_cover'), l.def.kind === 'clouds' ? v.cover : -1);
       gl.bindFramebuffer(gl.FRAMEBUFFER, l.fb);
       gl.viewport(0, 0, this.nativeW + 2, this.nativeH + 2);
       gl.activeTexture(gl.TEXTURE0);
@@ -483,6 +555,7 @@ export class Renderer {
       if (l.def.kind === 'ground' && this.atlas !== null) {
         this.ground.draw(this.atlas, this.paletteTex, this.scale, [vx, vy, vw, vh], this.canvasW, this.canvasH, labToRgb(g.light), v.rimSide, v.rimStrength, v.light);
       }
+      this.air(v, l.index, [vx, vy, vw, vh]);
     }
     gl.bindVertexArray(this.quad);
     gl.disable(gl.BLEND);
@@ -505,13 +578,14 @@ export class Renderer {
     gl.uniform1f(this.final.u('u_time'), v.time % 1000);
     gl.uniform1f(this.final.u('u_grain'), 0.035);
     gl.uniform1f(this.final.u('u_vignette'), 0.32);
-    gl.uniform3f(this.final.u('u_lift'), 0, 0, 0);
+    gl.uniform3f(this.final.u('u_lift'), v.flash * 0.18, v.flash * 0.2, v.flash * 0.26);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     gl.bindVertexArray(null);
   }
 }
 
 const SCRATCH = new Uint8Array(3);
+const RECT = [0, 0, 0, 0];
 const RGB = new Float32Array(3);
 
 /** An Oklab colour as linear-free sRGB 0..1 floats for a uniform (reuses one array). */

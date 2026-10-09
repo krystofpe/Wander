@@ -41,6 +41,7 @@ uniform float u_sway;
 uniform float u_time;
 uniform float u_gustX;
 uniform vec2 u_frac;
+uniform float u_cover;
 layout(location = 0) out vec4 o_color;
 layout(location = 1) out vec4 o_glow;
 ${LIGHT_GLSL}
@@ -76,6 +77,8 @@ void main() {
     if (r != 0 && abs(shiftOf(f & 7, sx)) == s) { role = r; flags = f; break; }
   }
   if (role == 0) { o_color = vec4(0.0); o_glow = vec4(0.0); return; }
+  // The cloud layer: each pixel shows only once the sky is covered enough (its flags hold the cover it needs).
+  if (u_cover >= 0.0 && float(flags & 127) > u_cover * 127.0) { o_color = vec4(0.0); o_glow = vec4(0.0); return; }
   vec4 c = texelFetch(u_cols, ivec2(((gx % u_ringW) + u_ringW) % u_ringW, 0), 0);
   int a = int(c.r * 255.0 + 0.5);
   int b = int(c.g * 255.0 + 0.5);
@@ -207,6 +210,98 @@ void main() {
     c = mix(c, moon, k);
   }
   o_color = vec4(c, 1.0);
+}`;
+
+const BAYER_GLSL = `
+const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
+float bayer(vec2 n) { return (BAYER[int(mod(n.y, 4.0)) * 4 + int(mod(n.x, 4.0))] + 0.5) / 16.0; }
+float hash12(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+float vnoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash12(i), hash12(i + vec2(1.0, 0.0)), u.x), mix(hash12(i + vec2(0.0, 1.0)), hash12(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+`;
+
+/**
+ * A veil of fog or valley mist between two layers (research: Depth §12–13): two octaves of drifting noise, densest
+ * at its band's floor and thinning upward, cut into four alpha steps with the shared Bayer pattern at native pixels
+ * so the veil stays pixel art.
+ */
+export const FOG_FS = `#version 300 es
+precision highp float;
+uniform vec3 u_color;
+uniform float u_density;
+uniform float u_base;
+uniform float u_height;
+uniform float u_drift;
+uniform float u_time;
+uniform float u_scale;
+uniform vec4 u_viewport;
+out vec4 o_color;
+${BAYER_GLSL}
+void main() {
+  vec2 screen = vec2(gl_FragCoord.x - u_viewport.x, u_viewport.w - (gl_FragCoord.y - u_viewport.y));
+  vec2 n = floor(screen / u_scale);
+  vec2 p = n + vec2(u_drift, 0.0);
+  float up = max(0.0, u_base - n.y);
+  float band = exp(-up / u_height) * (n.y > u_base + u_height * 2.0 ? 0.6 : 1.0);
+  float f = vnoise(p / vec2(110.0, 16.0) + vec2(u_time * 0.011, 0.0)) * 0.65 + vnoise(p / vec2(41.0, 7.0) - vec2(u_time * 0.019, 0.0)) * 0.35;
+  float a = u_density * band * smoothstep(0.22, 0.78, f);
+  a = clamp(floor(a * 4.0 + bayer(p)) / 4.0, 0.0, 0.85);
+  o_color = vec4(u_color * a, a);
+}`;
+
+/**
+ * Rain or snow in one depth plane, at full resolution but sized in native pixels (research: HD §17, Depth §21): a
+ * grid of cells, each holding at most one drop with a hashed place and phase, falling at the plane's speed and
+ * slanted by the wind.
+ */
+export const RAIN_FS = `#version 300 es
+precision highp float;
+uniform float u_amount;
+uniform float u_snow;
+uniform float u_wind;
+uniform float u_time;
+uniform float u_scale;
+uniform vec4 u_viewport;
+uniform vec2 u_cell;
+uniform float u_speed;
+uniform float u_length;
+uniform float u_offset;
+uniform vec3 u_color;
+uniform float u_alpha;
+out vec4 o_color;
+${BAYER_GLSL}
+void main() {
+  vec2 screen = vec2(gl_FragCoord.x - u_viewport.x, u_viewport.w - (gl_FragCoord.y - u_viewport.y));
+  vec2 f = screen / u_scale;
+  float slant = u_wind * (u_snow > 0.5 ? 0.25 : 0.45);
+  float t = u_time;
+  // Shear the field by the slant so drops fall along it, then let the field fall.
+  vec2 q = vec2(f.x + u_offset - slant * f.y, f.y - u_speed * t);
+  vec2 cell = floor(q / u_cell);
+  vec2 local = q - cell * u_cell;
+  float h = hash12(cell);
+  if (h > u_amount) { discard; }
+  vec2 at = vec2(hash12(cell + 7.1), hash12(cell + 3.7)) * u_cell;
+  float a = 0.0;
+  if (u_snow > 0.5) {
+    float sway = sin(t * (1.0 + h * 2.0) + h * 40.0) * 1.5;
+    vec2 d = local - at - vec2(sway, 0.0);
+    a = (abs(d.x) < u_length * 0.5 && abs(d.y) < u_length * 0.5) ? 1.0 : 0.0;
+  } else {
+    vec2 d = local - at;
+    a = (abs(d.x) < 0.5 && d.y > 0.0 && d.y < u_length) ? (1.0 - d.y / u_length * 0.6) : 0.0;
+  }
+  if (a <= 0.0) discard;
+  a *= u_alpha;
+  o_color = vec4(u_color * a, a);
 }`;
 
 /** Adds a layer's glow attachment into the native glow buffer, at its fractional offset (smearing is fine for glow). */

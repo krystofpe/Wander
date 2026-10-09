@@ -6,16 +6,16 @@ Columns: 8
 # the game grades every role by the hour, the biome and the depth.
 #
   0   0   0	clear
- 38  51  58	land 0
- 59  79  82	land 1
-104 129 120	land 2
-104 129 121	land 3
-125 146 132	land 4
+ 37  50  38	land 0
+ 56  74  51	land 1
+ 85 104  63	land 2
+ 85 104  64	land 3
+104 121  75	land 4
  32  34  41	rock 0
  54  58  66	rock 1
-100 104 108	rock 2
-100 104 109	rock 3
-121 123 124	rock 4
+ 95  99 103	rock 2
+ 95  99 104	rock 3
+110 112 114	rock 4
  31  25  24	soil 0
  53  42  36	soil 1
  79  63  47	soil 2

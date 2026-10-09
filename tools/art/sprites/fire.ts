@@ -74,5 +74,6 @@ export const SHEET: Sheet = {
     { name: 'embers', ms: [700, 500, 800], frames: [0, 1, 2].map(emberFrame) },
     { name: 'ashes', ms: 1000, frames: [compose(W, H, [ASH])] },
     { name: 'puff', ms: 300, frames: PUFFS.map((p) => compose(W, H, [block(0, 0, p)])) },
+    { name: 'splash', ms: 70, frames: [['.w.', '...'], ['w.w', '.v.'], ['v.v', '...']].map((p) => compose(W, H, [block(0, 0, p)])) },
   ],
 };

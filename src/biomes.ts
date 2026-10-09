@@ -95,7 +95,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     climate: [-0.65, -0.1],
     odd: false,
     weather: { wet: 0.3, snow: 0.6, fog: 0.35, storm: 0.1, cloud: 0.65, wind: 0.8 },
-    ground: { amp: 14, wave: 150, step: 'gravel' },
+    ground: { amp: 8, wave: 150, step: 'gravel' },
     far: { height: 120, rough: 0.75, mesa: 0, ridged: 0.8 },
     air: { haze: 0.026, mist: 0.5 },
     cold: true,

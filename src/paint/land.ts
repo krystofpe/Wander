@@ -32,7 +32,7 @@ export const HORIZON: Readonly<Record<BiomeId, number>> = {
   meadow: 190,
   autumn: 182,
   plateau: 206,
-  pass: 168,
+  pass: 184,
   coast: 206,
   desert: 196,
   tundra: 198,
@@ -55,8 +55,8 @@ const FORMS: Readonly<Record<BiomeId, readonly [Form, Form, Form, Form, Form]>> 
   meadow: [[42, 300, 'round', 'none'], [30, 240, 'round', 'none'], [26, 190, 'round', 'broad'], [20, 150, 'round', 'none'], [16, 130, 'round', 'broad']],
   autumn: [[52, 260, 'round', 'none'], [44, 200, 'round', 'broad'], [38, 150, 'round', 'broad'], [32, 115, 'round', 'broad'], [28, 95, 'round', 'broad']],
   plateau: [[72, 300, 'mesa', 'none'], [46, 260, 'mesa', 'none'], [16, 220, 'round', 'none'], [10, 170, 'round', 'none'], [8, 130, 'round', 'none']],
-  pass: [[135, 170, 'ridged', 'none'], [104, 140, 'ridged', 'none'], [74, 115, 'ridged', 'none'], [52, 95, 'ridged', 'conifer'], [42, 80, 'round', 'none']],
-  coast: [[38, 300, 'round', 'none'], [0, 200, 'sea', 'none'], [0, 160, 'sea', 'none'], [14, 120, 'dune', 'none'], [12, 90, 'dune', 'reeds']],
+  pass: [[140, 170, 'ridged', 'none'], [108, 140, 'ridged', 'none'], [70, 115, 'ridged', 'none'], [36, 95, 'round', 'conifer'], [20, 80, 'round', 'stones']],
+  coast: [[38, 300, 'round', 'none'], [0, 200, 'sea', 'none'], [0, 160, 'sea', 'none'], [0, 120, 'sea', 'none'], [7, 90, 'dune', 'reeds']],
   desert: [[48, 260, 'mesa', 'none'], [82, 220, 'mesa', 'none'], [56, 180, 'mesa', 'none'], [18, 150, 'dune', 'none'], [14, 110, 'dune', 'none']],
   tundra: [[62, 240, 'ridged', 'none'], [40, 200, 'round', 'none'], [24, 160, 'round', 'conifer'], [16, 130, 'round', 'none'], [12, 100, 'round', 'none']],
   swamp: [[0, 300, 'round', 'none'], [12, 220, 'round', 'dead'], [9, 170, 'round', 'conifer'], [11, 130, 'round', 'dead'], [9, 100, 'round', 'reeds']],
@@ -236,21 +236,66 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
         r = R.shade;
       } else {
         const below = y - landTop;
-        if (below === 0 && top === landTop) r = snowy ? R.snowLit : R.rim;
+        // The rim catches only crests and steep faces; flat land has none, or the plains would stack in stripes.
+        const crest = ground[i] > amp * 0.55 && ground[i] >= ground[i - 2] && ground[i] >= ground[i + 2];
+        const rimmed = crest || Math.abs(slope) > 0.35;
+        if (below === 0 && top === landTop && (rimmed || snowy)) r = snowy ? R.snowLit : R.rim;
+        else if (below === 0 && top === landTop) r = slope > 0.1 ? R.faceL : slope < -0.1 ? R.faceR : R.shade;
         else if (below <= faceDepth) {
           const face = slope > 0.15 ? R.faceL : slope < -0.15 ? R.faceR : R.shade;
           r = snowy ? (face === R.shade ? R.snowShade : R.snowFace) : face;
-        } else if (below <= shadeDepth) r = R.shade;
-        else r = R.deep;
+        } else {
+          // The body below is the land's face turned to us, lit by the sky: one shade, never a black void, with a
+          // few strata drawn across it so a big face reads as drawn.
+          r = R.shade;
+          const cell = Math.floor((u + (below >> 1) * 7) / 5);
+          const rocky = blended(blend, (id) => (FORMS[id][k][2] === 'mesa' || FORMS[id][k][2] === 'ridged' ? 1 : 0));
+          const strata = Math.floor((u + below * 11) / 9);
+          if (rocky > 0.5 && below > faceDepth + 3 && below % 5 === 0 && unit(strata * 31 + below, seed ^ (li * 977)) < 0.18) r = R.deep;
+          void cell;
+        }
+        void shadeDepth;
       }
       c.set(u, y, r, FLAG.RIM);
     }
-    // The sea: water from the horizon down, glints travelling by colour cycling.
+    // Scattered growth on the slopes below the crest: tiny dark conifers, crowns, birches or boulders, thinning
+    // toward the foot, so a hill's body reads as a wooded or stony slope instead of a flat colour.
+    const cover = coverAt(seed, layer, u);
+    if (cover !== 'none' && cover !== 'reeds' && cover !== 'poles' && cover !== 'ruins') {
+      const scale = Math.min(1.4, 4 / layer.z + 0.3);
+      const cell = Math.max(3, Math.round(5 * scale));
+      for (let row = 0; row < 7; row++) {
+        const cy = Math.floor(row * 9 * scale) + 6;
+        const j = Math.floor((u + row * 17) / cell);
+        const r0 = unit(j * 8 + row, seed ^ (salt + 0x51));
+        if (r0 > (cover === 'stones' ? 0.18 : 0.62) * (1 - row * 0.11)) continue;
+        const cx = j * cell - row * 17 + Math.floor(unit(j * 8 + row + 3, seed ^ salt) * cell);
+        const dx = Math.abs(u - cx);
+        const hgt = Math.round((3 + 4 * unit(j * 8 + row + 5, seed ^ salt)) * scale);
+        const tipY = landTop + cy - hgt;
+        let span = -1;
+        if (cover === 'conifer') span = Math.floor((hgt - 1) / 2.6) - dx >= 0 ? 0 : -1;
+        else if (cover === 'stones') span = dx <= Math.round(scale) ? 0 : -1;
+        else span = dx <= Math.round(hgt * 0.45) ? 0 : -1;
+        if (span < 0) continue;
+        const from = cover === 'conifer' ? tipY + Math.round(dx * 2.6) : tipY + (cover === 'stones' ? Math.round(hgt * 0.5) : Math.round((dx * dx) / Math.max(1, hgt * 0.5)));
+        for (let y = Math.max(from, landTop + 1); y <= landTop + cy && y < H; y++) c.set(u, y, y === from && cover !== 'conifer' ? R.shade : R.deep, FLAG.RIM);
+      }
+    }
+    // The sea: painted on the ridge layer only (the layers either side leave it alone, or their haze would step it
+    // into bands), from a bright horizon line down: lighter far off, darker near, short glints travelling by colour
+    // cycling.
     if (seaShare(seed, layer, u) > 0.5) {
+      const own = k === 2;
       for (let y = top; y < H; y++) {
+        if (!own) {
+          c.set(u, y, 0, 0);
+          continue;
+        }
         const kk = y - top;
-        const glint = noise1(u / 6 + kk * 2.3, seed ^ 0x5ea) > 0.5 - kk * 0.01;
-        const r = kk === 0 ? R.water3 : glint ? (kk < 8 ? R.water3 : R.water2) : kk < 3 ? R.water2 : R.water1;
+        const row = Math.floor(kk / 2);
+        const dash = unit(Math.floor((u + row * 13) / (3 + (row % 3))) * 64 + row, seed ^ 0x5ea) < 0.16 - Math.min(0.1, kk * 0.002);
+        const r = kk === 0 ? R.water3 : dash ? (kk < 12 ? R.water3 : R.water2) : kk < 6 ? R.water2 : kk < 30 ? R.water1 : R.water0;
         c.set(u, y, r, FLAG.WATER);
       }
     }

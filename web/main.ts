@@ -13,6 +13,9 @@ const seed = seedOf(opts.seed ?? 'wander');
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const renderer = new Renderer(canvas, false);
+// Debugging: ?layers=1,2,8 draws only those layers.
+const onlyLayers = params.get('layers');
+if (onlyLayers !== null) renderer.only = new Set(onlyLayers.split(',').map(Number));
 
 /** Tools read this: ready once the first frames are drawn with every chunk in place. */
 const status = {

@@ -117,6 +117,8 @@ export class Renderer {
   private viewX = 0;
   private viewY = 0;
   private paletteLayer = 0;
+  /** For debugging: only these layer indices are composited (null for all). */
+  only: Set<number> | null = null;
   /** How many chunks were painted, and the time spent (ms), for the bench. */
   chunksPainted = 0;
   paintMs = 0;
@@ -470,6 +472,7 @@ export class Renderer {
     gl.uniform1f(this.composite.u('u_glowStrength'), g.glowStrength);
     gl.activeTexture(gl.TEXTURE0);
     for (const l of this.layers) {
+      if (this.only !== null && !this.only.has(l.index)) continue;
       gl.useProgram(this.composite.program);
       gl.bindVertexArray(this.quad);
       gl.activeTexture(gl.TEXTURE0);

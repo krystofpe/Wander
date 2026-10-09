@@ -93,8 +93,9 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
     f('stone', ['ground'], 0.08, [14, 22], 0.9),
   ],
   pass: [
-    f('spruce', ['hills', 'mid', 'near'], 1.5, [40, 80], 0.7),
-    f('boulder', ['mid', 'near', 'ground'], 1.0, [16, 40], 0.4),
+    f('spruce', ['mid', 'near'], 2.6, [40, 90], 0.75),
+    f('boulder', ['mid', 'near'], 2.6, [16, 44], 0.4),
+    f('boulder', ['ground'], 0.8, [16, 30], 0.4),
     f('rock', ['ground'], 1.4, [8, 18], 0.3),
     f('drytuft', ['ground'], 3, [3, 5], 0.3),
     f('stone', ['ground'], 0.1, [10, 16], 0.9),

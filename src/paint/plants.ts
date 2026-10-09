@@ -286,7 +286,7 @@ export function birch(seed: number, height: number, bare = 0): Stamp {
     for (let i = 1; i < nodes.length; i++) {
       if (nodes.some((m) => m.parent === i)) continue;
       if (random() < bare) continue;
-      clump(s, random, nodes[i].x, nodes[i].y, 1.8 + random() * 2.2, L, random() < 0.35 ? 1 : 0, h);
+      clump(s, random, nodes[i].x, nodes[i].y, 2.6 + random() * 3, L, random() < 0.35 ? 1 : 0, h);
     }
     cleanup(s, (r) => r === B[0]);
     return s;
@@ -464,41 +464,40 @@ export function cactus(seed: number, height: number): Stamp {
 
 // ── Rocks ──────────────────────────────────────────────────────────────────
 
-/** A rock: a wide faceted lump cut flat at its foot; planes turned left and right, a lit cap, cracks in shade. */
+/**
+ * A rock: a rounded boulder cut flat at its foot (research: Pixel craft §28). Its upper left and upper right are
+ * faces lit when the sun is on their side, its lower part in shade, its foot darkest; only a few pixels on top catch
+ * the light; a crack runs in the shade.
+ */
 export function rock(seed: number, width: number, family = 'rock'): Stamp {
   return cached(`rock:${seed}:${width}:${family}`, () => {
     const random = rng(seed);
     const w = Math.max(4, Math.round(width));
-    const h = Math.max(3, Math.round(w * (0.38 + 0.3 * random())));
+    const h = Math.max(3, Math.round(w * (0.45 + 0.25 * random())));
     const s = newStamp(w, h, w >> 1);
     const R = [role(family, 0), role(family, 1), role(family, 2), role(family, 3), role(family, 4)];
-    // A polygon of 5–9 vertices over the upper half-ellipse.
-    const n = 5 + Math.floor(random() * 5);
-    const peak = 0.3 + 0.4 * random();
+    const cx = (w - 1) / 2 + (random() - 0.5) * w * 0.2;
     const tops: number[] = [];
     for (let x = 0; x < w; x++) {
-      const t = (x + 0.5) / w;
-      const k = Math.floor(t * n);
-      const f = t * n - k;
-      const a = 0.65 + 0.35 * Math.sin(((k + 0.0) / n) * Math.PI) + (rng(seed + k)() - 0.5) * 0.25;
-      const b = 0.65 + 0.35 * Math.sin(((k + 1.0) / n) * Math.PI) + (rng(seed + k + 1)() - 0.5) * 0.25;
-      tops.push(Math.round(h * (1 - Math.min(1, a + (b - a) * f))));
+      const t = Math.min(1, Math.abs(x - cx) / (w / 2));
+      const bump = (rng(seed + Math.floor(x / 3))() - 0.5) * 0.18;
+      tops.push(Math.max(0, Math.round(h * (1 - Math.sqrt(Math.max(0, 1 - t * t)) * (0.9 + bump)))));
     }
     for (let x = 0; x < w; x++) {
-      const slope = (tops[Math.min(w - 1, x + 1)] - tops[Math.max(0, x - 1)]) / 2;
-      const ridgeX = Math.round(peak * w);
       for (let y = tops[x]; y < h; y++) {
+        const dy = (y - tops[x]) / Math.max(1, h - tops[x]);
         let b: number;
-        if (y === tops[x]) b = 4;
-        else if (y > h - 2) b = 0;
-        else b = x < ridgeX ? (slope < 0.5 ? 2 : 1) : slope > -0.5 ? 3 : 1;
+        if (y === h - 1) b = 0;
+        else if (dy > 0.55) b = 1;
+        else b = x < cx ? 2 : 3;
+        // A few pixels on the very top catch the light.
+        if (y === tops[x] && Math.abs(x - cx) < w * 0.22 && y < h * 0.4) b = 4;
         put(s, x, y, R[b], FLAG.RIM);
       }
     }
-    // A crack or two, only in the shaded plane.
-    if (w > 8) {
-      const cx = Math.round(w * (0.55 + 0.3 * random()));
-      for (let y = tops[cx] + 2; y < h - 1 && y < tops[cx] + 2 + Math.round(h * 0.5); y++) put(s, cx + (y % 3 === 0 ? 1 : 0), y, R[0]);
+    if (w > 7) {
+      const kx = Math.round(cx + w * 0.18);
+      for (let y = Math.round(h * 0.45); y < h - 1; y++) put(s, kx + (y % 3 === 0 ? 1 : 0), y, R[0]);
     }
     return s;
   });

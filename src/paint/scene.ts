@@ -35,6 +35,27 @@ const SURFACE: Readonly<Record<BiomeId, string>> = {
 
 const SNOWY: ReadonlySet<BiomeId> = new Set(['tundra']);
 
+/**
+ * How much of a bank the tree layers (mid, near) have in each biome: a forest floor under the woods; in open country
+ * none, so those layers hold only their plants and props and the land behind shows through, instead of terraces.
+ */
+const BANK: Readonly<Record<BiomeId, number>> = {
+  pine: 1,
+  birch: 1,
+  meadow: 0,
+  autumn: 1,
+  plateau: 0,
+  pass: 1,
+  coast: 0.8,
+  desert: 0,
+  tundra: 0,
+  swamp: 0.6,
+  saltflat: 0,
+  stones: 0,
+  ruins: 0.5,
+  rail: 0,
+};
+
 /** Things that stand on the ground: a stamp for each placed thing, at its layer's scale. */
 export function stampFor(p: Placed, z: number): Stamp {
   const snowy = SNOWY.has(p.biome);
@@ -264,8 +285,15 @@ export function paintTrees(c: Chunk, seed: number, layer: LayerDef, li: number, 
     c.setColumnBiome(u, BIOME_IDS.indexOf(blend.a), BIOME_IDS.indexOf(blend.b), blend.k);
     const yh = blended(blend, (id) => HORIZON[id]);
     const base = layer.top + Math.round(baseline(layer.z, yh, WALK_Y));
-    const top = Math.round(base - bankHeight(seed, layer, li, u));
-    tops[x] = top;
+    const bank = blended(blend, (id) => BANK[id]);
+    const bankH = bankHeight(seed, layer, li, u);
+    // Things stand on the bank where there is one, on the layer's baseline where there is not.
+    tops[x] = Math.round(base - bankH * bank);
+    // Where the woods end, the bank slides down behind the playfield instead of stopping in a cliff.
+    const hidden = layer.top + WALK_Y + 6;
+    const k = Math.min(1, Math.max(0, (bank - 0.15) / 0.7));
+    const top = Math.round(hidden + (base - bankH - hidden) * k * k * (3 - 2 * k));
+    if (top >= hidden) continue;
     const fam = surfaceAt(seed, d);
     const n = fam === 'rock' || fam === 'snow' || fam === 'sand' || fam === 'salt' ? fam : 'grass';
     const steps = n === 'salt' ? 3 : n === 'snow' || n === 'sand' ? 4 : 5;
@@ -273,7 +301,12 @@ export function paintTrees(c: Chunk, seed: number, layer: LayerDef, li: number, 
     // it reads as the forest floor beyond, not as a terrace.
     for (let y = top; y < c.h; y++) {
       const k = y - top;
-      const r = k < 2 ? role(n, Math.max(0, steps - 3)) : k < 10 ? role(n, Math.max(0, steps - 4)) : role(n, 0);
+      let r = k < 2 ? role(n, Math.max(0, steps - 3)) : k < 10 ? role(n, Math.max(0, steps - 4)) : role(n, 0);
+      // Short strokes of the next lighter shade, like the playfield's ground: a bank reads as ground, not a wall.
+      if (k > 2 && k % 3 === 0) {
+        const cell = Math.floor((u + k * 5) / 4);
+        if (unit(cell * 64 + k, seed ^ (0x7c1 + li)) < 0.22) r = role(n, Math.min(steps - 2, k < 10 ? steps - 3 : 1));
+      }
       c.set(u, y, r, FLAG.RIM);
     }
   }

@@ -94,3 +94,59 @@ export function fbm(noise: Noise2D, x: number, y: number, octaves: number): numb
   }
   return sum / total;
 }
+
+/** Squirrel Eiserloh's SquirrelNoise5: a counter-based hash of an integer position and a seed (uint32). */
+export function squirrel(position: number, seed: number): number {
+  let m = Math.imul(position | 0, 0xd2a80a3f);
+  m = (m + (seed | 0)) | 0;
+  m ^= m >>> 9;
+  m = (m + 0xa884f197) | 0;
+  m ^= m >>> 11;
+  m = Math.imul(m, 0x6c736f4b);
+  m ^= m >>> 13;
+  m = (m + 0xb79f3abb) | 0;
+  m ^= m >>> 15;
+  m = Math.imul(m, 0x1b56c4f5);
+  m ^= m >>> 17;
+  return m >>> 0;
+}
+
+/** A hash of an integer position and a seed in [0, 1). Positions past 2^31 wrap, which stays deterministic. */
+export function unit(position: number, seed: number): number {
+  // Floor first so that negative and huge positions hash the same way everywhere.
+  const p = Math.floor(position);
+  const lo = p % 4294967296;
+  const hi = Math.floor(p / 4294967296);
+  return squirrel(lo, squirrel(hi, seed)) / 4294967296;
+}
+
+const fade = (t: number): number => t * t * t * (t * (t * 6 - 15) + 10);
+
+/**
+ * 1D gradient noise on an unbounded integer lattice (no permutation table, so it never repeats), in about
+ * [-1, 1]. Built only from + − × and floor, so it gives the same bits in every engine.
+ */
+export function noise1(x: number, seed: number): number {
+  const i = Math.floor(x);
+  const f = x - i;
+  const g0 = unit(i, seed) * 2 - 1;
+  const g1 = unit(i + 1, seed) * 2 - 1;
+  const a = g0 * f;
+  const b = g1 * (f - 1);
+  return 2 * (a + (b - a) * fade(f));
+}
+
+/** Fractal 1D noise: `octaves` layers, each at twice the frequency and `gain` times the weight. About [-1, 1]. */
+export function fbm1(x: number, seed: number, octaves: number, gain = 0.5): number {
+  let sum = 0;
+  let amp = 1;
+  let freq = 1;
+  let total = 0;
+  for (let o = 0; o < octaves; o++) {
+    sum += amp * noise1(x * freq + o * 31.7, seed + o * 1013);
+    total += amp;
+    amp *= gain;
+    freq *= 2;
+  }
+  return sum / total;
+}

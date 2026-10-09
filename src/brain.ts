@@ -1,1139 +1,158 @@
-// The brain: every activity scores itself from needs, personality, time, weather and the scene; the next one is
-// a weighted random pick. Each activity is a little script (a generator) stepped once per frame.
-import { BIOMES, BRAIN, COLORS, COOLDOWN_SEC, IDLE_KNOCK_SEC, MOON_FINDS, PRESENT_SEC, SELF_FEED_CAP, SELF_PLAY_CAP } from './config.ts';
-import type { Pose } from './art.ts';
-import { FIGURE_ROWS, FIGURE_W } from './figure.ts';
-import { MAX_CAIRN, clamp01, isNightFor, warm } from './creature.ts';
-import type { Feelings, Life, Mood } from './creature.ts';
-import { forestFocus } from './scene.ts';
-import type { Critter, Geometry, Prop, Scene } from './scene.ts';
-import type { Sky } from './sky.ts';
-import type { Topic } from './speech.ts';
-import { visitAt } from './visitor.ts';
+// His small, quiet brain: what to do next, from the hour, the weather, how long he has walked, what is just
+// ahead and how long since he last did each thing. No needs, no bars: every act scores itself, and the pick
+// is random, weighted by exp(score / temperature), so he acts for reasons but never on a script. Pure.
 
-export type Gaze = 'center' | 'left' | 'right' | 'up' | 'down';
+export const ACTS = ['walk', 'look', 'sit', 'smoke', 'shelter', 'camp'] as const;
+export type Act = (typeof ACTS)[number];
 
-/** How it looks right now. Not saved. */
-export type Body = {
-  x: number;
-  z: number;
-  facing: 1 | -1;
-  pose: Pose;
-  /** Eyes for the current action, or null for its mood's. */
-  eyes: string | null;
-  /** Where it looks, or null to look where it faces. */
-  gaze: Gaze | null;
-  /** Rows above the ground, while jumping. */
-  lift: number;
-  /** False while it is away wandering. */
-  visible: boolean;
-  /** Inside its home: only its eyes show, in the doorway. */
-  inside: boolean;
-  /** Stepping through its doorway: 0 outside, rising to 1 as it fades into the dark inside. */
-  doorway: number;
-  holding: { readonly glyph: string; readonly color: number } | null;
-  /** A small sign above its head: ?, !, ♪, z. */
-  icon: string | null;
+/** A place just ahead that is good for something: a seat, a view, shelter from rain, or a camp. */
+export type SpotKind = 'seat' | 'view' | 'shelter' | 'camp';
+export type Spot = {
+  readonly kind: SpotKind;
+  /** Where, in metres along the road. */
+  readonly at: number;
+  /** What it is ("rock", "bench", "bridge"…), for his thoughts and his pose. */
+  readonly what: string;
+  /** 0..1, how good a spot it is: a rock with a view is better than a stump in a ditch. */
+  readonly quality: number;
 };
 
-export function newBody(x: number, z: number): Body {
-  return { x, z, facing: 1, pose: 'stand', eyes: null, gaze: null, lift: 0, visible: true, inside: false, doorway: 0, holding: null, icon: null };
+/** Sim seconds since he last did each act. */
+export type Memory = Record<Act, number>;
+
+export function freshMemory(seconds: number): Memory {
+  return { walk: 0, look: seconds, sit: seconds, smoke: seconds, shelter: seconds, camp: seconds };
 }
 
-/** Moments when it may speak with Claude's words instead of its own. */
-export type VoiceKind = 'visit' | 'thought' | 'gift' | 'return' | 'greet' | 'stargaze' | 'knock';
-
-/** What activities can see and do; the game provides it. */
-export interface Ctx {
-  readonly life: Life;
-  readonly body: Body;
-  readonly scene: Scene;
-  readonly geo: Geometry;
-  readonly sky: Sky;
-  readonly feelings: Feelings;
-  readonly mood: Mood;
-  random(): number;
-  /** World time, epoch ms. */
-  now(): number;
-  /** Seconds since your last key or click. */
-  idleSec(): number;
-  /** False while the window is known to be in the background. */
-  focused(): boolean;
-  /** True while you are typing to it. */
-  talking(): boolean;
-  say(topic: Topic, extra?: Readonly<Record<string, string>>): void;
-  sayText(text: string): void;
-  /** Speaks with Claude's words when it can, otherwise a local line for `fallback`. */
-  voice(kind: VoiceKind, fallback: Topic, extra?: Readonly<Record<string, string>>): void;
-  /** True while a bubble shows or words are on their way. */
-  speaking(): boolean;
-  diary(text: string): void;
-  /** Holds out a gift; `offerState` tells whether you took it. */
-  offer(item: string): void;
-  offerState(): 'none' | 'waiting' | 'taken';
-  endOffer(): void;
-  /** Asks you a yes/no question; false when it has nothing left to ask. */
-  ask(): boolean;
-  questionState(): 'none' | 'waiting' | 'answered';
-  endQuestion(): void;
-  /** At the end of the first meeting: asks your name. */
-  askName(): void;
-  /** Where you last clicked on the ground, or null. */
-  pointed(): { x: number; z: number } | null;
-  /** Rings the bell, if allowed. */
-  bell(): void;
-}
-
-export type Script = Generator<void, void, number>;
-
-export const ACTIVITIES = [
-  'idle', 'stroll', 'sit', 'nap', 'sleep', 'forage', 'eat', 'drink', 'chase', 'critter', 'play', 'stargaze', 'shelter',
-  'dance', 'ponder', 'dig', 'hum', 'stack', 'visit', 'knock', 'gift', 'ask', 'hide', 'wander', 'watch',
-] as const;
-export type ActivityName = (typeof ACTIVITIES)[number];
-export const REACTIONS = ['listen', 'petted', 'woken', 'startle', 'greet', 'arrive', 'return', 'go', 'wave', 'jump', 'spin'] as const;
-export type ReactionName = (typeof REACTIONS)[number];
-export type DoName = ActivityName | ReactionName;
-
-/** What you (or Claude) can ask it to do. */
-export const REQUESTABLE: readonly DoName[] = [
-  'stroll', 'sit', 'sleep', 'play', 'dance', 'dig', 'hum', 'stargaze', 'ponder', 'visit', 'hide', 'stack', 'wave', 'jump', 'spin', 'wander',
-];
-
-export function isDoName(s: string): s is DoName {
-  return (ACTIVITIES as readonly string[]).includes(s) || (REACTIONS as readonly string[]).includes(s);
-}
-
-// ── Script helpers ─────────────────────────────────────────────────────────
-
-/** Waits `sec` real seconds. */
-function* wait(sec: number): Script {
-  let t = 0;
-  while (t < sec) t += yield;
-}
-
-/** Waits until `done()` or `limit` seconds pass. */
-function* until(done: () => boolean, limit: number): Script {
-  let t = 0;
-  while (t < limit && !done()) t += yield;
-}
-
-/** A spot to stand on near (x, z), out of the pond. */
-export function dry(c: { readonly scene: Scene; readonly geo: Geometry }, x: number, z: number): { x: number; z: number } {
-  const w = c.scene.layout.water;
-  if (w === null) return { x, z };
-  // Its feet must clear the pond's two rows, or it seems to stand in the water.
-  const span = Math.max(1, c.geo.rows - 1 - c.geo.horizon);
-  const clear = Math.max(0.15, 5 / span);
-  const halfCols = (w.sprite.w + FIGURE_W) / 2;
-  if (Math.abs(x - w.x) * c.geo.cols > halfCols || z < w.z - 0.1 || z > w.z + clear) return { x, z };
-  return { x, z: Math.min(1, w.z + clear) };
-}
-
-/** Walks (or runs) to (x, z), stepping round the pond. Gives up after `limit` seconds. */
-function* walkTo(c: Ctx, tx: number, tz: number, run = false, limit = 30): Script {
-  const { x, z } = tx < 0 || tx > 1 ? { x: tx, z: tz } : dry(c, tx, tz);
-  const b = c.body;
-  b.pose = 'walk';
-  let t = 0;
-  while (t < limit) {
-    const dt = yield;
-    t += dt;
-    const groundRows = Math.max(1, c.geo.rows - 1 - c.geo.horizon);
-    const dxCols = (x - b.x) * c.geo.cols;
-    const dzRows = (z - b.z) * groundRows;
-    if (Math.abs(dxCols) < 0.6 && Math.abs(dzRows) < 0.4) break;
-    const speed = (run ? BRAIN.runSpeed : BRAIN.walkSpeed) * dt;
-    if (Math.abs(dxCols) >= 0.6) {
-      const step = Math.sign(dxCols) * Math.min(Math.abs(dxCols), speed);
-      b.x += step / c.geo.cols;
-      b.facing = dxCols > 0 ? 1 : -1;
-    }
-    if (Math.abs(dzRows) >= 0.4) b.z += (Math.sign(dzRows) * Math.min(Math.abs(dzRows), BRAIN.depthSpeed * dt)) / groundRows;
-  }
-  b.pose = 'stand';
-}
-
-/** Walks to a moving target, as given by `target()` each frame, until `near()` or the time runs out. */
-function* follow(c: Ctx, target: () => { x: number; z: number } | null, near: () => boolean, run: boolean, limit: number): Script {
-  const b = c.body;
-  let t = 0;
-  b.pose = 'walk';
-  while (t < limit) {
-    const at = target();
-    if (at === null || near()) break;
-    const dt = yield;
-    t += dt;
-    const groundRows = Math.max(1, c.geo.rows - 1 - c.geo.horizon);
-    const dxCols = (at.x - b.x) * c.geo.cols;
-    const speed = (run ? BRAIN.runSpeed : BRAIN.walkSpeed) * dt;
-    if (Math.abs(dxCols) > 0.3) {
-      b.x += (Math.sign(dxCols) * Math.min(Math.abs(dxCols), speed)) / c.geo.cols;
-      b.facing = dxCols > 0 ? 1 : -1;
-    }
-    const dzRows = (at.z - b.z) * groundRows;
-    if (Math.abs(dzRows) > 0.3) b.z += (Math.sign(dzRows) * Math.min(Math.abs(dzRows), BRAIN.depthSpeed * dt)) / groundRows;
-  }
-  b.pose = 'stand';
-}
-
-/** A hop: up and down again, `height` in eighths of its own height. */
-function* hop(c: Ctx, height = 1.5): Script {
-  const b = c.body;
-  const pose = b.pose;
-  b.pose = 'jump';
-  let t = 0;
-  while (t < 0.5) {
-    t += yield;
-    b.lift = Math.max(0, Math.sin((Math.min(t, 0.5) / 0.5) * Math.PI) * height * (FIGURE_ROWS / 8));
-  }
-  b.lift = 0;
-  b.pose = pose === 'jump' ? 'stand' : pose;
-}
-
-/** Walks to its door and steps in: framed by the doorway, it fades into the dark inside. */
-function* goIn(c: Ctx, run = false): Script {
-  const door = c.geo.door(c.scene.layout.home);
-  yield* walkTo(c, door.x, door.z, run);
-  yield* through(c, 1);
-  c.body.inside = true;
-  c.body.doorway = 0;
-}
-
-/** Steps out of the dark of its doorway and walks a few steps from the door. */
-function* comeOut(c: Ctx): Script {
-  c.body.inside = false;
-  c.body.doorway = 1;
-  yield* through(c, 0);
-  const home = c.scene.layout.home;
-  yield* walkTo(c, c.body.x, Math.min(1, home.z + 0.1));
-}
-
-/** Moves its doorway fade to `to` (1 gone into the dark, 0 outside) over BRAIN.doorwaySec. */
-function* through(c: Ctx, to: number): Script {
-  const b = c.body;
-  b.pose = 'stand';
-  const from = b.doorway;
-  let t = 0;
-  while (t < BRAIN.doorwaySec) {
-    b.doorway = from + (to - from) * (t / BRAIN.doorwaySec);
-    t += yield;
-  }
-  b.doorway = to;
-}
-
-const fullMoon = (c: Ctx): boolean => Math.abs(c.sky.moon - 0.5) < 0.06;
-const darkMoon = (c: Ctx): boolean => c.sky.moon < 0.05 || c.sky.moon > 0.95;
-
-/** Something it finds: by the full or the new moon at night, sometimes a stranger thing than the biome holds. */
-function pickFind(c: Ctx): string {
-  const list = c.sky.daylight < 0.25 && c.random() < 0.5 && fullMoon(c) ? MOON_FINDS.full : c.sky.daylight < 0.25 && c.random() < 0.5 && darkMoon(c) ? MOON_FINDS.dark : BIOMES[c.life.biome].finds;
-  return list[Math.floor(c.random() * list.length)];
-}
-
-/** Waits for its bubble to finish (or `limit` seconds). */
-function* hush(c: Ctx, limit = 12): Script {
-  yield* until(() => !c.speaking(), limit);
-}
-
-/** Faces you: turns to the front and looks out. */
-function faceYou(c: Ctx): void {
-  c.body.gaze = 'center';
-}
-
-function particles(c: Ctx, glyph: string, color: number, count: number, opts: { up?: number; spread?: number; life?: number; glow?: boolean; gravity?: number } = {}): void {
-  const { col, row } = headOf(c);
-  for (let i = 0; i < count; i++) {
-    c.scene.emit({
-      glyph,
-      color,
-      col: col + (c.random() - 0.5) * (opts.spread ?? 4),
-      row: row - 1 + (c.random() - 0.5),
-      vc: (c.random() - 0.5) * 3,
-      vr: -(opts.up ?? 2) - c.random(),
-      life: (opts.life ?? 1.6) + c.random() * 0.6,
-      glow: opts.glow ?? false,
-      gravity: opts.gravity ?? 0,
-    });
-  }
-}
-
-/** Screen position of the top of its head. */
-/** The top of its hood: where its thoughts and hearts rise from. */
-export function headOf(c: { readonly body: Body; readonly geo: Geometry }): { col: number; row: number } {
-  return { col: c.geo.col(c.body.x), row: c.geo.footRow(c.body.z) - FIGURE_ROWS + 1 - Math.round(c.body.lift) };
-}
-
-const nearestOf = (props: readonly Prop[], x: number): Prop | null =>
-  props.reduce<Prop | null>((best, p) => (best === null || Math.abs(p.x - x) < Math.abs(best.x - x) ? p : best), null);
-
-const sideOf = (c: Ctx, p: Prop): -1 | 1 => (c.body.x < p.x ? -1 : 1);
-
-// ── Activities ─────────────────────────────────────────────────────────────
-
-type Activity = {
-  readonly cooldown?: number;
-  score(c: Ctx): number;
-  run(c: Ctx): Script;
+export type Situation = {
+  readonly hour: number;
+  readonly sunElevation: number;
+  /** 0..1 rain or snow. */
+  readonly precip: number;
+  readonly storm: boolean;
+  readonly snow: boolean;
+  /** Where he is, metres. */
+  readonly at: number;
+  /** Sim seconds walked since he last stopped. */
+  readonly walking: number;
+  readonly since: Memory;
+  /** Spots ahead within reach, nearest first. */
+  readonly spots: readonly Spot[];
+  /** Has he slept since the last dusk? */
+  readonly slept: boolean;
+  /** 0..1, drawn once a night: how late he is willing to walk before he camps. */
+  readonly nightOwl: number;
 };
 
-const raining = (c: Ctx): boolean => c.sky.weather.precip > 0.25;
-const present = (c: Ctx): boolean => c.idleSec() < PRESENT_SEC && c.focused();
-const bedtime = (c: Ctx): boolean => isNightFor(c.life.traits, c.sky.hour);
-const visibleCritter = (c: Ctx): Critter | null =>
-  // It chases the small ones; not birds overhead, not bats, not the deer.
-  c.scene.critters.find((k) => k.kind !== 'bird' && k.kind !== 'bat' && k.kind !== 'deer' && k.x > 0.05 && k.x < 0.95) ?? null;
+export type Until = 'time' | 'rain eases' | 'dawn';
+export type Choice = { readonly act: Act; readonly spot: Spot | null; readonly seconds: number; readonly until: Until; readonly smoke: boolean };
 
-const ACT: Readonly<Record<ActivityName, Activity>> = {
-  idle: {
-    score: (c) => 0.25 + 0.2 * c.life.traits.lazy,
-    *run(c) {
-      c.body.pose = 'stand';
-      const looks: (Gaze | null)[] = ['left', 'right', 'up', null, 'center'];
-      for (let i = 0; i < 3; i++) {
-        c.body.gaze = looks[Math.floor(c.random() * looks.length)];
-        yield* wait(1.5 + c.random() * 2.5);
-      }
-      c.body.gaze = null;
-    },
-  },
-  stroll: {
-    score: (c) => (bedtime(c) ? 0.05 : 0.3 + 0.35 * c.life.traits.curious * (c.life.needs.rest > 0.3 ? 1 : 0.3)),
-    *run(c) {
-      yield* walkTo(c, 0.06 + c.random() * 0.88, 0.25 + c.random() * 0.7);
-      yield* wait(1 + c.random() * 2);
-    },
-  },
-  sit: {
-    score: (c) => 0.2 + 0.4 * c.life.traits.lazy + 0.3 * (1 - c.life.needs.rest),
-    *run(c) {
-      const seat = nearestOf(c.scene.layout.seats, c.body.x);
-      if (seat !== null && c.random() < 0.7) {
-        const at = c.geo.beside(seat, sideOf(c, seat));
-        yield* walkTo(c, at.x, at.z);
-      }
-      c.body.pose = 'sit';
-      yield* wait(8 + c.random() * 14);
-      if (c.random() < 0.3) {
-        c.body.gaze = 'up';
-        yield* wait(3);
-      }
-      c.body.gaze = null;
-      c.body.pose = 'stand';
-    },
-  },
-  nap: {
-    cooldown: 300,
-    score: (c) => (!bedtime(c) && c.life.needs.rest < 0.35 ? 0.6 + (0.35 - c.life.needs.rest) * 2 + 0.3 * c.life.traits.lazy : 0),
-    *run(c) {
-      c.body.pose = 'sleep';
-      c.body.eyes = '- -';
-      c.life.asleep = true;
-      try {
-        let t = 0;
-        const length = 30 + c.random() * 60;
-        while (t < length) {
-          const dt = yield;
-          t += dt;
-          if (c.random() < dt * 0.6) particles(c, c.random() < 0.5 ? 'z' : 'Z', COLORS.hudFg, 1, { up: 1, spread: 1, life: 2 });
-        }
-        c.life.needs.rest = clamp01(c.life.needs.rest + 0.05);
-      } finally {
-        c.life.asleep = false;
-        c.body.eyes = null;
-      }
-    },
-  },
-  sleep: {
-    score: (c) => {
-      if (bedtime(c)) return c.life.needs.rest > 0.97 ? 0.4 : 1.4 + (1 - c.life.needs.rest);
-      return c.life.needs.rest < 0.12 ? 1.2 : 0;
-    },
-    *run(c) {
-      const already = c.life.asleep && c.body.inside;
-      if (!already) {
-        if (c.random() < 0.5) c.say('sleepy');
-        yield* goIn(c);
-      }
-      c.body.inside = true;
-      c.body.eyes = '- -';
-      c.life.asleep = true;
-      if (bedtime(c) && !already) c.say('goodnight');
-      let t = 0;
-      while (bedtime(c) || (c.life.needs.rest < 0.6 && t < 600)) {
-        const dt = yield;
-        t += dt;
-        if (c.random() < dt * 0.4) zFromDoor(c);
-        if (!bedtime(c) && c.life.needs.rest >= 1) break;
-      }
-      c.life.asleep = false;
-      c.body.eyes = '‿ ‿';
-      yield* wait(1.5);
-      yield* comeOut(c);
-      c.body.eyes = null;
-      c.say('wakeUp');
-      yield* hush(c, 4);
-    },
-  },
-  forage: {
-    cooldown: 45,
-    score: (c) => (c.life.needs.food < SELF_FEED_CAP ? (1 - c.life.needs.food) * 1.6 : 0),
-    *run(c) {
-      const spot = c.scene.layout.forage;
-      const at = c.geo.beside(spot, sideOf(c, spot));
-      yield* walkTo(c, at.x, at.z, c.life.needs.food < 0.2);
-      c.body.facing = spot.x > c.body.x ? 1 : -1;
-      c.body.pose = 'wave';
-      yield* wait(1.5);
-      c.body.pose = 'eat';
-      c.body.holding = { glyph: '•', color: 0xd04050 };
-      for (let i = 0; i < 4; i++) {
-        c.body.eyes = i % 2 === 0 ? '^ ^' : '- -';
-        yield* wait(0.6);
-      }
-      c.body.holding = null;
-      c.body.eyes = null;
-      c.life.needs.food = Math.max(c.life.needs.food, Math.min(SELF_FEED_CAP, c.life.needs.food + 0.35));
-      if (c.random() < 0.4) c.say('eatForage');
-      yield* wait(2);
-      c.body.pose = 'stand';
-    },
-  },
-  eat: {
-    score: (c) => (c.scene.foods.some((f) => f.h === 0) ? 0.3 + (1 - c.life.needs.food) * 1.5 + c.life.bond * 0.3 : 0),
-    *run(c) {
-      const landed = c.scene.foods.filter((f) => f.h === 0);
-      const food = landed.reduce((a, f) => (Math.abs(f.x - c.body.x) < Math.abs(a.x - c.body.x) ? f : a), landed[0]);
-      if (food === undefined) return;
-      const hungry = c.life.needs.food < 0.5;
-      yield* walkTo(c, food.x - c.body.facing * 0.01, food.z, hungry);
-      c.body.facing = food.x >= c.body.x ? 1 : -1;
-      if (!c.scene.foods.includes(food)) return; // gone
-      if (c.life.needs.food > 0.92) {
-        c.body.gaze = 'down';
-        yield* wait(1);
-        c.say('full');
-        c.body.gaze = null;
-        yield* hush(c, 4);
-        return;
-      }
-      c.scene.foods.splice(c.scene.foods.indexOf(food), 1);
-      c.body.holding = { glyph: food.kind.glyph, color: food.kind.color };
-      c.body.pose = 'eat';
-      for (let i = 0; i < 6; i++) {
-        c.body.eyes = i % 2 === 0 ? '^ ^' : '- -';
-        yield* wait(0.5);
-      }
-      c.body.holding = null;
-      c.body.eyes = null;
-      c.life.needs.food = clamp01(c.life.needs.food + 0.35);
-      c.life.needs.love = clamp01(c.life.needs.love + 0.05);
-      c.feelings.joy = clamp01(c.feelings.joy + 0.35);
-      c.life.stats.fed++;
-      warm(c.life);
-      c.say('thanksFood', { food: food.kind.name.replace(/^an? /, '') });
-      particles(c, '♥', COLORS.heart, 2);
-      yield* wait(2.5);
-      c.body.pose = 'stand';
-    },
-  },
-  drink: {
-    cooldown: 180,
-    score: (c) => 0.15 + (c.sky.season === 'summer' ? 0.15 : 0),
-    *run(c) {
-      const water = c.scene.layout.water;
-      const at = water !== null ? c.geo.beside(water, sideOf(c, water)) : { x: c.body.x, z: 0.02 };
-      yield* walkTo(c, at.x, at.z);
-      if (water !== null) c.body.facing = water.x > c.body.x ? 1 : -1;
-      c.body.pose = 'sit';
-      c.body.gaze = 'down';
-      yield* wait(2);
-      for (let i = 0; i < 3; i++) particles(c, '.', 0x9fd0ff, 1, { up: 1, spread: 2, life: 0.6 });
-      if (c.random() < 0.3) c.say('drink');
-      yield* wait(2.5);
-      c.body.gaze = null;
-      c.body.pose = 'stand';
-    },
-  },
-  chase: {
-    score: (c) => (c.scene.toy !== null && c.life.needs.rest > 0.15 ? 0.5 + 0.6 * c.life.traits.playful + 0.6 * (1 - c.life.needs.fun) : 0),
-    *run(c) {
-      let bats = 0;
-      while (c.scene.toy !== null && bats < 4) {
-        const toy = c.scene.toy;
-        yield* follow(c, () => (c.scene.toy === null ? null : { x: c.scene.toy.x, z: c.scene.toy.z }), () => {
-          const t = c.scene.toy;
-          return t !== null && Math.abs(t.x - c.body.x) * c.geo.cols < 2.5 && Math.abs(t.z - c.body.z) < 0.15 && t.h < 2.5;
-        }, true, 12);
-        if (c.scene.toy !== toy) break;
-        // Bat it away, with a hop.
-        toy.vx = (c.random() < 0.5 ? -1 : 1) * (12 + c.random() * 12);
-        toy.vh = 8 + c.random() * 4;
-        toy.resting = false;
-        bats++;
-        c.life.needs.fun = clamp01(c.life.needs.fun + 0.1);
-        c.feelings.joy = clamp01(c.feelings.joy + 0.2);
-        c.body.eyes = '^ ^';
-        if (bats === 1) c.say('play');
-        yield* hop(c, 2);
-        c.body.eyes = null;
-      }
-      if (bats > 0) {
-        c.life.stats.played++;
-        c.life.needs.love = clamp01(c.life.needs.love + 0.04);
-        warm(c.life);
-      }
-    },
-  },
-  critter: {
-    cooldown: 60,
-    score: (c) => (visibleCritter(c) !== null && !bedtime(c) ? 0.25 + 0.4 * c.life.traits.playful + 0.2 * c.life.traits.curious : 0),
-    *run(c) {
-      const k = visibleCritter(c);
-      if (k === null) return;
-      c.body.icon = '!';
-      yield* wait(0.8);
-      c.body.icon = null;
-      yield* follow(c, () => (c.scene.critters.includes(k) ? { x: k.x, z: k.flies ? c.body.z : k.z } : null), () => Math.abs(k.x - c.body.x) * c.geo.cols < 3, c.life.traits.playful > 0.5, 8);
-      // It gets away.
-      k.vx = (k.x > c.body.x ? 1 : -1) * Math.max(6, Math.abs(k.vx) * 2);
-      yield* hop(c);
-      c.body.gaze = k.flies ? 'up' : null;
-      yield* wait(1.5);
-      c.body.gaze = null;
-      c.life.needs.fun = clamp01(c.life.needs.fun + 0.05);
-    },
-  },
-  play: {
-    cooldown: 30,
-    score: (c) => (c.life.needs.fun < SELF_PLAY_CAP && !bedtime(c) ? (1 - c.life.needs.fun) * 0.9 * (0.5 + c.life.traits.playful) : 0.05),
-    *run(c) {
-      if (c.random() < 0.5) c.say('playAlone');
-      for (let i = 0; i < 4 + Math.floor(c.random() * 4); i++) {
-        if (c.random() < 0.4) c.body.facing = c.body.facing === 1 ? -1 : 1;
-        c.body.eyes = '^ ^';
-        yield* hop(c, 1 + c.random() * 1.5);
-        yield* wait(0.2 + c.random() * 0.4);
-      }
-      c.body.eyes = null;
-      c.life.needs.fun = Math.max(c.life.needs.fun, Math.min(SELF_PLAY_CAP, c.life.needs.fun + 0.12));
-      c.feelings.joy = clamp01(c.feelings.joy + 0.1);
-    },
-  },
-  stargaze: {
-    cooldown: 120,
-    score: (c) => (c.sky.daylight < 0.25 && c.sky.weather.cloud < 0.5 && !bedtime(c) ? 0.4 + 0.3 * c.life.traits.curious + (fullMoon(c) ? 0.3 : 0) : 0),
-    *run(c) {
-      yield* walkTo(c, 0.2 + c.random() * 0.6, 0.6 + c.random() * 0.3);
-      c.body.pose = 'sit';
-      c.body.gaze = 'up';
-      c.body.eyes = '° °';
-      yield* wait(4);
-      if (c.random() < 0.5) c.voice('stargaze', 'stargaze');
-      yield* wait(8 + c.random() * 10);
-      if (c.random() < 0.3) {
-        shootingStar(c);
-        yield* wait(0.8);
-        c.body.eyes = 'o o';
-        c.say('wish');
-        c.diary('Saw a falling star and made a wish.');
-        yield* hush(c, 6);
-      }
-      c.body.eyes = null;
-      c.body.gaze = null;
-      c.body.pose = 'stand';
-    },
-  },
-  shelter: {
-    score: (c) => (raining(c) && c.life.traits.rainLover < 0.5 ? 0.7 + (0.5 - c.life.traits.rainLover) * 1.5 : 0),
-    *run(c) {
-      c.say('rainDislike');
-      yield* goIn(c, true);
-      yield* until(() => !raining(c), 90 + c.random() * 90);
-      yield* comeOut(c);
-    },
-  },
-  dance: {
-    cooldown: 40,
-    score: (c) => (raining(c) && c.life.traits.rainLover >= 0.5 ? 0.4 + 0.6 * c.life.traits.rainLover : 0),
-    *run(c) {
-      c.say(c.sky.weather.kind === 'snow' ? 'snow' : c.random() < 0.5 ? 'rainLike' : 'dance');
-      for (let i = 0; i < 6; i++) {
-        c.body.facing = c.body.facing === 1 ? -1 : 1;
-        c.body.eyes = '^ ^';
-        c.body.gaze = 'up';
-        yield* hop(c, 1.2);
-        if (c.sky.weather.kind === 'rain') particles(c, '.', 0xa9c4e8, 2, { up: -1, spread: 5, life: 0.5, gravity: 10 });
-      }
-      c.body.eyes = null;
-      c.body.gaze = null;
-      c.life.needs.fun = clamp01(c.life.needs.fun + 0.08);
-      c.feelings.joy = clamp01(c.feelings.joy + 0.2);
-    },
-  },
-  // When the visitor walks through the glow, it stops whatever it would do next and watches it go by,
-  // eyes wide, without a sound; afterwards a word, and a line in its diary.
-  watch: {
-    cooldown: 300,
-    score: (c) => (!c.life.asleep && !c.body.inside && visitAt(c.now(), c.life.seed, c.life.biome, c.sky.daylight) !== null ? 3 : 0),
-    *run(c) {
-      c.body.pose = 'stand';
-      c.body.eyes = 'o o';
-      yield* wait(1.5);
-      let seen = 0;
-      while (visitAt(c.now(), c.life.seed, c.life.biome, c.sky.daylight) !== null && seen < 150) {
-        const visit = visitAt(c.now(), c.life.seed, c.life.biome, c.sky.daylight);
-        // Its gaze follows it across: it walks from one side of the glow to the other.
-        const focus = forestFocus(c.scene.layout.home.x < 0.5);
-        const at = visit === null ? focus : focus + visit.dir * (visit.progress - 0.5) * 0.72;
-        c.body.gaze = at < c.body.x - 0.08 ? 'left' : at > c.body.x + 0.08 ? 'right' : 'up';
-        c.body.eyes = null;
-        seen += yield;
-      }
-      c.body.gaze = null;
-      yield* wait(2);
-      c.say('visitor');
-      c.diary('Something tall walked through the light at the end of the path. It did not look back.');
-      yield* hush(c, 5);
-      c.body.pose = 'stand';
-    },
-  },
-  ponder: {
-    cooldown: 45,
-    score: (c) => 0.15 + 0.25 * c.life.traits.curious,
-    *run(c) {
-      if (c.random() < 0.5) c.body.pose = 'sit';
-      c.body.icon = '?';
-      c.body.gaze = c.random() < 0.5 ? 'up' : 'down';
-      yield* wait(3);
-      c.body.icon = null;
-      const season = c.sky.season;
-      if (c.random() < 0.25) c.say(season);
-      else c.voice('thought', 'ponder');
-      yield* hush(c);
-      yield* wait(2 + c.random() * 3);
-      c.body.gaze = null;
-      c.body.pose = 'stand';
-    },
-  },
-  dig: {
-    cooldown: COOLDOWN_SEC.dig,
-    score: (c) => (bedtime(c) ? 0 : 0.1 + 0.35 * c.life.traits.curious),
-    *run(c) {
-      yield* walkTo(c, 0.08 + c.random() * 0.84, 0.35 + c.random() * 0.6);
-      c.say('dig');
-      c.body.pose = 'dig';
-      c.body.gaze = 'down';
-      let t = 0;
-      const length = 4 + c.random() * 3;
-      while (t < length) {
-        const dt = yield;
-        t += dt;
-        if (c.random() < dt * 6) {
-          const foot = c.geo.footRow(c.body.z);
-          c.scene.emit({ glyph: c.random() < 0.5 ? '.' : ',', color: COLORS.dirt, col: c.geo.col(c.body.x) + c.body.facing * 6, row: foot - 1, vc: c.body.facing * (2 + c.random() * 3), vr: -4 - c.random() * 3, life: 0.8, gravity: 18 });
-        }
-      }
-      c.body.pose = 'stand';
-      c.body.gaze = null;
-      if (c.random() < 0.15 + 0.25 * c.life.traits.curious) {
-        const item = pickFind(c);
-        c.life.found.push(item);
-        if (c.life.found.length > 12) c.life.found.shift();
-        c.life.stats.finds++;
-        c.body.holding = { glyph: '*', color: COLORS.spark };
-        particles(c, '*', COLORS.spark, 4, { glow: true });
-        c.body.eyes = 'o o';
-        c.say('found', { item });
-        c.diary(`Found ${item}.`);
-        yield* hush(c, 5);
-        c.body.holding = null;
-        c.body.eyes = null;
-      } else {
-        c.say('digNothing');
-        yield* hush(c, 4);
-      }
-    },
-  },
-  hum: {
-    cooldown: 60,
-    score: (c) => (c.mood === 'content' || c.mood === 'joyful' || c.mood === 'calm' ? 0.3 : 0.05),
-    *run(c) {
-      if (c.random() < 0.5) c.body.pose = 'sit';
-      c.body.eyes = '‿ ‿';
-      if (c.random() < 0.5) c.say('hum');
-      let t = 0;
-      while (t < 8) {
-        const dt = yield;
-        t += dt;
-        if (c.random() < dt * 1.5) particles(c, c.random() < 0.5 ? '♪' : '♫', COLORS.note, 1, { up: 1.5, spread: 3, life: 2 });
-      }
-      c.body.eyes = null;
-      c.body.pose = 'stand';
-    },
-  },
-  stack: {
-    cooldown: COOLDOWN_SEC.stack,
-    score: (c) => (c.life.cairn < MAX_CAIRN && !bedtime(c) ? 0.12 + 0.15 * (1 - c.life.traits.lazy) : 0),
-    *run(c) {
-      const spot = c.scene.layout.cairn;
-      c.body.holding = { glyph: 'o', color: 0xa8a49c };
-      yield* walkTo(c, spot.x - 0.03, spot.z);
-      c.body.facing = 1;
-      c.body.pose = 'dig';
-      c.say('stack');
-      yield* wait(2.5);
-      c.body.holding = null;
-      c.life.cairn++;
-      c.body.pose = 'stand';
-      if (c.life.cairn === MAX_CAIRN) {
-        c.say('cairnDone');
-        c.diary('Finished the cairn. Nine stones.');
-      } else if (c.life.cairn === 1) {
-        c.diary('Started a cairn.');
-      }
-      yield* hush(c, 4);
-    },
-  },
-  visit: {
-    cooldown: COOLDOWN_SEC.visit,
-    score: (c) => (present(c) && c.life.needs.love < 0.75 && !bedtime(c) ? (1 - c.life.needs.love) * (0.4 + c.life.bond) : 0),
-    *run(c) {
-      yield* comeForward(c);
-      c.body.pose = 'wave';
-      yield* wait(1.2);
-      c.body.pose = 'stand';
-      c.voice('visit', 'visit');
-      yield* hush(c, 15);
-      yield* wait(3 + c.random() * 4);
-      c.life.needs.love = clamp01(c.life.needs.love + 0.03);
-      c.body.gaze = null;
-    },
-  },
-  knock: {
-    cooldown: COOLDOWN_SEC.knock,
-    score: (c) =>
-      (c.idleSec() > IDLE_KNOCK_SEC || !c.focused()) && c.life.needs.love < 0.6 && c.life.bond > 0.25 && !bedtime(c) ? 0.6 : 0,
-    *run(c) {
-      yield* comeForward(c);
-      c.bell();
-      for (let i = 0; i < 2; i++) {
-        c.body.pose = 'wave';
-        const { col } = headOf(c);
-        c.scene.emit({ glyph: '*', color: COLORS.spark, col: col + 4, row: c.geo.rows - 1, vc: 0, vr: 0, life: 0.4, glow: true });
-        yield* wait(0.5);
-        c.body.pose = 'stand';
-        yield* wait(0.4);
-      }
-      c.voice('knock', 'knock');
-      const idle = c.idleSec();
-      yield* until(() => c.idleSec() < Math.min(idle, 1), 10);
-      c.body.gaze = null;
-    },
-  },
-  gift: {
-    cooldown: COOLDOWN_SEC.gift,
-    score: (c) => (c.life.found.length > 0 && c.life.bond > 0.35 && present(c) && !bedtime(c) ? 0.4 + 0.5 * c.life.bond : 0),
-    *run(c) {
-      const item = c.life.found[c.life.found.length - 1];
-      c.body.holding = { glyph: '*', color: COLORS.spark };
-      yield* comeForward(c);
-      c.voice('gift', 'gift', { item });
-      c.offer(item);
-      yield* until(() => c.offerState() !== 'waiting', 25);
-      const taken = c.offerState() === 'taken';
-      c.endOffer();
-      c.body.holding = null;
-      if (taken) {
-        c.body.eyes = '^ ^';
-        particles(c, '♥', COLORS.heart, 3);
-        yield* hop(c);
-        c.body.eyes = null;
-      } else {
-        c.body.eyes = '- -';
-        c.say('giftIgnored');
-        yield* hush(c, 5);
-        c.body.eyes = null;
-      }
-      c.body.gaze = null;
-    },
-  },
-  ask: {
-    cooldown: COOLDOWN_SEC.ask,
-    score: (c) => (present(c) && c.life.bond > 0.3 && !bedtime(c) ? 0.25 + 0.4 * c.life.traits.curious : 0),
-    *run(c) {
-      yield* comeForward(c);
-      c.body.icon = '?';
-      if (!c.ask()) {
-        c.body.icon = null;
-        return;
-      }
-      yield* until(() => c.questionState() !== 'waiting', 30);
-      c.body.icon = null;
-      if (c.questionState() === 'waiting') c.say('neverMind');
-      c.endQuestion();
-      yield* hush(c, 8);
-      c.body.gaze = null;
-    },
-  },
-  hide: {
-    cooldown: 60,
-    score: (c) => {
-      if (c.feelings.fright > 0.3) return 1.3;
-      return c.life.traits.shy > 0.6 && c.life.bond < 0.3 && present(c) ? 0.3 * c.life.traits.shy : 0;
-    },
-    *run(c) {
-      // Only what stands about as tall as it does hides it.
-      const big = c.scene.layout.props.filter((p) => p.sprite.h >= FIGURE_ROWS - 2 && p.kind !== 'home');
-      const cover = nearestOf(big, c.body.x);
-      if (cover === null || c.random() < 0.4) {
-        yield* goIn(c, true);
-      } else {
-        yield* walkTo(c, cover.x, Math.max(0, cover.z - 0.05), true);
-      }
-      c.body.eyes = 'o o';
-      c.say('hide');
-      yield* until(() => c.feelings.fright < 0.1, 20 + c.random() * 20);
-      c.body.eyes = null;
-      if (c.body.inside) yield* comeOut(c);
-      yield* walkTo(c, c.body.x, Math.min(1, c.body.z + 0.25));
-    },
-  },
-  wander: {
-    cooldown: COOLDOWN_SEC.wanderOff,
-    score: (c) =>
-      c.life.traits.curious > 0.45 && c.life.needs.rest > 0.5 && c.life.needs.food > 0.4 && !bedtime(c) && c.idleSec() > 240
-        ? 0.1 + 0.2 * c.life.traits.curious
-        : 0,
-    *run(c) {
-      c.say('wanderOff');
-      yield* hush(c, 5);
-      const left = c.body.x < 0.5;
-      yield* walkTo(c, left ? -0.06 : 1.06, c.body.z, false, 40);
-      c.body.visible = false;
-      yield* wait(120 + c.random() * 240);
-      const item = pickFind(c);
-      c.life.found.push(item);
-      c.life.stats.finds++;
-      c.body.visible = true;
-      yield* walkTo(c, left ? 0.15 : 0.85, c.body.z, false, 40);
-      c.voice('return', 'wanderBack', { item });
-      c.diary(`Walked to the edge of the ${BIOMES[c.life.biome].title.toLowerCase()} and back. Found ${item}.`);
-      c.life.needs.fun = clamp01(c.life.needs.fun + 0.3);
-      yield* hush(c, 10);
-    },
-  },
-};
+export const BRAIN = {
+  temperature: 0.35,
+  /** How far ahead (metres) a spot counts for each act. */
+  reach: { seat: 70, view: 50, shelter: 90, camp: 140 },
+  /** Fewest sim seconds between two of the same act. */
+  cooldown: { look: 200, sit: 300, smoke: 420, shelter: 90 },
+} as const;
 
-/** Walks to the front of the scene, near the middle, and looks at you. */
-function* comeForward(c: Ctx): Script {
-  yield* walkTo(c, 0.35 + c.random() * 0.3, 1, false, 25);
-  faceYou(c);
+const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+function nearest(s: Situation, kind: SpotKind): Spot | null {
+  let best: Spot | null = null;
+  for (const spot of s.spots) {
+    if (spot.kind !== kind || spot.at < s.at || spot.at - s.at > BRAIN.reach[kind]) continue;
+    // A better spot a little further on beats a poor one close by.
+    if (best === null || spot.quality - (spot.at - s.at) / 400 > best.quality - (best.at - s.at) / 400) best = spot;
+  }
+  return best;
 }
 
-function zFromDoor(c: Ctx): void {
-  const home = c.scene.layout.home;
-  const door = c.geo.door(home);
-  c.scene.emit({ glyph: c.random() < 0.5 ? 'z' : 'Z', color: COLORS.hudFg, col: c.geo.col(door.x) + 1, row: c.geo.footRow(home.z) - 3, vc: 1, vr: -1, life: 2.5 });
+/** Is it time to look for a camp? From dusk on, later for a night owl; never once he has slept. */
+function campUrge(s: Situation): number {
+  if (s.slept) return 0;
+  const evening = s.hour >= 12;
+  // −2° at dusk for an early sleeper, down to −30° (deep night) for one who walks late.
+  const threshold = -2 - 28 * s.nightOwl;
+  if (evening && s.sunElevation > threshold) return 0;
+  if (!evening && s.sunElevation > -6) return 0; // too close to dawn to bother
+  return 1;
 }
 
-function shootingStar(c: Ctx): void {
-  const row = 1 + Math.floor(c.random() * Math.max(1, c.geo.horizon / 2));
-  const col = Math.floor(c.random() * c.geo.cols * 0.6);
-  for (let i = 0; i < 6; i++) {
-    c.scene.emit({ glyph: i === 0 ? '*' : '·', color: COLORS.star, col: col - i * 1.5, row: row - i * 0.4, vc: 40, vr: 12, life: 0.5 - i * 0.05, glow: true });
+/** Scores for every act that is possible now; absent means impossible. */
+export function scores(s: Situation): Partial<Record<Act, { score: number; spot: Spot | null }>> {
+  const out: Partial<Record<Act, { score: number; spot: Spot | null }>> = {};
+  const golden = s.sunElevation > -6 && s.sunElevation < 10 ? 0.9 : 0;
+  const tired = clamp01(s.walking / 900);
+  const wet = s.precip > 0.1;
+
+  out.walk = { score: 1.4 - 0.9 * tired - (wet && !s.snow ? 0.2 : 0), spot: null };
+
+  const view = nearest(s, 'view');
+  if (view !== null && s.since.look >= BRAIN.cooldown.look && s.precip < 0.6) {
+    out.look = { score: 0.2 + 0.8 * clamp01(s.since.look / 900) + 0.7 * view.quality + golden - 0.4 * s.precip, spot: view };
   }
+
+  const seat = nearest(s, 'seat');
+  if (seat !== null && s.since.sit >= BRAIN.cooldown.sit && s.precip < 0.45) {
+    out.sit = { score: 0.4 * seat.quality + 1.7 * tired + 0.5 * clamp01(s.since.sit / 1200) + 0.3 * golden - 0.3 * s.precip, spot: seat };
+  }
+
+  if (s.since.smoke >= BRAIN.cooldown.smoke && s.precip < 0.3) {
+    out.smoke = { score: -0.1 + 0.7 * clamp01(s.since.smoke / 1500) + 0.3 * tired, spot: null };
+  }
+
+  const roof = nearest(s, 'shelter');
+  if (roof !== null && s.precip > 0.45 && s.since.shelter >= BRAIN.cooldown.shelter) {
+    out.shelter = { score: 2 + 2.2 * s.precip + (s.storm ? 1 : 0) - (s.snow ? 0.6 : 0), spot: roof };
+  }
+
+  const camp = nearest(s, 'camp');
+  if (camp !== null && campUrge(s) > 0) {
+    out.camp = { score: 3 + camp.quality + (s.sunElevation < -12 ? 1 : 0), spot: camp };
+  }
+  return out;
 }
 
-// ── Reactions ──────────────────────────────────────────────────────────────
+const range = (random: () => number, a: number, b: number): number => a + (b - a) * random();
 
-const REACT: Readonly<Record<ReactionName, (c: Ctx) => Script>> = {
-  *listen(c) {
-    if (c.body.inside || !c.body.visible) return;
-    yield* comeForward(c);
-    c.body.icon = '…';
-    yield* until(() => !c.talking(), 300);
-    c.body.icon = null;
-    yield* hush(c, BRAIN.thinkTimeoutSec + 10);
-    yield* wait(1.5);
-    c.body.gaze = null;
-  },
-  *petted(c) {
-    const bond = c.life.bond;
-    faceYou(c);
-    c.body.pose = 'stand';
-    if (c.feelings.annoyance > 0.5) {
-      c.body.eyes = '> <';
-      c.say('tooMuch');
-      yield* hush(c, 4);
-      c.body.eyes = null;
-      yield* walkTo(c, c.body.x < 0.5 ? c.body.x + 0.2 : c.body.x - 0.2, Math.max(0.2, c.body.z - 0.3));
-      return;
-    }
-    if (bond < 0.25 && c.life.traits.shy > 0.5) {
-      c.body.eyes = 'o o';
-      c.say('pettedShy');
-      yield* wait(1.5);
-    } else {
-      c.body.eyes = bond > 0.6 ? '♥ ♥' : '^ ^';
-      particles(c, '♥', COLORS.heart, bond > 0.6 ? 3 : 2);
-      if (c.random() < 0.6) c.say(bond > 0.6 ? 'pettedLove' : 'petted');
-      if (c.life.traits.playful > 0.4) yield* hop(c, 1);
-      yield* wait(2);
-    }
-    c.body.eyes = null;
-    yield* hush(c, 4);
-    c.body.gaze = null;
-  },
-  *woken(c) {
-    // At home, asleep. Does it get up?
-    const deep = bedtime(c) && c.sky.hour > 0 && c.sky.hour < 5;
-    const wakes = c.random() < 0.35 + c.life.bond * 0.5 - (deep ? 0.2 : 0);
-    if (!wakes) {
-      c.body.inside = true;
-      c.body.eyes = '- -';
-      c.life.asleep = true;
-      c.say('sleepTalk');
-      zFromDoor(c);
-      yield* hush(c, 5);
-      return;
-    }
-    c.life.asleep = false;
-    c.body.eyes = '‿ ‿';
-    c.body.inside = true;
-    yield* wait(1.2);
-    yield* comeOut(c);
-    c.body.eyes = deep && c.life.bond < 0.5 ? '> <' : '‿ ‿';
-    c.say(deep && c.life.bond < 0.5 ? 'wokenGrumpy' : 'woken');
-    yield* hush(c, 5);
-    yield* comeForward(c);
-    c.body.eyes = '‿ ‿';
-    yield* wait(8 + c.random() * 6);
-    c.body.eyes = null;
-    c.body.gaze = null;
-  },
-  *startle(c) {
-    if (c.body.inside || !c.body.visible) return;
-    c.body.eyes = 'o o';
-    c.body.icon = '!';
-    c.say(c.life.traits.shy > 0.5 ? 'startled' : 'thunder');
-    yield* hop(c, 2);
-    c.body.icon = null;
-    yield* wait(1);
-    c.body.eyes = null;
-  },
-  *greet(c) {
-    if (c.body.inside || !c.body.visible) return;
-    faceYou(c);
-    c.body.pose = 'wave';
-    c.voice('greet', 'backSoon');
-    yield* wait(1.6);
-    c.body.pose = 'stand';
-    yield* hush(c, 10);
-    c.body.gaze = null;
-  },
-  *arrive(c) {
-    // A wisp drifts in and becomes the figure.
-    const b = c.body;
-    b.visible = false;
-    b.x = 0.5;
-    b.z = 0.8;
-    const col = c.geo.col(0.5);
-    const row = c.geo.footRow(0.8) - 2;
-    let t = 0;
-    while (t < 3.5) {
-      const dt = yield;
-      t += dt;
-      const a = t * 5;
-      const r = 6 * (1 - t / 3.5) + 0.5;
-      c.scene.emit({ glyph: t > 2.5 ? '*' : '·', color: COLORS.spark, col: col + Math.cos(a) * r * 2, row: row + Math.sin(a) * r, vc: 0, vr: 0, life: 0.35, glow: true });
-    }
-    b.visible = true;
-    b.eyes = '- -';
-    yield* wait(1);
-    b.eyes = '° °';
-    b.gaze = 'up';
-    yield* wait(1.2);
-    b.eyes = null;
-    faceYou(c);
-    yield* wait(0.8);
-    c.say('hello');
-    yield* hush(c, 6);
-    c.askName();
-    yield* until(() => c.talking(), 2);
-    yield* until(() => !c.talking(), 600);
-    yield* hush(c, BRAIN.thinkTimeoutSec + 10);
-    b.gaze = null;
-  },
-  *return(c) {
-    // Back from wandering while you were away: the scene is empty for a moment, then it walks in.
-    const b = c.body;
-    b.visible = false;
-    yield* wait(2.5);
-    const fromLeft = c.random() < 0.5;
-    b.x = fromLeft ? -0.06 : 1.06;
-    b.z = 0.7;
-    b.visible = true;
-    yield* walkTo(c, fromLeft ? 0.3 : 0.7, 0.85, false, 40);
-    faceYou(c);
-    c.body.pose = 'wave';
-    c.voice('greet', 'backDays');
-    yield* wait(1.5);
-    c.body.pose = 'stand';
-    yield* hush(c, 15);
-    b.gaze = null;
-  },
-  *go(c) {
-    // You clicked somewhere: it goes to have a look.
-    const at = c.pointed();
-    if (at === null) return;
-    c.body.icon = '?';
-    yield* wait(0.5);
-    c.body.icon = null;
-    yield* walkTo(c, at.x, at.z);
-    c.body.gaze = 'down';
-    yield* wait(1.5);
-    c.body.gaze = null;
-    if (c.random() < 0.25 + 0.25 * c.life.traits.curious) yield* ACT.dig.run(c);
-  },
-  *wave(c) {
-    faceYou(c);
-    c.body.pose = 'wave';
-    yield* wait(2);
-    c.body.pose = 'stand';
-    yield* hush(c, 6);
-    c.body.gaze = null;
-  },
-  *jump(c) {
-    c.body.eyes = '^ ^';
-    for (let i = 0; i < 2; i++) yield* hop(c, 2);
-    c.body.eyes = null;
-    yield* hush(c, 6);
-  },
-  *spin(c) {
-    for (let i = 0; i < 6; i++) {
-      c.body.facing = c.body.facing === 1 ? -1 : 1;
-      yield* wait(0.25);
-    }
-    yield* hop(c, 1);
-  },
-};
-
-// ── The brain ──────────────────────────────────────────────────────────────
-
-/** Picks and runs activities. Deterministic for a given sequence of `random()` values and updates. */
-export class Brain {
-  /** What it is doing now. */
-  current: DoName | null = null;
-  private script: Script | null = null;
-  private clock = 0;
-  private readonly lastRun = new Map<DoName, number>();
-  private readonly recent: DoName[] = [];
-  private readonly queue: DoName[] = [];
-  private readonly c: Ctx;
-
-  constructor(c: Ctx) {
-    this.c = c;
-  }
-
-  /** One frame: steps the current script, or picks the next activity. */
-  update(dt: number): void {
-    this.clock += dt;
-    if (this.script === null) this.start(this.next());
-    const script = this.script;
-    if (script === null) return;
-    const step = script.next(dt);
-    if (step.done === true && this.script === script) {
-      this.script = null;
-      this.current = null;
+/** The next thing to do. `random` is called a fixed number of times, so choices replay exactly. */
+export function choose(s: Situation, random: () => number): Choice {
+  const options = scores(s);
+  const acts = ACTS.filter((a) => options[a] !== undefined);
+  let max = -Infinity;
+  for (const a of acts) max = Math.max(max, options[a]?.score ?? -Infinity);
+  let total = 0;
+  const weights = acts.map((a) => {
+    const w = Math.exp(((options[a]?.score ?? 0) - max) / BRAIN.temperature);
+    total += w;
+    return w;
+  });
+  const r1 = random();
+  const r2 = random();
+  const r3 = random();
+  let x = r1 * total;
+  let act: Act = 'walk';
+  for (let i = 0; i < acts.length; i++) {
+    x -= weights[i];
+    if (x < 0) {
+      act = acts[i];
+      break;
     }
   }
-
-  /** Every activity's score right now, for tests and the journal. */
-  scores(): [ActivityName, number][] {
-    return ACTIVITIES.map((name) => [name, this.scoreOf(name)]);
-  }
-
-  /** Stops whatever it is doing and runs `name` now. */
-  run(name: DoName): void {
-    this.stop();
-    this.start(name);
-  }
-
-  /** Runs `name` after the current activity ends. */
-  later(name: DoName): void {
-    if (!this.queue.includes(name)) this.queue.push(name);
-  }
-
-  /** Stops the current activity; the next update picks a fresh one. */
-  interrupt(): void {
-    this.stop();
-  }
-
-  private stop(): void {
-    const script = this.script;
-    this.script = null;
-    this.current = null;
-    if (script !== null) script.return();
-    const b = this.c.body;
-    b.pose = 'stand';
-    b.lift = 0;
-    b.eyes = null;
-    b.gaze = null;
-    b.icon = null;
-    b.holding = null;
-    b.doorway = 0;
-    if (b.inside && !this.c.life.asleep) b.inside = false;
-  }
-
-  private start(name: DoName): void {
-    if (this.c.life.asleep && name !== 'sleep' && name !== 'woken' && name !== 'nap') {
-      this.c.life.asleep = false;
-      this.c.body.inside = false;
-    }
-    this.current = name;
-    this.lastRun.set(name, this.clock);
-    this.recent.push(name);
-    if (this.recent.length > BRAIN.memory) this.recent.shift();
-    const act = (ACT as Readonly<Record<string, Activity>>)[name];
-    const script = act !== undefined ? act.run(this.c) : REACT[name as ReactionName](this.c);
-    this.script = script;
-    // Run up to the first yield, so the script's first frame happens now.
-    const first = script.next(0);
-    if (first.done === true && this.script === script) {
-      this.script = null;
-      this.current = null;
-    }
-  }
-
-  private scoreOf(name: ActivityName): number {
-    const act = ACT[name];
-    const since = this.lastRun.get(name);
-    if (act.cooldown !== undefined && since !== undefined && this.clock - since < act.cooldown) return 0;
-    const base = act.score(this.c);
-    if (base <= 0) return 0;
-    const repeats = this.recent.filter((r) => r === name).length;
-    return base / (1 + BRAIN.novelty * repeats);
-  }
-
-  /** The next activity: something queued, a whim, or a weighted random pick by score. */
-  private next(): DoName {
-    const queued = this.queue.shift();
-    if (queued !== undefined) return queued;
-    const scored = this.scores().filter(([, s]) => s > 0);
-    if (scored.length === 0) return 'idle';
-    const r = (): number => this.c.random();
-    if (r() < BRAIN.whim) {
-      const light = scored.filter(([n]) => n !== 'sleep' && n !== 'wander');
-      if (light.length > 0) return light[Math.floor(r() * light.length)][0];
-    }
-    const top = Math.max(...scored.map(([, s]) => s));
-    const weights = scored.map(([, s]) => Math.exp((s - top) / BRAIN.temperature));
-    let pick = r() * weights.reduce((a, b) => a + b, 0);
-    for (let i = 0; i < scored.length; i++) {
-      pick -= weights[i];
-      if (pick <= 0) return scored[i][0];
-    }
-    return scored[scored.length - 1][0];
+  const spot = options[act]?.spot ?? null;
+  const pick = (a: number, b: number): number => range(() => r2, a, b);
+  switch (act) {
+    case 'walk':
+      return { act, spot, seconds: pick(25, 75), until: 'time', smoke: false };
+    case 'look':
+      return { act, spot, seconds: pick(14, 38), until: 'time', smoke: r3 < 0.25 };
+    case 'sit':
+      return { act, spot, seconds: pick(110, 230), until: 'time', smoke: r3 < 0.8 };
+    case 'smoke':
+      return { act, spot, seconds: pick(70, 120), until: 'time', smoke: true };
+    case 'shelter':
+      return { act, spot, seconds: 480, until: 'rain eases', smoke: r3 < 0.5 };
+    case 'camp':
+      return { act, spot, seconds: 1, until: 'dawn', smoke: true };
   }
 }

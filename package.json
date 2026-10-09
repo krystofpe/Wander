@@ -1,17 +1,14 @@
 {
   "name": "wander",
-  "version": "0.2.0",
-  "description": "A small hooded creature that lives its own life in your terminal, drawn in pixel art",
+  "version": "0.3.0",
+  "description": "A lone wanderer walks forever through procedurally generated pixel-art lands, in the browser",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=25"
   },
   "scripts": {
-    "start": "node src/main.ts",
-    "test": "node --test",
-    "bench": "node src/main.ts --bench",
-    "art": "aseprite -b --script tools/export-art.lua"
+    "test": "node --disable-warning=ExperimentalWarning --test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.132.1"

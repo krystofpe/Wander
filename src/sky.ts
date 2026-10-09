@@ -1,12 +1,28 @@
-// The sky over the scene, from the world clock: hour, light, colours, moon, season, weather and wind. All pure.
-import { BIOMES, LIGHT_KEYS, SKY_KEYS, WEATHER } from './config.ts';
-import type { BiomeName } from './config.ts';
-import { mix, scale } from './color.ts';
+// The sky as numbers: the hour, the sun and the moon, the season, the weather and the wind. All pure functions of
+// the world clock (in hours since the road began) and the seed, so a restart shows the same sky.
 import { hash2, makeNoise } from './noise.ts';
 import type { Noise2D } from './noise.ts';
 
 export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
 export type Precip = 'none' | 'rain' | 'snow';
+export type WeatherName = 'clear' | 'cloudy' | 'overcast' | 'fog' | 'rain' | 'snow' | 'storm';
+export type DayPhase = 'dawn' | 'morning' | 'noon' | 'afternoon' | 'golden' | 'dusk' | 'blue' | 'night' | 'late';
+
+/** How a place leans: chances per weather slot (0..1), blended from the biomes around him. */
+export type Tendency = {
+  /** Share of slots with rain or snow. */
+  readonly wet: number;
+  /** Share of wet slots that fall as snow. */
+  readonly snow: number;
+  /** Share of dry slots with fog (doubled around dawn). */
+  readonly fog: number;
+  /** Share of rain slots that are storms. */
+  readonly storm: number;
+  /** How cloudy a dry sky tends to be, 0..1. */
+  readonly cloud: number;
+  /** How windy, 0..1. */
+  readonly wind: number;
+};
 
 export type Weather = {
   /** 0..1 share of the sky under cloud. */
@@ -15,30 +31,11 @@ export type Weather = {
   readonly precip: number;
   readonly kind: Precip;
   readonly storm: boolean;
-  readonly name: string;
-};
-
-/** Everything about the sky at one moment. */
-export type Sky = {
-  /** 0 ≤ hour < 24, local time. */
-  readonly hour: number;
-  readonly phase: string;
-  /** 0 at night … 1 at noon. */
-  readonly daylight: number;
-  /** Light multipliers per channel, already dimmed by weather. */
-  readonly lightR: number;
-  readonly lightG: number;
-  readonly lightB: number;
-  readonly zenith: number;
-  readonly horizon: number;
-  readonly season: Season;
-  /** 0 new moon … 0.5 full … 1 new again. */
-  readonly moon: number;
-  readonly weather: Weather;
+  /** 0..1 thickness of ground fog. */
+  readonly fog: number;
   /** −1..1: which way and how hard the wind blows (positive is to the right). */
   readonly wind: number;
-  /** 0..1: how wet everything still is from rain, now or in the last half hour. */
-  readonly wet: number;
+  readonly name: WeatherName;
 };
 
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -49,10 +46,20 @@ export function smoothstep(a: number, b: number, v: number): number {
   return t * t * (3 - 2 * t);
 }
 
-/** Local hour of the day, 0 ≤ h < 24. */
+/** Hour of the day, 0 ≤ h < 24, from world hours. */
+export function hourOfDay(worldHours: number): number {
+  return ((worldHours % 24) + 24) % 24;
+}
+
+/** Day on the road, from 1. */
+export function dayOf(worldHours: number): number {
+  return Math.floor(worldHours / 24) + 1;
+}
+
+/** Local hour of the day for a real time. */
 export function localHour(ms: number): number {
   const d = new Date(ms);
-  return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+  return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600 + d.getMilliseconds() / 3600000;
 }
 
 /** Northern-hemisphere season of a date. */
@@ -64,179 +71,228 @@ export function seasonOf(ms: number): Season {
   return 'winter';
 }
 
+/** Highest the sun climbs, in degrees. */
+const NOON_ELEVATION = 52;
+
+/**
+ * The sun's natural elevation in degrees at a local hour: rising at 6, setting at 18, lingering near the
+ * horizon as s·|s|. Used by the real-clock mode, whose day is long enough for twilight to last.
+ */
+export function naturalElevation(hour: number): number {
+  const s = Math.sin((2 * Math.PI * (hour - 6)) / 24);
+  return NOON_ELEVATION * s * Math.abs(s);
+}
+
+/**
+ * The warped day: [clock hour, elevation] keys, linear between. A one-hour day spends 17 real minutes in
+ * night, 4 in dawn twilight, 2 in the morning blue hour, 4 in the morning golden hour, 18 in day, 6 in the
+ * evening golden hour, 4 in the evening blue hour and 5 in dusk twilight (docs/research/wanderer-research.md,
+ * "Light and time of day" 1): the beautiful hours last long enough to be seen, the evening longest.
+ */
+const WARP: readonly (readonly [number, number])[] = [
+  [0, -52],
+  [3.4, -18],
+  [5.0, -6],
+  [5.8, -4],
+  [7.4, 6],
+  [11.0, NOON_ELEVATION],
+  [14.6, 6],
+  [17.0, -4],
+  [18.6, -8],
+  [20.6, -18],
+  [24, -52],
+];
+
+/** The sun's elevation in degrees at a clock hour of the warped day. */
+export function sunElevation(hour: number, natural = false): number {
+  const h = ((hour % 24) + 24) % 24;
+  if (natural) return naturalElevation(h);
+  for (let i = 1; i < WARP.length; i++) {
+    const [h1, e1] = WARP[i];
+    if (h <= h1) {
+      const [h0, e0] = WARP[i - 1];
+      return e0 + ((e1 - e0) * (h - h0)) / (h1 - h0);
+    }
+  }
+  return WARP[WARP.length - 1][1];
+}
+
+/** The hour a clock would show for this light: where the natural sun has the same elevation, morning or evening. */
+export function shownHour(hour: number, natural = false): number {
+  const h = ((hour % 24) + 24) % 24;
+  if (natural) return h;
+  const e = sunElevation(h);
+  // The warped sun climbs until 11 and the natural one until 12: invert the natural curve on the same side.
+  const rising = h < 11;
+  let lo = rising ? 0 : 12;
+  let hi = rising ? 12 : 24;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    const m = naturalElevation(mid);
+    if (rising ? m < e : m > e) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/** The moon follows the sun by its phase: new rises with the sun, full rises as it sets. */
+export function moonElevation(hour: number, phase: number, natural = false): number {
+  return naturalElevation(shownHour(hour, natural) - phase * 24);
+}
+
+/** Where a body is across the sky: x 0..1 from where it rises (left) to where it sets (right). */
+export function arcX(hour: number): number {
+  const h = (((hour - 6) % 24) + 24) % 24;
+  return h / 12;
+}
+
+/** The sun's place: x 0..1 across the sky (left to right), elevation in degrees; x outside 0..1 at night. */
+export function sunAt(hour: number, natural = false): { x: number; elevation: number } {
+  return { x: arcX(shownHour(hour, natural)), elevation: sunElevation(hour, natural) };
+}
+
+export function moonAt(hour: number, phase: number, natural = false): { x: number; elevation: number } {
+  return { x: arcX(shownHour(hour, natural) - phase * 24), elevation: moonElevation(hour, phase, natural) };
+}
+
 const SYNODIC_DAYS = 29.530588853;
 const NEW_MOON_2000 = Date.UTC(2000, 0, 6, 18, 14);
 
-/** Moon phase at a time: 0 new, 0.25 first quarter, 0.5 full, 0.75 last quarter. */
+/** Moon phase at a real time: 0 new, 0.25 first quarter, 0.5 full, 0.75 last quarter. */
 export function moonPhase(ms: number): number {
   const cycles = (ms - NEW_MOON_2000) / 86400000 / SYNODIC_DAYS;
   return ((cycles % 1) + 1) % 1;
 }
 
-export function phaseName(hour: number): string {
-  if (hour >= 5 && hour < 7) return 'dawn';
-  if (hour >= 7 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 17) return 'afternoon';
-  if (hour >= 17 && hour < 20) return 'dusk';
-  return 'night';
+/** The moon on the road: it starts at `startPhase` and turns once every 29.5 world days. */
+export function roadMoon(worldHours: number, startPhase: number): number {
+  return (((startPhase + worldHours / 24 / SYNODIC_DAYS) % 1) + 1) % 1;
 }
 
-/** Sunlight [red, green, blue, daylight] at an hour, interpolated between LIGHT_KEYS. */
-export function sunlight(hour: number): [number, number, number, number] {
-  for (let i = 1; i < LIGHT_KEYS.length; i++) {
-    const b = LIGHT_KEYS[i];
-    if (hour <= b[0]) {
-      const a = LIGHT_KEYS[i - 1];
-      const k = (hour - a[0]) / (b[0] - a[0]);
-      return [lerp(a[1], b[1], k), lerp(a[2], b[2], k), lerp(a[3], b[3], k), lerp(a[4], b[4], k)];
-    }
+/**
+ * The part of the day, from the sun: golden hour is +10°..0° in the evening, dusk 0°..−4°, blue hour
+ * −4°..−12° (all of it is dawn in the morning, until +8°), night below −12°; the small hours are "late".
+ */
+export function dayPhase(hour: number, natural = false): DayPhase {
+  const e = sunElevation(hour, natural);
+  const shown = shownHour(hour, natural);
+  const morning = shown < 12;
+  if (e < -12) return morning ? 'late' : 'night';
+  if (morning) {
+    if (e < 8) return 'dawn';
+    return shown < 10.5 ? 'morning' : 'noon';
   }
-  const last = LIGHT_KEYS[LIGHT_KEYS.length - 1];
-  return [last[1], last[2], last[3], last[4]];
+  if (e < -4) return 'blue';
+  if (e < 0) return 'dusk';
+  if (e < 10) return 'golden';
+  return shown < 14 ? 'noon' : 'afternoon';
 }
 
-/** Clear-sky [zenith, horizon] colours at an hour. */
-export function skyColors(hour: number): [number, number] {
-  for (let i = 1; i < SKY_KEYS.length; i++) {
-    const b = SKY_KEYS[i];
-    if (hour <= b[0]) {
-      const a = SKY_KEYS[i - 1];
-      const k = (hour - a[0]) / (b[0] - a[0]);
-      return [mix(a[1], b[1], k), mix(a[2], b[2], k)];
-    }
-  }
-  const last = SKY_KEYS[SKY_KEYS.length - 1];
-  return [last[1], last[2]];
+/** 0 at night … 1 in full day, from the sun's elevation. */
+export function daylight(hour: number, natural = false): number {
+  return smoothstep(-8, 12, sunElevation(hour, natural));
 }
 
-type Slot = { cloud: number; precip: number; storm: boolean };
+/** World hours per weather slot, and how long a change takes. */
+export const WEATHER_SLOT_HOURS = 3;
+export const WEATHER_FADE_HOURS = 1;
 
-function slotWeather(slot: number, seed: number, biome: BiomeName, season: Season): Slot {
+type Slot = { cloud: number; precip: number; snow: boolean; storm: boolean; fog: number };
+
+function slotWeather(slot: number, seed: number, t: Tendency): Slot {
   const u = (k: number): number => hash2(slot, k, seed ^ 0x3a7e) / 4294967296;
-  const chance = BIOMES[biome].rain * (season === 'winter' || season === 'autumn' ? 1.25 : 1);
-  if (u(1) < chance) {
-    return { cloud: 0.75 + 0.25 * u(3), precip: 0.4 + 0.6 * u(2), storm: !BIOMES[biome].cold && u(4) < WEATHER.storms };
+  // The hour the slot starts: fog gathers around dawn.
+  const hour = hourOfDay(slot * WEATHER_SLOT_HOURS);
+  const dawn = hour >= 3 && hour <= 9 ? 2 : 1;
+  if (u(1) < t.wet) {
+    const snow = u(5) < t.snow;
+    return { cloud: 0.8 + 0.2 * u(3), precip: 0.35 + 0.65 * u(2), snow, storm: !snow && u(4) < t.storm, fog: 0.15 * u(6) };
   }
-  return { cloud: Math.pow(u(3), 1.4) * 0.75, precip: 0, storm: false };
-}
-
-/** Whether rain falls as snow here and now. */
-export function snows(biome: BiomeName, season: Season): boolean {
-  return BIOMES[biome].cold || season === 'winter';
-}
-
-/** The weather at a world time: slots of WEATHER.slotMinutes, fading into the next slot. Pure. */
-export function weatherAt(ms: number, seed: number, biome: BiomeName): Weather {
-  const slotMs = WEATHER.slotMinutes * 60000;
-  const slot = Math.floor(ms / slotMs);
-  const f = (ms - slot * slotMs) / slotMs;
-  const season = seasonOf(ms);
-  const a = slotWeather(slot, seed, biome, season);
-  const b = slotWeather(slot + 1, seed, biome, season);
-  const k = smoothstep(1 - WEATHER.fadeMinutes / WEATHER.slotMinutes, 1, f);
-  const cloud = lerp(a.cloud, b.cloud, k);
-  const precip = lerp(a.precip, b.precip, k);
-  const storm = precip > 0.3 && (k < 0.5 ? a.storm : b.storm);
-  const kind: Precip = precip <= 0.02 ? 'none' : snows(biome, season) ? 'snow' : 'rain';
-  let name: string;
-  if (storm) name = 'Storm';
-  else if (kind === 'snow') name = 'Snow';
-  else if (kind === 'rain') name = 'Rain';
-  else if (cloud > 0.6) name = 'Cloudy';
-  else if (cloud > 0.3) name = 'Partly cloudy';
-  else name = 'Clear';
-  return { cloud, precip: kind === 'none' ? 0 : precip, kind, storm, name };
+  const cloud = clamp01(Math.pow(u(3), 1.3) * (0.4 + 0.8 * t.cloud));
+  const fog = u(6) < t.fog * dawn ? 0.55 + 0.45 * u(7) : 0;
+  return { cloud, precip: 0, snow: false, storm: false, fog };
 }
 
 const windNoise = new Map<number, Noise2D>();
 
-/** Wind −1..1, drifting over tens of minutes; storms blow harder. */
-export function windAt(ms: number, seed: number, weather: Weather): number {
+/** The wind: drifting over hours, stronger in storms (`storminess` 0..1) and in windy places. −1..1. */
+export function windAt(worldHours: number, seed: number, strength: number, storminess: number): number {
   let noise = windNoise.get(seed);
   if (noise === undefined) {
     noise = makeNoise(seed ^ 0x77d);
     windNoise.set(seed, noise);
   }
-  const w = noise(ms / (40 * 60000), 0.5) * 0.8;
-  return Math.max(-1, Math.min(1, w * (weather.storm ? 1.6 : 1 + weather.precip * 0.4)));
+  const w = noise(worldHours / 9, 0.5) * (0.35 + 0.65 * strength) + noise(worldHours * 1.7, 3.5) * 0.15;
+  return Math.max(-1, Math.min(1, w * (1.15 + 0.65 * storminess)));
 }
 
-/** The sky at a world time for a creature's seed and biome. Pure. */
-export function skyAt(ms: number, seed: number, biome: BiomeName): Sky {
-  const hour = localHour(ms);
-  const [r0, g0, b0, daylight] = sunlight(hour);
-  const weather = weatherAt(ms, seed, biome);
-  const dim = 1 - WEATHER.dimming * weather.precip - 0.12 * weather.cloud;
-  // A full moon up in a clear sky silvers the night a little.
-  const phase = moonPhase(ms);
-  const moonlight = moonPosition(hour) === null ? 0 : (1 - daylight) * (1 - Math.abs(phase - 0.5) * 2) * (1 - weather.cloud) * 0.16;
-  // The dark of the moon: nights near the new moon are darker still.
-  const dark = 1 - 0.22 * (1 - daylight) * Math.abs(phase - 0.5) * 2;
-  const [r, g, b] = [r0 * dark + moonlight * 0.8, g0 * dark + moonlight * 0.92, b0 * dark + moonlight * 1.1];
-  const wet = Math.max(weather.precip, weatherAt(ms - 15 * 60000, seed, biome).precip * 0.75, weatherAt(ms - 30 * 60000, seed, biome).precip * 0.45);
-  let [zenith, horizon] = skyColors(hour);
-  const grey = scale(weather.storm ? 0x5a626e : 0x8a929c, 0.2 + 0.8 * daylight);
-  const overcast = weather.cloud * 0.75 + weather.precip * 0.25;
-  zenith = mix(zenith, grey, overcast);
-  horizon = mix(horizon, grey, overcast * 0.8);
-  // Under a dense canopy the day never quite arrives, and the sky is the glow between far trunks.
-  const gloom = BIOMES[biome].gloom;
-  let light: [number, number, number] = [r * dim, g * dim, b * dim];
-  if (gloom !== undefined) {
-    const k = 0.45 + 0.55 * daylight;
-    // Clouds hardly reach under the canopy; heavy rain a little. At the height of the day it is lit just as
-    // it was drawn; the night takes it down to a cold floor, a little lighter under the moon.
-    const wetDim = 1 - WEATHER.dimming * weather.precip * 0.5;
-    const floor = [0.42, 0.52, 0.58];
-    light = floor.map((f, i) => Math.max(f + moonlight * [0.8, 0.92, 1.1][i], (f + (1 - f) * daylight) * gloom.light[i] * wetDim)) as [number, number, number];
-    zenith = mix(zenith, scale(gloom.zenith, k), 0.9);
-    horizon = mix(horizon, scale(gloom.horizon, k), 0.9);
+function nameOf(cloud: number, precip: number, kind: Precip, storm: boolean, fog: number): WeatherName {
+  if (storm) return 'storm';
+  if (kind === 'snow') return 'snow';
+  if (kind === 'rain') return 'rain';
+  if (fog > 0.45) return 'fog';
+  if (cloud > 0.7) return 'overcast';
+  if (cloud > 0.35) return 'cloudy';
+  return 'clear';
+}
+
+/** The weather at a world time for a place's tendency: slots that fade into the next. Pure. */
+export function weatherAt(worldHours: number, seed: number, t: Tendency): Weather {
+  const slot = Math.floor(worldHours / WEATHER_SLOT_HOURS);
+  const f = worldHours / WEATHER_SLOT_HOURS - slot;
+  const a = slotWeather(slot, seed, t);
+  const b = slotWeather(slot + 1, seed, t);
+  const k = smoothstep(1 - WEATHER_FADE_HOURS / WEATHER_SLOT_HOURS, 1, f);
+  const cloud = lerp(a.cloud, b.cloud, k);
+  const precip = lerp(a.precip, b.precip, k);
+  const snow = k < 0.5 ? a.snow : b.snow;
+  const storm = precip > 0.3 && (k < 0.5 ? a.storm : b.storm);
+  const fog = lerp(a.fog, b.fog, k);
+  const kind: Precip = precip <= 0.03 ? 'none' : snow ? 'snow' : 'rain';
+  const wind = windAt(worldHours, seed, t.wind, lerp(a.storm ? 1 : 0, b.storm ? 1 : 0, k));
+  return { cloud, precip: kind === 'none' ? 0 : precip, kind, storm, fog, wind, name: nameOf(cloud, precip, kind, storm, fog) };
+}
+
+/** Weather fixed by name, for the frozen mode and the tour. `wind` is also accepted: clear and blowing. */
+export function namedWeather(name: string, windSign = 1): Weather | null {
+  const w = (cloud: number, precip: number, kind: Precip, storm: boolean, fog: number, wind: number, n: WeatherName): Weather => ({
+    cloud,
+    precip,
+    kind,
+    storm,
+    fog,
+    wind: wind * windSign,
+    name: n,
+  });
+  switch (name) {
+    case 'clear':
+      return w(0.08, 0, 'none', false, 0, 0.15, 'clear');
+    case 'cloudy':
+      return w(0.5, 0, 'none', false, 0, 0.3, 'cloudy');
+    case 'overcast':
+      return w(0.9, 0, 'none', false, 0.1, 0.25, 'overcast');
+    case 'fog':
+      return w(0.6, 0, 'none', false, 0.9, 0.05, 'fog');
+    case 'rain':
+      return w(0.95, 0.7, 'rain', false, 0.15, 0.4, 'rain');
+    case 'snow':
+      return w(0.9, 0.6, 'snow', false, 0.1, 0.3, 'snow');
+    case 'storm':
+      return w(1, 0.95, 'rain', true, 0.1, 0.85, 'storm');
+    case 'wind':
+      return w(0.3, 0, 'none', false, 0, 0.95, 'clear');
+    default:
+      return null;
   }
-  return {
-    hour,
-    phase: phaseName(hour),
-    daylight,
-    lightR: light[0],
-    lightG: light[1],
-    lightB: light[2],
-    zenith,
-    horizon,
-    season: seasonOf(ms),
-    moon: phase,
-    weather,
-    wind: windAt(ms, seed, weather),
-    wet,
-  };
 }
 
-/** Where the sun is: across the sky from 6:00 to 19:30. x 0..1 left to right, y 0..1 up from the horizon. */
-export function sunPosition(hour: number): { x: number; y: number } | null {
-  const t = (hour - 6) / 13.5;
-  if (t <= 0 || t >= 1) return null;
-  return { x: 0.06 + 0.88 * t, y: Math.sin(Math.PI * t) };
-}
-
-/** Where the moon is: across the sky from 18:30 to 7:00. */
-export function moonPosition(hour: number): { x: number; y: number } | null {
-  const h = hour < 12 ? hour + 24 : hour;
-  const t = (h - 18.5) / 12.5;
-  if (t <= 0 || t >= 1) return null;
-  return { x: 0.06 + 0.88 * t, y: Math.sin(Math.PI * t) };
-}
-
-/** The moon's glyph for a phase; the filled part is lit. */
-export function moonGlyph(phase: number): string {
-  const i = Math.round(phase * 8) % 8;
-  return ['○', ')', '◑', '●', '●', '●', '◐', '('][i];
-}
-
-/** True during a lightning flash, from real time; only in storms. */
+/** True during a lightning flash (two quick flickers), from real seconds; only in storms. */
 export function flashAt(realSec: number, seed: number, weather: Weather): boolean {
   if (!weather.storm) return false;
-  const window = Math.floor(realSec / 6);
+  const window = Math.floor(realSec / 7);
   const h = hash2(window, 7, seed ^ 0xf1a5);
-  if (h / 4294967296 > 0.45) return false;
-  const at = ((h >>> 8) & 1023) / 1024; // when in the window
-  const f = realSec / 6 - window;
-  return (f > at && f < at + 0.02) || (f > at + 0.05 && f < at + 0.065);
+  if (h / 4294967296 > 0.4) return false;
+  const at = ((h >>> 8) & 1023) / 1024;
+  const f = realSec / 7 - window;
+  return (f > at && f < at + 0.012) || (f > at + 0.03 && f < at + 0.04);
 }

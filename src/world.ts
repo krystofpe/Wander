@@ -7,9 +7,9 @@ import { fbm1, noise1, unit } from './noise.ts';
 import type { Tendency } from './sky.ts';
 
 export const WORLD = {
-  /** Mean stretch length and how far a boundary may move from its grid point (metres): 400–1400 m. */
-  stretch: 900,
-  jitter: 250,
+  /** Mean stretch length and how far a boundary may move from its grid point (metres): 400–1200 m, about 6–17 minutes. */
+  stretch: 800,
+  jitter: 200,
   /** Half-width of a biome blend, metres (palette, sky, sound, weather). */
   blend: 120,
   /** How far the blend boundary wanders, metres: biomes interleave a little near a border. */

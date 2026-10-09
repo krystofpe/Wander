@@ -1,6 +1,30 @@
 // GLSL for the passes (research: HD §6–21). Rows are counted from the top everywhere in this file's maths;
 // framebuffer rows are flipped once where they are read or written.
 
+/**
+ * Local light at native resolution (research: Light §5–7): up to six lights (x, y in native view pixels, radius,
+ * intensity), summed with a soft falloff and cut into four rings, so each art pixel takes one of a few steps. A lit
+ * pixel moves toward its own daylight colour in the light's colour: firelight shows things as they are, warmed.
+ */
+export const LIGHT_GLSL = `
+uniform vec4 u_lights[6];
+uniform int u_lightCount;
+uniform vec3 u_lightColor;
+uniform float u_lightGain;
+uniform int u_albedoRow;
+float lightAt(vec2 p) {
+  float sum = 0.0;
+  for (int i = 0; i < 6; i++) {
+    if (i >= u_lightCount) break;
+    vec4 L = u_lights[i];
+    vec2 d = (p - L.xy) * vec2(1.0, 1.3);
+    float f = clamp(1.0 - length(d) / L.z, 0.0, 1.0);
+    sum += f * sqrt(f) * L.w;
+  }
+  return floor(min(sum, 1.0) * 4.0 + 0.4) / 4.0 * u_lightGain;
+}
+`;
+
 /** Resolves one layer at native resolution: role → palette, the two biome rows mixed by the column's blend. */
 export const RESOLVE_FS = `#version 300 es
 precision highp float;
@@ -16,8 +40,10 @@ uniform int u_rowBase;
 uniform float u_sway;
 uniform float u_time;
 uniform float u_gustX;
+uniform vec2 u_frac;
 layout(location = 0) out vec4 o_color;
 layout(location = 1) out vec4 o_glow;
+${LIGHT_GLSL}
 
 int roleAt(int x, int row, out int flags) {
   flags = 0;
@@ -56,9 +82,17 @@ void main() {
   vec4 pa = texelFetch(u_palette, ivec2(role, u_rowBase + a), 0);
   vec4 pb = texelFetch(u_palette, ivec2(role, u_rowBase + b), 0);
   vec4 p = mix(pa, pb, c.b);
-  o_color = vec4(p.rgb, 1.0);
   // Palette alpha carries how much a role glows (a lamp, a lit window at night): 1 means not at all.
   float glow = 1.0 - p.a;
+  vec3 col = p.rgb;
+  if (u_lightCount > 0 && u_lightGain > 0.0 && glow < 0.5) {
+    float q = lightAt(vec2(float(x), float(row)) + 0.5 - 1.0 - u_frac);
+    if (q > 0.0) {
+      vec3 alb = mix(texelFetch(u_palette, ivec2(role, u_albedoRow + a), 0).rgb, texelFetch(u_palette, ivec2(role, u_albedoRow + b), 0).rgb, c.b);
+      col = mix(col, max(col, alb * u_lightColor * 1.35), q);
+    }
+  }
+  o_color = vec4(col, 1.0);
   o_glow = vec4(p.rgb * glow, glow);
 }`;
 
@@ -175,10 +209,66 @@ void main() {
   o_color = vec4(c, 1.0);
 }`;
 
+/** Adds a layer's glow attachment into the native glow buffer, at its fractional offset (smearing is fine for glow). */
+export const GLOWADD_FS = `#version 300 es
+precision highp float;
+uniform sampler2D u_tex;
+uniform vec2 u_texSize;
+uniform vec2 u_frac;
+uniform vec2 u_size;
+out vec4 o_color;
+void main() {
+  vec2 nat = vec2(gl_FragCoord.x, u_size.y - gl_FragCoord.y);
+  vec2 t = nat + u_frac + 1.0;
+  o_color = texture(u_tex, vec2(t.x, u_texSize.y - t.y) / u_texSize);
+}`;
+
+/** Dual-filter downsample (Bjørge): the centre and four diagonal half-texel taps. */
+export const DOWN_FS = `#version 300 es
+precision highp float;
+uniform sampler2D u_tex;
+uniform vec2 u_texel;
+uniform vec2 u_size;
+out vec4 o_color;
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_size;
+  vec2 h = u_texel * 0.5;
+  vec4 s = texture(u_tex, uv) * 4.0;
+  s += texture(u_tex, uv + vec2(-h.x, -h.y));
+  s += texture(u_tex, uv + vec2(h.x, -h.y));
+  s += texture(u_tex, uv + vec2(-h.x, h.y));
+  s += texture(u_tex, uv + vec2(h.x, h.y));
+  o_color = s / 8.0;
+}`;
+
+/** Dual-filter upsample: a tent of eight taps around the texel, added onto the larger level. */
+export const UP_FS = `#version 300 es
+precision highp float;
+uniform sampler2D u_tex;
+uniform vec2 u_texel;
+uniform vec2 u_size;
+out vec4 o_color;
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_size;
+  vec2 h = u_texel * 0.5;
+  vec4 s = texture(u_tex, uv + vec2(-h.x * 2.0, 0.0));
+  s += texture(u_tex, uv + vec2(-h.x, h.y)) * 2.0;
+  s += texture(u_tex, uv + vec2(0.0, h.y * 2.0));
+  s += texture(u_tex, uv + vec2(h.x, h.y)) * 2.0;
+  s += texture(u_tex, uv + vec2(h.x * 2.0, 0.0));
+  s += texture(u_tex, uv + vec2(h.x, -h.y)) * 2.0;
+  s += texture(u_tex, uv + vec2(0.0, -h.y * 2.0));
+  s += texture(u_tex, uv + vec2(-h.x, -h.y)) * 2.0;
+  o_color = s / 12.0;
+}`;
+
 /** The last pass: scene to the canvas with a gentle vignette, temporal grain and a triangular dither (Gjøl). */
 export const FINAL_FS = `#version 300 es
 precision highp float;
 uniform sampler2D u_scene;
+uniform sampler2D u_bloom;
+uniform float u_bloomStrength;
+uniform vec4 u_viewport;
 uniform vec2 u_size;
 uniform float u_time;
 uniform float u_grain;
@@ -195,6 +285,9 @@ float hash(vec2 p) {
 void main() {
   vec2 uv = gl_FragCoord.xy / u_size;
   vec3 c = texture(u_scene, uv).rgb;
+  // Bloom from the glowing things only, smooth, at full resolution.
+  vec2 bv = (gl_FragCoord.xy - u_viewport.xy) / u_viewport.zw;
+  c += texture(u_bloom, bv).rgb * u_bloomStrength;
   vec2 d = uv - 0.5;
   float v = 1.0 - u_vignette * smoothstep(0.35, 0.95, length(d * vec2(1.0, 0.8)) * 1.25);
   c *= v;

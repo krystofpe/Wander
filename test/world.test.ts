@@ -23,7 +23,7 @@ test('stretches last about 5 to 20 minutes at walking pace', () => {
   assert.ok(all.length > 200);
   for (const s of all) {
     const minutes = (s.end - s.start) / 1.15 / 60;
-    assert.ok(minutes >= 3.5 && minutes <= 24, `${s.biome} lasts ${minutes.toFixed(1)} min`);
+    assert.ok(minutes >= 5 && minutes <= 20, `${s.biome} lasts ${minutes.toFixed(1)} min`);
   }
 });
 

@@ -2,9 +2,10 @@
 // masks, species picked by the biome weights so transitions mix naturally (research: Procgen §26). Pure: the
 // painters draw from it and the brain finds its seats, views, shelters and camps in it.
 import type { BiomeId } from './biomes.ts';
-import { columnDistance } from './layers.ts';
+import type { Spot } from './brain.ts';
+import { GROUND, LAYERS, PX_PER_M, columnDistance } from './layers.ts';
 import { fbm1, unit } from './noise.ts';
-import { biomeAt, share } from './world.ts';
+import { biomeAt, groundHeight, landmarksBetween, share, stretchAt } from './world.ts';
 import type { Blend } from './world.ts';
 
 export type Species =
@@ -247,4 +248,65 @@ function chance(blend: Blend, sp: Species, layerName: string, r: number): { flor
 function findFlora(id: BiomeId, sp: Species, layerName: string): Flora | null {
   for (const fl of FLORA[id]) if (fl.species === sp && fl.on.includes(layerName)) return fl;
   return null;
+}
+
+// ── Spots for the brain ────────────────────────────────────────────────────
+
+
+/** What he can sit on, and how high its top is (native px above the ground). */
+const SEATS: Partial<Record<Species, { quality: number; height: (size: number) => number }>> = {
+  rock: { quality: 0.75, height: (s) => Math.round(s * 0.5) },
+  boulder: { quality: 0.6, height: (s) => Math.round(s * 0.5) },
+  log: { quality: 0.8, height: (s) => Math.max(3, Math.round(s * 0.16)) },
+  stump: { quality: 0.55, height: (s) => Math.round(s * 0.6) },
+  drift: { quality: 0.7, height: (s) => Math.max(3, Math.round(s * 0.16)) },
+};
+
+const SHELTER_TREES: ReadonlySet<Species> = new Set(['pine', 'spruce', 'oak']);
+/** Biomes where there is no dry ground to camp on. */
+const WET: ReadonlySet<string> = new Set(['swamp']);
+
+export type SpotAt = Spot & { readonly height: number; readonly u: number };
+
+/**
+ * The spots between d0 and d1 (metres): seats on rocks, logs and stumps of a fitting height; views from rises and
+ * toward landmarks; shelter under big trees; flat, dry places to camp. Pure, from the same placements the playfield
+ * is painted with, so a seat he chooses is really there.
+ */
+export function spotsBetween(seed: number, d0: number, d1: number): SpotAt[] {
+  const out: SpotAt[] = [];
+  const ground = LAYERS[GROUND];
+  const things = placeBetween(seed, ground.name, GROUND, 1, Math.floor(d0 * PX_PER_M), Math.ceil(d1 * PX_PER_M), []);
+  for (const p of things) {
+    const d = p.u / PX_PER_M;
+    const seat = SEATS[p.species];
+    if (seat !== undefined && seat.height(p.size) <= 12) out.push({ kind: 'seat', at: d, what: p.species, quality: seat.quality, height: seat.height(p.size), u: p.u });
+    // A standing stone is something to stand beside and look at.
+    if (p.species === 'stone') out.push({ kind: 'view', at: d - 1.5, what: 'stone', quality: 0.5, height: 0, u: p.u });
+    if (SHELTER_TREES.has(p.species) && p.size >= 90) out.push({ kind: 'shelter', at: d, what: p.species === 'oak' ? 'oak' : 'pine', quality: 0.6 + Math.min(0.3, (p.size - 90) / 200), height: 0, u: p.u });
+  }
+  // Rises: a local high point of the ground with a little prominence is a view.
+  const step = 12;
+  for (let d = Math.ceil(d0 / step) * step; d < d1; d += step) {
+    const h = groundHeight(seed, d);
+    const around = Math.max(groundHeight(seed, d - 40), groundHeight(seed, d + 40));
+    if (h > around + 1.2 && h >= groundHeight(seed, d - step) && h >= groundHeight(seed, d + step)) {
+      out.push({ kind: 'view', at: d, what: 'rise', quality: Math.min(1, 0.4 + (h - around) / 6), height: 0, u: Math.round(d * PX_PER_M) });
+    }
+  }
+  // Landmarks are worth stopping for.
+  for (const m of landmarksBetween(seed, d0 - 40, d1 + 40)) {
+    const at = m.at - 25;
+    if (at >= d0 && at < d1) out.push({ kind: 'view', at, what: m.kind, quality: 0.95, height: 0, u: Math.round(at * PX_PER_M) });
+  }
+  // Camps: flat, dry ground every 20 m, better near trees.
+  for (let d = Math.ceil(d0 / 20) * 20; d < d1; d += 20) {
+    if (WET.has(stretchAt(seed, d).biome)) continue;
+    const slope = Math.abs(groundHeight(seed, d + 3) - groundHeight(seed, d - 3)) / 6;
+    if (slope > 0.06) continue;
+    const trees = things.filter((p) => SHELTER_TREES.has(p.species) && Math.abs(p.u / PX_PER_M - d) < 18).length;
+    out.push({ kind: 'camp', at: d, what: trees > 0 ? 'clearing' : 'open ground', quality: 0.5 + Math.min(0.4, trees * 0.15), height: 0, u: Math.round(d * PX_PER_M) });
+  }
+  out.sort((a, b) => a.at - b.at);
+  return out;
 }

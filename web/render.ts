@@ -5,7 +5,7 @@ import { BIOME_IDS, BIOMES } from '../src/biomes.ts';
 import type { BiomeId } from '../src/biomes.ts';
 import { CHUNK_W, LAYERS, RING_W, VIEW_H, columnDistance } from '../src/layers.ts';
 import type { LayerDef } from '../src/layers.ts';
-import { buildRow, hazeAt, labToBytes } from '../src/palette.ts';
+import { buildRow, gradeOf, hazeAt, labToBytes, newGrade, newMoment } from '../src/palette.ts';
 import type { Grade } from '../src/palette.ts';
 import { Chunk } from '../src/paint/chunk.ts';
 import { paintLand } from '../src/paint/land.ts';
@@ -13,9 +13,9 @@ import { paintFore, paintGround, paintTrees } from '../src/paint/scene.ts';
 import { stretchesBetween, WORLD } from '../src/world.ts';
 import { Gpu, QUAD_VS } from './gl.ts';
 import type { Program } from './gl.ts';
-import { COMPOSITE_FS, FINAL_FS, RESOLVE_FS, SKY_FS } from './shaders.ts';
+import { COMPOSITE_FS, DOWN_FS, FINAL_FS, GLOWADD_FS, RESOLVE_FS, SKY_FS, UP_FS } from './shaders.ts';
 import { SpriteBatch } from './sprites.ts';
-import type { Atlas } from './sprites.ts';
+import type { Atlas, Light } from './sprites.ts';
 
 /** Biome rows reserved per layer in the palette texture. */
 const BIOME_SLOTS = 16;
@@ -62,7 +62,22 @@ export type View = {
   /** Rim light on sprites: which side the light is on (−1 left, +1 right, 0 none) and how strong (0..1). */
   rimSide: number;
   rimStrength: number;
+  /** Local lights (fire, ember, windows) in native view pixels. */
+  light: Light;
+  /** How strongly the glowing things bloom. */
+  bloom: number;
 };
+
+/** How much a layer takes the local light: fully on the playfield, less the further back it stands. */
+function lightGain(kind: string, z: number): number {
+  if (kind === 'ground' || kind === 'fore') return 1;
+  if (z <= 1.5) return 0.55;
+  if (z <= 2.1) return 0.22;
+  return 0;
+}
+
+/** The first palette row holding each biome's daylight colours, unhazed: what local light reveals. */
+export const ALBEDO_ROW = LAYERS.length * 16;
 
 /** The palette row of a biome on a layer. */
 export function paletteRow(layer: number, biome: number): number {
@@ -80,6 +95,13 @@ export class Renderer {
   private readonly composite: Program;
   private readonly sky: Program;
   private readonly final: Program;
+  private readonly glowAdd: Program;
+  private readonly down: Program;
+  private readonly up: Program;
+  /** The bloom chain: native glow, then halves; level 0 is what the final pass adds. */
+  private bloomTex: WebGLTexture[] = [];
+  private bloomFb: WebGLFramebuffer[] = [];
+  private bloomSize: [number, number][] = [];
   private readonly layers: LayerGpu[] = [];
   private readonly palette: Uint8Array;
   private readonly paletteTex: WebGLTexture;
@@ -118,7 +140,10 @@ export class Renderer {
     this.sky = prog(SKY_FS, 'sky');
     this.final = prog(FINAL_FS, 'final');
     this.ground = new SpriteBatch(this.gpu, quadBuf);
-    const rows = LAYERS.length * BIOME_SLOTS;
+    this.glowAdd = prog(GLOWADD_FS, 'glow');
+    this.down = prog(DOWN_FS, 'down');
+    this.up = prog(UP_FS, 'up');
+    const rows = (LAYERS.length + 1) * BIOME_SLOTS;
     this.palette = new Uint8Array(256 * rows * 4);
     this.paletteTex = this.gpu.texture({ width: 256, height: rows, internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE, bytes: 4 });
     let maxH = 0;
@@ -140,6 +165,13 @@ export class Renderer {
       });
     });
     this.chunk = new Chunk(CHUNK_W, maxH);
+    // Daylight rows: each biome at noon, no haze. Local light moves pixels toward these.
+    const noon = newMoment();
+    noon.elevation = 45;
+    const g = gradeOf(noon, newGrade());
+    BIOME_IDS.forEach((id, b) => buildRow(id, g, 0, 0, this.palette, (ALBEDO_ROW + b) * 1024));
+    gl.bindTexture(gl.TEXTURE_2D, this.paletteTex);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, ALBEDO_ROW, 256, BIOME_SLOTS, gl.RGBA, gl.UNSIGNED_BYTE, this.palette.subarray(ALBEDO_ROW * 1024, (ALBEDO_ROW + BIOME_SLOTS) * 1024));
   }
 
   /** Sizes everything for a canvas of w×h device pixels: the integer scale and the native view grown to fit. */
@@ -160,6 +192,19 @@ export class Renderer {
       l.color = this.gpu.texture(spec);
       l.glow = this.gpu.texture(spec);
       l.fb = this.gpu.framebuffer([l.color, l.glow]);
+    }
+    // The bloom chain at native size and below.
+    for (const fb of this.bloomFb) this.gpu.deleteFramebuffer(fb);
+    for (const t of this.bloomTex) this.gpu.deleteTexture(t);
+    this.bloomTex = [];
+    this.bloomFb = [];
+    this.bloomSize = [];
+    const hf = this.gpu.floatTargets;
+    for (let i = 0, bw = this.nativeW, bh = this.nativeH; i < 5; i++, bw = Math.max(1, bw >> 1), bh = Math.max(1, bh >> 1)) {
+      const t = this.gpu.texture({ width: bw, height: bh, internal: hf ? gl.RGBA16F : gl.RGBA8, format: gl.RGBA, type: hf ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE, filter: gl.LINEAR, bytes: hf ? 8 : 4 });
+      this.bloomTex.push(t);
+      this.bloomFb.push(this.gpu.framebuffer([t]));
+      this.bloomSize.push([bw, bh]);
     }
     this.gpu.deleteFramebuffer(this.sceneFb);
     this.gpu.deleteTexture(this.scene);
@@ -296,7 +341,13 @@ export class Renderer {
     gl.uniform1i(this.resolve.u('u_targetH'), this.nativeH + 2);
     gl.uniform1f(this.resolve.u('u_time'), v.time % 1000);
     gl.uniform1f(this.resolve.u('u_gustX'), (v.time * 60) % 300);
+    gl.uniform4fv(this.resolve.u('u_lights'), v.light.lights);
+    gl.uniform1i(this.resolve.u('u_lightCount'), v.light.count);
+    gl.uniform3fv(this.resolve.u('u_lightColor'), v.light.color);
+    gl.uniform1i(this.resolve.u('u_albedoRow'), ALBEDO_ROW);
     for (const l of this.layers) {
+      gl.uniform2f(this.resolve.u('u_frac'), l.fx, l.fy);
+      gl.uniform1f(this.resolve.u('u_lightGain'), lightGain(l.def.kind, l.def.z));
       gl.bindFramebuffer(gl.FRAMEBUFFER, l.fb);
       gl.viewport(0, 0, this.nativeW + 2, this.nativeH + 2);
       gl.activeTexture(gl.TEXTURE0);
@@ -311,7 +362,63 @@ export class Renderer {
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
 
-    // 2. Full-resolution composite into the scene.
+    // 2. The glow buffer at native size: every layer's glowing pixels at their offsets, and the sprites' glow;
+    // then blurred down a chain of halves and back up (dual filter).
+    const nw = this.nativeW;
+    const nh = this.nativeH;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.bloomFb[0]);
+    gl.viewport(0, 0, nw, nh);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE);
+    gl.useProgram(this.glowAdd.program);
+    gl.uniform4f(this.glowAdd.u('u_rect'), -1, -1, 1, 1);
+    gl.uniform1i(this.glowAdd.u('u_tex'), 0);
+    gl.uniform2f(this.glowAdd.u('u_texSize'), nw + 2, nh + 2);
+    gl.uniform2f(this.glowAdd.u('u_size'), nw, nh);
+    gl.activeTexture(gl.TEXTURE0);
+    for (const l of this.layers) {
+      gl.bindTexture(gl.TEXTURE_2D, l.glow);
+      gl.uniform2f(this.glowAdd.u('u_frac'), l.fx, l.fy);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    if (this.atlas !== null) this.ground.draw(this.atlas, this.paletteTex, 1, [0, 0, nw, nh], nw, nh, labToRgb(v.grade.light), 0, 0, v.light, 1);
+    gl.bindVertexArray(this.quad);
+    gl.disable(gl.BLEND);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.useProgram(this.down.program);
+    gl.uniform4f(this.down.u('u_rect'), -1, -1, 1, 1);
+    gl.uniform1i(this.down.u('u_tex'), 0);
+    for (let i = 1; i < this.bloomTex.length; i++) {
+      const [bw, bh] = this.bloomSize[i];
+      const [pw, ph] = this.bloomSize[i - 1];
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.bloomFb[i]);
+      gl.viewport(0, 0, bw, bh);
+      gl.bindTexture(gl.TEXTURE_2D, this.bloomTex[i - 1]);
+      gl.uniform2f(this.down.u('u_texel'), 1 / pw, 1 / ph);
+      gl.uniform2f(this.down.u('u_size'), bw, bh);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.useProgram(this.up.program);
+    gl.uniform4f(this.up.u('u_rect'), -1, -1, 1, 1);
+    gl.uniform1i(this.up.u('u_tex'), 0);
+    for (let i = this.bloomTex.length - 1; i > 0; i--) {
+      const [bw, bh] = this.bloomSize[i - 1];
+      const [sw, sh] = this.bloomSize[i];
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.bloomFb[i - 1]);
+      gl.viewport(0, 0, bw, bh);
+      gl.bindTexture(gl.TEXTURE_2D, this.bloomTex[i]);
+      gl.uniform2f(this.up.u('u_texel'), 1 / sw, 1 / sh);
+      gl.uniform2f(this.up.u('u_size'), bw, bh);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    gl.disable(gl.BLEND);
+
+    // 3. Full-resolution composite into the scene.
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.sceneFb);
     gl.viewport(0, 0, this.canvasW, this.canvasH);
     gl.clearColor(0, 0, 0, 1);
@@ -371,14 +478,14 @@ export class Renderer {
       gl.uniform1f(this.composite.u('u_haze'), hazeAt(l.def.z, 0.12));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       if (l.def.kind === 'ground' && this.atlas !== null) {
-        this.ground.draw(this.atlas, this.paletteTex, this.scale, [vx, vy, vw, vh], this.canvasW, this.canvasH, labToRgb(g.light), v.rimSide, v.rimStrength);
+        this.ground.draw(this.atlas, this.paletteTex, this.scale, [vx, vy, vw, vh], this.canvasW, this.canvasH, labToRgb(g.light), v.rimSide, v.rimStrength, v.light);
       }
     }
     gl.bindVertexArray(this.quad);
     gl.disable(gl.BLEND);
     gl.disable(gl.SCISSOR_TEST);
 
-    // 3. Final pass to the canvas.
+    // 4. Final pass to the canvas.
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, this.canvasW, this.canvasH);
     gl.useProgram(this.final.program);
@@ -386,6 +493,11 @@ export class Renderer {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.scene);
     gl.uniform1i(this.final.u('u_scene'), 0);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.bloomTex[0]);
+    gl.uniform1i(this.final.u('u_bloom'), 1);
+    gl.uniform1f(this.final.u('u_bloomStrength'), v.bloom);
+    gl.uniform4f(this.final.u('u_viewport'), vx, vy, vw, vh);
     gl.uniform2f(this.final.u('u_size'), this.canvasW, this.canvasH);
     gl.uniform1f(this.final.u('u_time'), v.time % 1000);
     gl.uniform1f(this.final.u('u_grain'), 0.035);

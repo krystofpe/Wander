@@ -1,0 +1,251 @@
+// The stage: from his life and the moment, everything the renderer draws: the camera, the light, the sun and moon,
+// his sprite in the pose of his stage, the fire, the smoke. No allocation per frame beyond a few small numbers.
+import { BIOME_IDS } from '../src/biomes.ts';
+import { GROUND, HIM_X, PX_PER_M, VIEW_H, WALK_Y } from '../src/layers.ts';
+import { dragging } from '../src/life.ts';
+import type { Life } from '../src/life.ts';
+import { gradeOf, newGrade, newMoment } from '../src/palette.ts';
+import { HORIZON } from '../src/paint/land.ts';
+import { arcX, moonAt, roadMoon, shownHour, sunElevation } from '../src/sky.ts';
+import type { Weather } from '../src/sky.ts';
+import { loopFrame, walkFrame } from '../src/walker.ts';
+import { biomeAt, blended, groundHeight } from '../src/world.ts';
+import { ALBEDO_ROW, paletteRow } from './render.ts';
+import type { Renderer, View } from './render.ts';
+import type { Atlas } from './sprites.ts';
+
+type Puff = { x: number; y: number; vx: number; vy: number; age: number; life: number; big: boolean };
+
+/** Quake's "flicker" light style: base brightness, popping upward now and then, read at 10 Hz (research: Light §6). */
+const FLICKER = 'mmnmmommommnonmmonqnmmo';
+const flicker = (time: number, offset: number): number => (FLICKER.charCodeAt(Math.floor(time * 10 + offset) % FLICKER.length) - 97) / 12;
+
+const PUFFS = 48;
+
+export class Stage {
+  readonly view: View;
+  readonly moment = newMoment();
+  readonly grade = newGrade();
+  /** Where the camera frames him: his share of the screen width, eased between walking and stopped. */
+  private framing = HIM_X;
+  private camY = Number.NaN;
+  private readonly puffs: Puff[] = Array.from({ length: PUFFS }, () => ({ x: 0, y: 0, vx: 0, vy: 0, age: 0, life: 0, big: false }));
+  private puffAt = 0;
+  private fireSmoke = 0;
+  readonly moonStart: number;
+
+  constructor(seed: number, moonStart: number) {
+    this.moonStart = moonStart;
+    this.view = {
+      seed,
+      camX: 0,
+      camY: 0,
+      grade: this.grade,
+      sunX: 0,
+      sunY: 0,
+      time: 0,
+      wind: 0,
+      horizon: 190,
+      clear: 1,
+      rimSide: 0,
+      rimStrength: 0,
+      sunUp: 0,
+      moonX: 0,
+      moonY: 0,
+      moonPhase: 0.5,
+      moonUp: 0,
+      light: { lights: new Float32Array(24), count: 0, color: new Float32Array([1, 0.62, 0.32]), albedoRow: ALBEDO_ROW },
+      bloom: 0.5,
+    };
+  }
+
+  /** A puff of smoke at native screen coordinates, drifting with the wind. */
+  puff(x: number, y: number, wind: number, big: boolean): void {
+    const p = this.puffs[this.puffAt];
+    this.puffAt = (this.puffAt + 1) % PUFFS;
+    p.x = x;
+    p.y = y;
+    p.vx = wind * 6 + (big ? 0 : 1.2);
+    p.vy = big ? -5 : -2.2;
+    p.age = 0;
+    p.life = big ? 3.2 : 2.4;
+    p.big = big;
+  }
+
+  /**
+   * Fills the view for this frame and queues the sprites. `hour` is the hour of the day; `time` real seconds of
+   * animation; `dt` real seconds since the last frame (0 when frozen); `still` snaps the camera (frozen shots).
+   */
+  update(r: Renderer, atlas: Atlas | null, l: Life, hour: number, natural: boolean, w: Weather, time: number, dt: number, still: boolean, pose: string | null): void {
+    const v = this.view;
+    const m = this.moment;
+    const W = r.nativeW;
+    const extra = r.nativeH - VIEW_H;
+    m.elevation = sunElevation(hour, natural);
+    m.morning = shownHour(hour, natural) < 12;
+    m.cloud = w.cloud;
+    m.precip = w.precip;
+    m.fog = w.fog;
+    m.storm = w.storm;
+    m.time = time;
+    const ax = arcX(shownHour(hour, natural));
+    m.side = Math.max(-1, Math.min(1, ax * 2 - 1));
+    v.moonPhase = roadMoon(l.clock, this.moonStart);
+    m.moonlight = 1 - Math.abs(v.moonPhase - 0.5) * 2;
+    gradeOf(m, this.grade);
+
+    // The camera: him left of centre while he walks, eased toward the middle when he stops.
+    const stopped = l.stage !== 'walk';
+    const want = stopped ? 0.5 : HIM_X;
+    this.framing = still ? want : this.framing + (want - this.framing) * Math.min(1, dt / 5);
+    const groundY = groundHeight(l.seed, l.at) * PX_PER_M;
+    if (Number.isNaN(this.camY) || still) this.camY = groundY;
+    else this.camY += (groundY - this.camY) * Math.min(1, dt * 0.8);
+    v.camX = l.at * PX_PER_M - this.framing * W;
+    v.camY = this.camY;
+    v.time = time;
+    v.wind = w.wind;
+    v.horizon = blended(biomeAt(l.seed, l.at), (id) => HORIZON[id]);
+    v.clear = 1 - Math.min(1, w.cloud * 1.1);
+    v.sunX = ax * W;
+    v.sunY = extra + v.horizon - (m.elevation / 52) * v.horizon;
+    v.sunUp = Math.min(1, Math.max(0, (m.elevation + 1) / 3));
+    const moon = moonAt(hour, v.moonPhase, natural);
+    v.moonX = moon.x * W;
+    v.moonY = extra + v.horizon - (moon.elevation / 52) * v.horizon;
+    v.moonUp = moon.x > 0 && moon.x < 1 && Math.abs(v.moonPhase - 0.5) < 0.47 ? Math.min(1, Math.max(0, (moon.elevation + 1) / 3)) : 0;
+    const low = Math.max(0, 1 - Math.abs(m.elevation - 2) / 14);
+    v.rimSide = m.side > 0.15 ? 1 : m.side < -0.15 ? -1 : 0;
+    v.rimStrength = Math.min(0.85, 0.15 + 0.7 * low) * (1 - this.grade.night) * (1 - w.cloud * 0.8);
+
+    r.ground.clear();
+    const light = v.light;
+    light.count = 0;
+    v.bloom = 0.35 + 0.55 * this.grade.night;
+    if (atlas === null) return;
+    const b = biomeAt(l.seed, l.at);
+    const rowA = paletteRow(GROUND, BIOME_IDS.indexOf(b.a));
+    const rowB = paletteRow(GROUND, BIOME_IDS.indexOf(b.b));
+    // Screen row of the ground's top at a distance, and screen column of a distance.
+    const groundRow = (d: number): number => WALK_Y + extra + this.camY - groundHeight(l.seed, d) * PX_PER_M;
+    const colOf = (d: number): number => d * PX_PER_M - v.camX;
+
+    // The fire, and its smoke.
+    const fire = atlas.sheets.fire;
+    if (l.fire !== null) {
+      const fx = colOf(l.fire.at);
+      const fy = groundRow(l.fire.at);
+      const tag = l.fire.heat > 0.55 ? 'burn' : l.fire.heat > 0.2 ? 'low' : l.fire.heat > 0.02 ? 'embers' : 'ashes';
+      // The fire's light: it reaches further as it burns up, flickering; by day it hardly shows.
+      if (l.fire.heat > 0.02 && light.count < 6) {
+        const o = light.count * 4;
+        const fl = flicker(time, 0);
+        light.lights[o] = fx;
+        light.lights[o + 1] = fy - 7;
+        light.lights[o + 2] = (26 + 70 * l.fire.heat) * (0.96 + 0.04 * fl);
+        light.lights[o + 3] = (0.35 + 0.65 * l.fire.heat) * fl * (0.3 + 0.7 * this.grade.night);
+        light.count++;
+      }
+      const frames = fire[tag];
+      const f = frames[loopFrame(frames.map((x) => x[4]), time)];
+      r.ground.add(fx - 10, fy - 21, f, rowA, rowB, b.k, false);
+      this.fireSmoke -= dt * (0.6 + l.fire.heat);
+      if (this.fireSmoke <= 0 && dt > 0) {
+        this.fireSmoke = 0.5 + Math.random() * 0.6;
+        this.puff(fx + (Math.random() - 0.5) * 3, fy - 12 - l.fire.heat * 6, v.wind, true);
+      }
+    }
+
+    // Him.
+    const sheet = atlas.sheets.wanderer;
+    const stage = pose ?? l.stage;
+    const seat = l.seat <= 2 ? 0 : l.seat <= 7 ? 5 : 10;
+    let frame: readonly number[];
+    let lift = 0;
+    const loop = (tag: string): readonly number[] => sheet[tag][loopFrame(sheet[tag].map((x) => x[4]), time)];
+    switch (stage) {
+      case 'walk':
+        frame = sheet.walk[walkFrame(l.walked)];
+        break;
+      case 'stand':
+        frame = l.smoking >= 0 ? sheet.smoke[smokeStage(l)] : loop('stand');
+        break;
+      case 'smoke':
+        frame = sheet.smoke[2];
+        break;
+      case 'look':
+        frame = loop('look');
+        break;
+      case 'back':
+        frame = loop('back');
+        break;
+      case 'sitdown':
+      case 'standup':
+      case 'sit':
+        frame = l.smoking >= 0 && stage === 'sit' ? sheet[`sitsmoke${seat}`][dragging(l) ? 2 : l.smoking % 9.5 < 4 ? 1 : 0] : loop(`sit${seat}`);
+        lift = seat - l.seat;
+        break;
+      case 'kneel':
+      case 'pack':
+        frame = loop('kneel');
+        break;
+      case 'campsit':
+      case 'wake':
+        frame = l.smoking >= 0 ? sheet.sitsmoke0[dragging(l) ? 2 : l.smoking % 9.5 < 4 ? 1 : 0] : loop('sit0');
+        break;
+      case 'lie':
+        frame = loop('lie');
+        break;
+      case 'sleep':
+        frame = loop('sleep');
+        break;
+      default:
+        frame = sheet.stand[0];
+    }
+    const hx = colOf(l.at);
+    const hy = groundRow(l.at) + lift;
+    r.ground.add(hx - 14, hy - 35, frame, rowA, rowB, b.k, false);
+
+    // The ember lights the inside of his hood a little, more on the drag.
+    if (l.smoking >= 0 && light.count < 6) {
+      const o = light.count * 4;
+      const ey = stage === 'stand' ? 12 : 12 + (34 - (stage === 'campsit' || stage === 'wake' ? 0 : seat)) - 21;
+      light.lights[o] = hx - 14 + 22;
+      light.lights[o + 1] = hy - 35 + ey;
+      light.lights[o + 2] = dragging(l) ? 9 : 6;
+      light.lights[o + 3] = (dragging(l) ? 0.9 : 0.45) * (0.4 + 0.6 * this.grade.night);
+      light.count++;
+    }
+    // Cigarette smoke: a thin thread from the ember while he smokes, a cloud on the exhale.
+    if (l.smoking >= 0 && dt > 0 && Math.random() < dt * 1.5) {
+      const ember = stage === 'stand' ? [22, 12] : [22, 12 + (34 - (stage === 'campsit' || stage === 'wake' ? 0 : seat)) - 21];
+      this.puff(hx - 14 + ember[0] + 1, hy - 35 + ember[1] - 1, v.wind, false);
+    }
+    // The puffs, aging and drifting.
+    const puffFrames = fire.puff;
+    for (const p of this.puffs) {
+      if (p.life <= 0) continue;
+      p.age += dt;
+      if (p.age >= p.life) {
+        p.life = 0;
+        continue;
+      }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx += v.wind * dt * 2;
+      const k = p.age / p.life;
+      const fi = Math.min(puffFrames.length - 1, Math.floor((p.big ? 1 : 0) + k * (puffFrames.length - (p.big ? 1 : 0))));
+      r.ground.add(p.x, p.y, puffFrames[fi], rowA, rowB, b.k, false, 1 - k * 0.3);
+    }
+  }
+}
+
+/** Which standing-smoke frame: hand up (0, 1), the drag (2, 3), hand down (4). */
+function smokeStage(l: Life): number {
+  const p = (l.smoking - 2 + 9.5) % 9.5;
+  if (p < 0.8) return 1;
+  if (p < 1.6) return 2;
+  if (p < 2.2) return 3;
+  if (p < 3) return 4;
+  return 0;
+}

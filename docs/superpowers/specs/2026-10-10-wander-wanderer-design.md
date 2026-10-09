@@ -99,7 +99,7 @@ Each layer's baseline is `y_h + (y_g − y_h)/z`, where the horizon `y_h` and gr
 
 **Determinism** (R: Procgen §1–3). Every random decision is a counter-based hash (SquirrelNoise5) of integer coordinates and the seed; noise is 1D lattice noise on hashed gradients, with no tables and no `Math.sin`, so it repeats nowhere and gives the same bits in every engine. The same seed and distance always give the same place.
 
-**Stretches** (R: Procgen §13). The road is cut into stretches of 400–1400 m (about 5–20 minutes at walking pace): boundary `k` sits at `900·k` metres moved by up to ±250 m. Any distance finds its stretch directly.
+**Stretches** (R: Procgen §13). The road is cut into stretches of 400–1200 m (about 6–17 minutes at walking pace): boundary `k` sits at `800·k` metres moved by up to ±200 m. Any distance finds its stretch directly.
 
 **Which biome** (R: Procgen §12). Four slow climate fields along the road (temperature, moisture, altitude, human trace), each mapped through tanh to spread evenly, place every stretch in climate space; each biome has a centroid there. An even stretch picks among the three nearest biomes by weight; an odd stretch picks among the best that differ from both even neighbours and may sit next to them (never desert by tundra or swamp, never tundra by swamp). No chain, no look-back: any stretch is found in a few steps. Over long roads every biome comes up 4–12% of the time.
 

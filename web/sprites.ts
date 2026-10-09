@@ -4,6 +4,7 @@
 import { decodeIndexedPng } from '../src/png.ts';
 import { Gpu } from './gl.ts';
 import type { Program } from './gl.ts';
+import { LIGHT_GLSL } from './shaders.ts';
 
 export type Atlas = {
   readonly w: number;
@@ -24,6 +25,9 @@ export async function loadAtlas(gpu: Gpu): Promise<Atlas> {
 }
 
 const MAX = 512;
+
+/** The local lights of a frame, in native view pixels: x, y, radius, intensity (six at most), and their colour. */
+export type Light = { readonly lights: Float32Array; count: number; readonly color: Float32Array; albedoRow: number };
 /** Floats per instance: rect (x, y, w, h; native, top-left), source (atlas x, y, w, h), rows (A, B, k, flip), alpha. */
 const STRIDE = 13;
 
@@ -40,7 +44,9 @@ out vec2 v_local;
 flat out vec4 v_src;
 flat out vec4 v_rows;
 flat out float v_alpha;
+flat out vec2 v_origin;
 void main() {
+  v_origin = i_rect.xy;
   // Snap the sprite's top-left to whole screen pixels: every art pixel stays exactly scale × scale.
   vec2 origin = floor(i_rect.xy * u_scale + 0.5);
   vec2 p = origin + a_pos * i_rect.zw * u_scale;
@@ -61,11 +67,14 @@ uniform sampler2D u_palette;
 uniform vec3 u_rim;
 uniform float u_rimSide;
 uniform float u_rimStrength;
+uniform int u_mode;
 in vec2 v_local;
 flat in vec4 v_src;
 flat in vec4 v_rows;
 flat in float v_alpha;
+flat in vec2 v_origin;
 out vec4 o_color;
+${LIGHT_GLSL}
 
 int roleAt(ivec2 t, ivec2 size) {
   if (t.x < 0 || t.y < 0 || t.x >= size.x || t.y >= size.y) return 0;
@@ -83,7 +92,23 @@ void main() {
   vec4 pa = texelFetch(u_palette, ivec2(role, int(v_rows.x)), 0);
   vec4 pb = texelFetch(u_palette, ivec2(role, int(v_rows.y)), 0);
   vec4 p = mix(pa, pb, v_rows.z);
+  float glow = 1.0 - p.a;
+  // Glow mode feeds the bloom: only the pixels that glow (eyes, ember, fire).
+  if (u_mode == 1) {
+    if (glow < 0.05) discard;
+    o_color = vec4(p.rgb * glow, glow) * v_alpha;
+    return;
+  }
   vec3 c = p.rgb;
+  if (u_lightCount > 0 && glow < 0.5) {
+    float q = lightAt(v_origin + vec2(t) + 0.5);
+    if (q > 0.0) {
+      int ra = u_albedoRow + int(v_rows.x) % 16;
+      int rb = u_albedoRow + int(v_rows.y) % 16;
+      vec3 alb = mix(texelFetch(u_palette, ivec2(role, ra), 0).rgb, texelFetch(u_palette, ivec2(role, rb), 0).rgb, v_rows.z);
+      c = mix(c, max(c, alb * u_lightColor * 1.35), q);
+    }
+  }
   // A rim: this pixel is on the outline facing the light (the side the sun or the fire is on), or the top edge.
   int side = int(u_rimSide * (flip ? -1.0 : 1.0));
   if (u_rimStrength > 0.0 && p.a > 0.99) {
@@ -154,10 +179,17 @@ export class SpriteBatch {
     this.count++;
   }
 
-  draw(atlas: Atlas, palette: WebGLTexture, scale: number, viewport: readonly number[], canvasW: number, canvasH: number, rim: Float32Array, rimSide: number, rimStrength: number): void {
+  /** Draws the queued sprites: `mode` 0 in colour onto the scene, 1 only their glow (for the bloom buffer). */
+  draw(atlas: Atlas, palette: WebGLTexture, scale: number, viewport: readonly number[], canvasW: number, canvasH: number, rim: Float32Array, rimSide: number, rimStrength: number, light: Light, mode = 0): void {
     if (this.count === 0) return;
     const gl = this.gpu.gl;
     gl.useProgram(this.prog.program);
+    gl.uniform1i(this.prog.u('u_mode'), mode);
+    gl.uniform4fv(this.prog.u('u_lights'), light.lights);
+    gl.uniform1i(this.prog.u('u_lightCount'), light.count);
+    gl.uniform3fv(this.prog.u('u_lightColor'), light.color);
+    gl.uniform1f(this.prog.u('u_lightGain'), 1);
+    gl.uniform1i(this.prog.u('u_albedoRow'), light.albedoRow);
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.data, 0, this.count * STRIDE);

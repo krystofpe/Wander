@@ -10,12 +10,12 @@ Columns: 8
  59  79  82	land 1
 104 129 120	land 2
 104 129 121	land 3
-165 179 156	land 4
+125 146 132	land 4
  32  34  41	rock 0
  54  58  66	rock 1
 100 104 108	rock 2
 100 104 109	rock 3
-161 159 154	rock 4
+121 123 124	rock 4
  31  25  24	soil 0
  53  42  36	soil 1
  79  63  47	soil 2

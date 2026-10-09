@@ -209,6 +209,135 @@ function smokeFrame(stage: number): string[] {
   ]);
 }
 
+// ── Sitting, kneeling, lying ───────────────────────────────────────────────
+
+/** The torso above the waist, the near arm resting forward. Rows 15–22 (shifted when sitting). */
+const TORSO_SIT: Part = block(10, 15, [
+  'odllllllllo..',
+  'odmmmmmlllo..',
+  'odmmmmdlllo..',
+  'odmmmmmdllo..',
+  'odmmmmmdlllo.',
+  'odmmmmmmdllo.',
+  'oddmmmmmmdllo',
+  'oddmmmmmmmdlo',
+]);
+
+/** The torso above the waist with the forearm raised to the hood (smoking). */
+const TORSO_SIT_SMOKE: Part = block(10, 15, [
+  'odllllllllo..',
+  'odmmmmmmllo..',
+  'odmmmmmmllo..',
+  'odmmmmmdllo..',
+  'odmmmmmdlmo..',
+  'odmmmmmmdmo..',
+  'oddmmmmmmmo..',
+  'oddmmmmmmmmo.',
+]);
+
+/**
+ * Sitting on a seat `s` px high (0 on the ground with the knees up, about 5 on a log, about 10 on a rock or a stump),
+ * the pack on or off, smoking (an ember stage) or not, eyes open or shut. His hips rest on the seat's top and the hood
+ * stands 18 px above it, as a sitting body does.
+ */
+function sitFrame(s: number, pack: boolean, ember: string | null, hood: Part = HOOD): string[] {
+  const hip = 34 - s;
+  const dy = hip - 21;
+  const parts: (Part | Placed)[] = [];
+  // The stick leans on the seat beside him.
+  parts.push(stroke(27, 35 - 26, 25, 35, 'k', 'K'));
+  if (pack) parts.push({ part: PACK, dy });
+  parts.push({ part: ember === null ? TORSO_SIT : TORSO_SIT_SMOKE, dy });
+  // The lap: the coat over the thighs, reaching forward to the knee.
+  if (s >= 3) {
+    parts.push(block(9, hip - 1, ['.oddmmmmmmmmmo.', 'oddmmmmmmmmmmmo', 'oodddddddddddo.']));
+    // Shins straight down from the knee to the ground, the far one a little behind and darker; boots.
+    for (let y = hip + 1; y <= 33; y++) parts.push(block(19, y, ['oodo']));
+    parts.push(block(19, 34, ['bbBB.']), block(19, 35, ['bbbbb']));
+  } else {
+    // On the ground: knees drawn up, the coat spread behind on the ground.
+    parts.push(block(7, hip - 2, ['...oddmmmmmmmmo.', '..oddmmmmmmmmmmo', 'oodddmmmmmmmmmmo', 'oooodddddddddoo.']));
+    parts.push(block(18, hip - 5, ['..oo.', '.odmo', 'odmmo', 'odmo.']));
+    parts.push(block(21, 31, ['do.', 'do.', 'odo']), block(21, 34, ['bbBB.']), block(21, 35, ['bbbbb']));
+  }
+  parts.push({ part: hood, dy });
+  if (ember === null) parts.push(block(20, hip - 3, ['dd']));
+  else {
+    parts.push({ part: ARM_RAISED, dy });
+    parts.push(block(21, 12 + dy, [`c${ember}`]));
+  }
+  return compose(W, H, parts);
+}
+
+/** The pack set down on the ground behind him at camp. */
+const PACK_DOWN: Part = block(1, 27, ['..ssss..', '.srrrrs.', '.qqqqqq.', 'prrrrrq.', 'prrqrrq.', 'pqqqqqq.', 'prrrrrq.', 'pqrrrqq.', '.pppppp.']);
+
+/** Kneeling at the fire: reaching to it (0), striking a match (1), blowing on it with the hood bowed (2). */
+function kneelFrame(stage: number): string[] {
+  const dy = 9;
+  const lean = stage === 2 ? 2 : 1;
+  const parts: (Part | Placed)[] = [PACK_DOWN, stroke(4, 33, 9, 22, 'k', 'K')];
+  // The far shin flat on the ground, the near foot planted with the knee up.
+  parts.push(block(8, 34, ['oooooo.']), block(7, 35, ['bbbbbbb']));
+  parts.push({ part: TORSO_SIT, dx: lean, dy });
+  parts.push(block(9 + lean, 29, ['.oddmmmmmmmmo.', 'oddmmmmmmmmmmo', 'oodddddddddoo.']));
+  parts.push(block(19, 27, ['.oo.', 'odmo', 'odmo', 'odo.', '.do.', '.do.', 'bbBB', 'bbbb']));
+  parts.push({ part: stage === 2 ? HOOD_SHUT : HOOD, dx: lean + (stage === 2 ? 1 : 0), dy: dy + (stage === 2 ? 2 : 0) });
+  // The arm reaching down and forward to the fire.
+  const hand = stage === 0 ? [25, 31] : stage === 1 ? [24, 29] : [23, 30];
+  parts.push(stroke(18 + lean, 25, hand[0], hand[1], 'l'), block(hand[0], hand[1], ['dd']));
+  if (stage === 1) parts.push(block(hand[0] + 2, hand[1] - 1, ['*']));
+  return compose(W, H, parts);
+}
+
+/** Lying on his side by the fire, the hood toward it, the pack under his head; `shut` closes the eyes. */
+function lieFrame(breath: number, shut: boolean): string[] {
+  const eyes = shut ? 'hh' : 'ee';
+  return compose(W, H, [
+    block(19, 32, ['..qqrrrrq.', '.prrrrrrrq', 'ppqqqqqqqp']),
+    block(2, 27 - breath, [
+      '...................ooo.....',
+      '..........ooooooo.odmmo....',
+      '.......oooddmmmmmooddmmmo..',
+    ]),
+    block(2, 30, [
+      '...bboddmmmmmmmmmmmmmdmhhhmo',
+      '..bBBoddmmmmmmmmmmmmmmdh' + eyes + 'hmo',
+      '..bbbooddddddddddddddddohhhmo',
+    ]),
+    block(1, 33, ['...........................']),
+  ]);
+}
+
+/** His back to us, looking out at the view: hood from behind, the pack whole, the stick at his side. */
+function backFrame(breath: number): string[] {
+  return compose(W, H, [
+    stroke(22, 9, 22, 35, 'k', 'K'),
+    block(10, 3 - breath, ['...ooo....', '..odmmo...', '.odmmmmo..', '.odmlmmmo.', 'odmlllmmo.', 'odmmllmmmo', 'odmmmmmmmo', 'odmmmmmmmo', '.odmmmmmo.']),
+    block(9, 12, ['.ssssssss..', 'srrrrrrrrs.', 'qqqqqqqqqq.']),
+    block(8, 15, [
+      'odlppppppldo',
+      'odmprrrrpmdo',
+      'odmprrrrpmdo',
+      'odmprqqrpmdo',
+      'odmprrrrpmmo',
+      'odmprrrrpmmo',
+      'odmppppppmmo',
+      'odmmmmmmmmmo',
+      'odmmmmmmmmmo',
+      'oddmmmmmmmmo',
+      'oddmmmmmmmmmo',
+      'oddmmmmmmmmmo',
+      'oddmmmmmmmmmmo',
+      'oddmmmmmmmmmmo',
+      'oddmmmmmmmmmmo',
+      'ooddddddddddoo',
+    ]),
+    block(11, 31, ['oo...oo', 'oo...oo', 'oo...oo', 'bbb..bbb', 'bbb..bbb']),
+    block(21, 20, ['dd', 'dd']),
+  ]);
+}
+
 export const SHEET: Sheet = {
   name: 'wanderer',
   w: W,
@@ -219,6 +348,16 @@ export const SHEET: Sheet = {
     { name: 'look', ms: [1200, 2400], frames: [standFrame(0, HOOD), standFrame(0, HOOD_BACK)] },
     { name: 'smoke', ms: [600, 600, 900, 900, 600], frames: [0, 1, 2, 3, 4].map(smokeFrame) },
     { name: 'shut', ms: 1000, frames: [standFrame(0, HOOD_SHUT)] },
+    { name: 'back', ms: [1800, 1500], frames: [backFrame(0), backFrame(1)] },
+    { name: 'sit0', ms: [1600, 1300], frames: [sitFrame(0, false, null), sitFrame(0, false, null, HOOD_BACK)] },
+    { name: 'sit5', ms: [1600, 1300], frames: [sitFrame(5, true, null), sitFrame(5, true, null, HOOD_BACK)] },
+    { name: 'sit10', ms: [1600, 1300], frames: [sitFrame(10, true, null), sitFrame(10, true, null, HOOD_BACK)] },
+    { name: 'sitsmoke0', ms: 600, frames: ['x', 'X', '*'].map((e) => sitFrame(0, false, e)) },
+    { name: 'sitsmoke5', ms: 600, frames: ['x', 'X', '*'].map((e) => sitFrame(5, true, e)) },
+    { name: 'sitsmoke10', ms: 600, frames: ['x', 'X', '*'].map((e) => sitFrame(10, true, e)) },
+    { name: 'kneel', ms: [900, 700, 1100], frames: [0, 1, 2].map(kneelFrame) },
+    { name: 'lie', ms: [2200, 2200], frames: [lieFrame(0, false), lieFrame(1, false)] },
+    { name: 'sleep', ms: [2600, 2600], frames: [lieFrame(0, true), lieFrame(1, true)] },
   ],
   points: { ember: [22, 12], feet: [14, 35] },
 };

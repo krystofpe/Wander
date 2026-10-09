@@ -44,14 +44,33 @@ The brief is `~/wander-ambient-prompt.md`. Read this file first after a restart,
   `npm run shot`, `npm run sheet` (contact sheets at native 1:1), `npm run motion` (frames 1/60 s apart, slit-scans).
 - M3 slice: renderer (ring textures, chunk streaming, palette rows, native resolve per layer, full-res composite with
   per-layer fractional offsets and d7samurai sampling, smooth HD sky with pixel sun, moon in phase and stars, final
-  pass with vignette, grain and dither); painters for land (per-biome landforms and crowns), tree layers, playfield,
-  foreground; plants (conifers, space-colonisation crowns, L-system dead trees, cacti, bushes, tufts, reeds, rocks);
-  the wanderer drawn by hand in parts (8-frame walk, stand, look, smoke), Aseprite pipeline (art:draw → art), indexed
-  atlas decoded in the browser.
+  pass with vignette, grain and dither); painters for land, tree layers, playfield, foreground; plants; the wanderer
+  drawn by hand in parts; Aseprite pipeline; indexed atlas decoded in the browser.
+- M4–M6 (5b86c6e, 41309f6): his life on the road (life.ts: stops, sitting and smoking, camp from dusk to dawn with a
+  fire, lying, sleeping, packing), real light (fire and ember light rings with Quake flicker, bloom from emissive).
+- M7 (1bf56b0): every biome reads as itself (rims only on crests, banks only under woods, lit faces, real sea).
+- M8 (46ffc40): weather in the air: cumulus and overcast clouds catching the sunset, fog veils, rain and snow at
+  three depths, lightning.
+- M9 (7e0116b): `npm start` (server, Chromium app full screen, watchdog), the saved road with time away, thoughts
+  from Claude (server, SDK, structured output, timeouts, fallback) or the local voice, the bar (H) and log (L).
+- M10 (44297ce): sound, all synthesised (web/audio): wind body/trees/whistles/leaf ticks from one gust signal, rain
+  bed/boil/drops by surface, waves, crickets by Dolbear's law, birds (FM syllable songs, dawn chorus), owl, a far
+  train, thunder rendered per flash, footsteps by ground on the walk cycle's contacts, lighter/drag/exhale, the fire
+  (lapping, hiss, crackles), generative music (incommensurable loops, KS plucks, FM bells, pads, drone, motifs).
+  Worker clock keeps life and sound going in a hidden window. `npm run listen` records and measures it.
+  Measured (15 s clips, EBU R128): birch dawn −33 LUFS, night meadow −32, coast −30, camp with fire −27,
+  pine rain −23, pass in wind −24, coast storm −20 (peak −4.6 dBFS).
 
 ## Next
 
-- Commit the vertical slice; then clouds and fog sheets; the brain + walker in the page (stops, sit, smoke, camp).
+1. Landmarks drawn (all 11 kinds; lit window, chimney smoke, blinking mast lamp, lighthouse, bridge with wood steps,
+   a passing train at night), per-layer sprite batches.
+2. Life: bird flocks, bats, fireflies, a deer, a fox, a fish jumping, falling leaves.
+3. Sky: Milky Way, shooting stars, aurora in the north.
+4. `npm run tour` (every biome, blend, hour, weather, pose, landmark; 1080p and some 4K; contact sheet), look at
+   everything and fix.
+5. In-page bench (`npm run bench`, p50/p99), soaks (`npm run soak`), the 30-minute watch (`npm run watch`).
+6. README, docs/CREDITS.md, spec font decision; final review; draft PR.
 
 ## Open problems
 

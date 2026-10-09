@@ -30,6 +30,8 @@ export type Api = {
   /** A thought from Claude for this context, or null (no credentials, rate limit, failure). Never slow to fail. */
   thought(context: unknown): Promise<{ text: string } | null>;
   mind(): 'claude' | 'local';
+  /** The page is alive (it calls this every few seconds). */
+  beat?(): void;
 };
 
 export type Running = { readonly url: string; readonly server: Server; close(): Promise<void> };
@@ -102,6 +104,10 @@ export function startServer(root: string, api: Api, port = 0): Promise<Running> 
         return json(res, 200, { thought: reply?.text ?? null, mind: api.mind() });
       }
       if (route === 'GET /api/mind') return json(res, 200, { mind: api.mind() });
+      if (route === 'POST /api/beat') {
+        api.beat?.();
+        return json(res, 200, { ok: true });
+      }
       if (req.method === 'GET') return serveFile(root, url.pathname, res);
       return send(res, 405, MIME['.txt'], 'method not allowed');
     };

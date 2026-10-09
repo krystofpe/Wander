@@ -14,3 +14,82 @@ html, body {
   display: block;
   image-rendering: pixelated;
 }
+
+@font-face {
+  font-family: 'Alegreya';
+  font-style: italic;
+  font-weight: 400 900;
+  src: url('/web/fonts/Alegreya-Italic.ttf') format('truetype');
+}
+
+:root {
+  --thought-font: 'Alegreya', Georgia, serif;
+  --ink: #e8e2d4;
+  --dim: rgba(220, 214, 200, 0.55);
+}
+
+/* His thought: quiet, in the world beside him, never on top of busy art. */
+#thought {
+  position: fixed;
+  left: 0;
+  top: 0;
+  max-width: 30vw;
+  font-family: var(--thought-font);
+  font-style: italic;
+  font-weight: 400;
+  font-size: calc(var(--px, 3px) * 7.2);
+  line-height: 1.32;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  text-shadow: 0 0 calc(var(--px, 3px) * 4) rgba(10, 10, 18, 0.55), 0 1px 2px rgba(10, 10, 18, 0.6);
+  opacity: 0;
+  transition: opacity 1.6s ease-in-out;
+  pointer-events: none;
+  white-space: pre-line;
+}
+
+#thought::before {
+  content: '';
+  position: absolute;
+  inset: -0.6em -1em;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(8, 8, 14, 0.22), rgba(8, 8, 14, 0));
+}
+
+#thought.shown {
+  opacity: 0.92;
+}
+
+/* The bar (H) and the log (L): small, dim, out of the way. */
+#bar,
+#log {
+  position: fixed;
+  font-family: var(--thought-font);
+  font-style: italic;
+  color: var(--dim);
+  font-size: calc(var(--px, 3px) * 5);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+#bar {
+  left: calc(var(--px, 3px) * 8);
+  bottom: calc(var(--px, 3px) * 5);
+  letter-spacing: 0.03em;
+}
+
+#log {
+  right: calc(var(--px, 3px) * 8);
+  top: calc(var(--px, 3px) * 8);
+  max-height: 70vh;
+  overflow: hidden;
+  text-align: right;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+#bar.shown,
+#log.shown {
+  opacity: 1;
+}

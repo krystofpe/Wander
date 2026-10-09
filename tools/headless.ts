@@ -1,13 +1,13 @@
 // Headless Chromium on the GPU with the page served locally: shared by shot, tour, motion, bench and soak.
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import { chromium } from 'playwright-core';
 import type { Browser, Page } from 'playwright-core';
 import { HEADLESS_FLAGS, findChromium } from '../server/browser.ts';
 import { startServer } from '../server/server.ts';
 import type { Api, Running } from '../server/server.ts';
 
-export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+import { ROOT } from '../server/root.ts';
+
+export { ROOT };
 
 /** A journey store that keeps nothing: the tools never touch the real save. */
 export const NO_SAVE: Api = {

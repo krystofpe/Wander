@@ -39,6 +39,9 @@ export class Stage {
   private splashAt = 0;
   private readonly bytes = new Uint8Array(3);
   readonly moonStart: number;
+  /** Where his head is on the native view this frame (for his thoughts). */
+  headX = 0;
+  headY = 0;
 
   constructor(seed: number, moonStart: number) {
     this.moonStart = moonStart;
@@ -251,6 +254,8 @@ export class Stage {
     }
     const hx = colOf(l.at);
     const hy = groundRow(l.at) + lift;
+    this.headX = hx;
+    this.headY = hy - 32 + (stage === 'sit' || stage === 'campsit' || stage === 'wake' ? 12 : stage === 'lie' || stage === 'sleep' ? 26 : 0);
     r.ground.add(hx - 14, hy - 35, frame, rowA, rowB, b.k, false);
 
     // The ember lights the inside of his hood a little, more on the drag.

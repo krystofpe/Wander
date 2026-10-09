@@ -144,6 +144,13 @@ export class Renderer {
   nativeH = 360;
   private viewX = 0;
   private viewY = 0;
+  /** Where the native view's top-left sits on the canvas, in device pixels. */
+  get viewOffsetX(): number {
+    return this.viewX;
+  }
+  get viewOffsetY(): number {
+    return this.viewY;
+  }
   private paletteLayer = 0;
   /** For debugging: only these layer indices are composited (null for all). */
   only: Set<number> | null = null;

@@ -7,7 +7,7 @@ const f = flags(process.argv.slice(2));
 const out = f.get('out') ?? 'shot.png';
 const [w, h] = (f.get('size') ?? '1920x1080').split('x').map(Number);
 const q = new URLSearchParams({ frozen: '1' });
-for (const k of ['seed', 'at', 'hour', 'weather', 'pose', 't', 'biome', 'day', 'realclock', 'layers']) {
+for (const k of ['seed', 'at', 'hour', 'weather', 'pose', 't', 'biome', 'day', 'realclock', 'layers', 'thought']) {
   const v = f.get(k);
   if (v !== undefined) q.set(k, v);
 }

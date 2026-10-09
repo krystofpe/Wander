@@ -7,16 +7,20 @@ import { lit, mix, ramp, scale } from './color.ts';
 import { Backdrop } from './backdrop.ts';
 import type { Life } from './creature.ts';
 import { FACE_ROW, FIGURE_ROWS, FIGURE_W, LANTERN_ON_GROUND, LANTERN_POSES, closed, figure, frameName, withEyes } from './figure.ts';
-import { dither, drawColors, drawColorsAt, flat, paint } from './kit.ts';
-import type { Material } from './kit.ts';
-import { SWAYS, cairnArt, critterArt, foregroundArt, hasSign, inDoorway, itemArt, propArt, signArt, toyArt } from './scenery.ts';
+import { dither, drawColors, drawColorsAt } from './kit.ts';
+import type { ColorSprite } from './kit.ts';
+import { INK, aerial, art as art2, cycleStep, extent, grounded, mirrored, paintPixels, pixels } from './sprites.ts';
+import { visitAt } from './visitor.ts';
+import type { Inks, Pixels } from './sprites.ts';
+import { SWAYS, TRUNKS, cairnArt, critterArt, foregroundArt, hasSign, inDoorway, itemArt, propArt, shelterEmbers, signArt, toyArt } from './scenery.ts';
 import type { Look } from './scenery.ts';
 import { surroundArt, surroundPerch } from './surround.ts';
-import { toPalette } from './palette.ts';
-import type { Frame } from './frame.ts';
+import { nightOf, toPalette } from './palette.ts';
+import { Frame } from './frame.ts';
 import { hash2, makeNoise } from './noise.ts';
 import type { Noise2D } from './noise.ts';
-import type { Geometry, Prop, Scene } from './scene.ts';
+import { Geometry, forestFocus, frameCrop } from './scene.ts';
+import type { Prop, Scene } from './scene.ts';
 import { moonPosition, snows, sunPosition } from './sky.ts';
 import type { Season, Sky } from './sky.ts';
 
@@ -25,6 +29,8 @@ export type Segment = { readonly text: string; readonly color: number };
 /** Everything the renderer needs for one frame. */
 export type View = {
   readonly geo: Geometry;
+  /** Terminal pixels to a pixel of the art, each way: the scene is drawn at `geo`'s size and enlarged. */
+  readonly scale?: number;
   readonly sky: Sky;
   readonly scene: Scene;
   readonly life: Life;
@@ -34,6 +40,8 @@ export type View = {
   readonly eyeGlow: number;
   /** Real seconds, for animation. */
   readonly time: number;
+  /** The world's clock, in milliseconds: what comes and goes by it (the visitor). */
+  readonly world?: number;
   readonly flash: boolean;
   readonly bubble: { readonly text: string; readonly kind: 'say' | 'think' } | null;
   /** Rows under the scene: the status bar and the hints. Null hides them. */
@@ -121,8 +129,8 @@ class Layer implements Canvas {
     this.own = new Uint8Array(frame.width * frame.height * 2);
   }
 
-  /** Maps every pixel of the scene onto the biome's palette, except the creature's own. */
-  toPalette(biome: BiomeName): void {
+  /** Maps every pixel of the scene onto the biome's palette, except the creature's own; `night` turns it towards its night colours. */
+  toPalette(biome: BiomeName, night = 0): void {
     const f = this.frame;
     for (let row = 0; row < this.height; row++) {
       for (let col = 0; col < this.width; col++) {
@@ -130,14 +138,14 @@ class Layer implements Canvas {
         const g = f.glyph[i];
         if (g !== SPACE && g !== UPPER) {
           // A glyph: only what is behind it.
-          f.bg[i] = toPalette(biome, f.bg[i], this.glowBg[i] === 1);
+          f.bg[i] = toPalette(biome, f.bg[i], this.glowBg[i] === 1, night);
           continue;
         }
         const t = g === UPPER ? f.fg[i] : f.bg[i];
         const b = f.bg[i];
         const gt = (g === UPPER ? this.glowFg[i] : this.glowBg[i]) === 1;
-        const nt = this.own[i * 2] === 1 ? t : toPalette(biome, t, gt && glowsWarm(t));
-        const nb = this.own[i * 2 + 1] === 1 ? b : toPalette(biome, b, this.glowBg[i] === 1 && glowsWarm(b));
+        const nt = this.own[i * 2] === 1 ? t : toPalette(biome, t, gt && glowsWarm(t), night);
+        const nb = this.own[i * 2 + 1] === 1 ? b : toPalette(biome, b, this.glowBg[i] === 1 && glowsWarm(b), night);
         f.glyph[i] = nt === nb ? SPACE : UPPER;
         f.fg[i] = nt;
         f.bg[i] = nb;
@@ -229,6 +237,8 @@ const FULL = code('█');
 type Light = { col: number; row: number; radius: number; rgb: readonly [number, number, number]; gain: number };
 
 const BUTTERFLY_COLORS = [0xffd84a, 0xff9ad0, 0xffffff, 0xa0d8ff, 0xffa040];
+/** The colours of the creatures that walk the ground: in the gloom they show as dark shapes against the growth. */
+const WALKER_COLORS: Readonly<Partial<Record<string, number>>> = { frog: 0x6ac04a, hare: 0x1e2c34, deer: 0x24323c };
 
 function lighten(rgb: number, k: number): number {
   return mix(rgb, 0xffffff, k);
@@ -254,26 +264,49 @@ export class Renderer {
       return;
     }
     const geo = v.geo;
-    const layer = new Layer(frame, geo.rows);
+    const s = v.scale ?? 1;
+    const sceneRows = frame.height - hudRows;
+    // On a big window the scene is drawn at its own size into a smaller frame, then enlarged into this one.
+    const target = s === 1 ? frame : this.sceneFrame(geo.cols, geo.rows);
+    const layer = new Layer(target, geo.rows);
     const home = v.scene.layout.home;
     const door = home.sprite.door;
-    const path = door === undefined ? null : { x: geo.left(home.x, home.sprite.w) + door.x + (door.w >> 1), y: geo.footRow(home.z) * 2 + 2, w: door.w };
-    this.backdrop.draw(layer, { geo, sky: v.sky, biome: v.life.biome, time: v.time, slow: ambient(v.time), flash: v.flash, path, landmark: landmarkColumn(v) });
+    const path = door === undefined ? null : { x: geo.leftOf(home) + door.x + (door.w >> 1), y: geo.footRow(home.z) * 2 + 2, w: door.w };
+    const visit = v.world === undefined ? null : visitAt(v.world, v.life.seed, v.life.biome, v.sky.daylight);
+    this.backdrop.draw(layer, { geo, sky: v.sky, biome: v.life.biome, time: v.time, slow: ambient(v.time), flash: v.flash, path, landmark: landmarkColumn(v), visit, homeLeft: home.x < 0.5 });
     const lights = this.drawThings(layer, v);
     drawLife(layer, v);
     this.drawParticles(layer, v);
     this.drawMist(layer, v);
-    drawForeground(layer, v);
+    // Under the canopy the great mushrooms in the corners stand in front of the trunks' roots.
+    const under = BIOMES[v.life.biome].gloom !== undefined;
+    if (!under) drawForeground(layer, v);
     drawSurround(layer, v);
+    if (under) drawForeground(layer, v);
     drawCrow(layer, v);
+    drawOwl(layer, v);
     drawWatchers(layer, v);
     light(layer, v, lights);
     this.drawRays(layer, v);
-    layer.toPalette(v.life.biome);
-    this.drawWeather(layer, v);
-    if (v.bubble !== null) drawBubble(layer, v);
-    for (let r = 0; r < hudRows; r++) drawSegments(frame, geo.rows + r, v.hud?.[r] ?? []);
+    layer.toPalette(v.life.biome, nightOf(v.sky.daylight));
+    if (s === 1) this.drawWeather(layer, v);
+    else {
+      enlarge(target, frame, s, sceneRows);
+      // Rain and snow fall at the window's own fineness, not in the art's big pixels.
+      const fine = new Geometry(frame.width, sceneRows);
+      this.drawWeather(new Layer(frame, sceneRows), { ...v, geo: fine });
+    }
+    if (v.bubble !== null) drawBubble(frame, v, s, sceneRows);
+    for (let r = 0; r < hudRows; r++) drawSegments(frame, sceneRows + r, v.hud?.[r] ?? []);
     if (v.journal !== null) drawJournal(frame, v.journal);
+  }
+
+  private offscreen: Frame | null = null;
+
+  /** The frame the scene is drawn into before it is enlarged, kept from one frame to the next. */
+  private sceneFrame(cols: number, rows: number): Frame {
+    if (this.offscreen === null || this.offscreen.width !== cols || this.offscreen.height !== rows) this.offscreen = new Frame(cols, rows);
+    return this.offscreen;
   }
 
   /** Props, cairn, critters on the ground, food, the toy and the creature, back to front. Returns light sources. */
@@ -285,8 +318,22 @@ export class Renderer {
     const things: { row: number; draw: () => void }[] = [];
     for (const p of scene.layout.props) {
       things.push({ row: geo.footRow(p.z), draw: () => drawProp(layer, v, p, look) });
-      // Glowing mushrooms light the ground round them, a cold light, more at night.
-      if (p.kind === 'glowshroom') lights.push({ col: geo.col(p.x), row: geo.footRow(p.z) - 1, radius: 7, rgb: [0.3, 1, 0.95], gain: night ? 0.55 : 0.25 });
+      // Glowing mushrooms light the ground and bark round them, a cold light, more at night; each cluster
+      // breathes, slowly, in its own time.
+      if (p.kind === 'glowshroom') {
+        const breath = 0.8 + 0.2 * Math.sin(ambient(v.time) * 0.45 + p.x * 17);
+        lights.push({ col: geo.col(p.x), row: geo.footRow(p.z) - 1, radius: 6 + p.sprite.w * 0.35, rgb: [0.3, 1, 0.95], gain: (night ? 0.6 : 0.22) * breath });
+      }
+    }
+    // The great mushrooms in the corners light the roots and the floor at the front.
+    if (BIOMES[life.biome].gloom !== undefined) {
+      const homeSide = scene.layout.home.x < 0.5 ? -1 : 1;
+      for (const side of [-1, 1]) {
+        if (side === homeSide) continue;
+        const heavy = geo.cols >= 100;
+        const breath = 0.8 + 0.2 * Math.sin(ambient(v.time) * 0.4 + side * 2);
+        lights.push({ col: side < 0 ? 8 : geo.cols - 9, row: geo.rows - 5, radius: heavy ? 16 : 10, rgb: [0.3, 1, 0.95], gain: (night ? 0.55 : 0.18) * breath });
+      }
     }
     if (life.cairn > 0) {
       const foot = geo.footRow(scene.layout.cairn.z);
@@ -299,7 +346,11 @@ export class Renderer {
       things.push({
         row: foot,
         draw: () => {
-          const art = critterArt(k.kind, Math.floor(k.t * 3), k.kind === 'frog' ? 0x6ac04a : 0xb0a060);
+          // Walkers step in bursts: the hare's legs move only as it hops; the deer stands grazing between its steps.
+          const moving = k.kind === 'deer' ? Math.sin(k.t * 0.35 + k.phase) > 0.55 : Math.sin(k.t * 1.7 + k.phase) > 0.2;
+          const frame = k.kind === 'deer' ? (moving ? 0 : 1) : moving ? Math.floor(k.t * 6) : 0;
+          // Dark shapes in the gloom, the light catching along their backs and ears.
+          const art = critterArt(k.kind, frame, WALKER_COLORS[k.kind] ?? 0xb0a060, k.kind === 'hare' || k.kind === 'deer' ? 0x7aa8b0 : undefined);
           drawColorsAt(layer, art, geo.col(k.x) - (art.w >> 1), (foot - art.h + 1) * 2, k.vx < 0);
         },
       });
@@ -327,6 +378,11 @@ export class Renderer {
       const foot = geo.footRow(body.z);
       things.push({ row: foot + 0.5, draw: () => lights.push(...drawCreature(layer, v, foot)) });
     }
+    // Under the canopy, veils of misty light hang between the depths: whatever stands behind each one is a
+    // little hazier, most of all round the glow. Each is drawn just before the things standing at its depth.
+    if (BIOMES[life.biome].gloom !== undefined) {
+      for (const z of VEILS) things.push({ row: geo.footRow(z) - 0.25, draw: () => drawVeil(layer, v, z) });
+    }
     things.sort((a, b) => a.row - b.row);
     for (const t of things) t.draw();
 
@@ -334,7 +390,7 @@ export class Renderer {
     if (body.visible && body.inside) {
       const h = scene.layout.home;
       const door = h.sprite.door ?? { col: h.sprite.w >> 1, row: h.sprite.h - 3 };
-      const col = geo.left(h.x, h.sprite.w) + door.col;
+      const col = geo.leftOf(h) + door.col;
       const row = geo.footRow(h.z) - h.sprite.h + 1 + door.row;
       // Two eyes, two pixels wide: open they are two pixels tall, shut only their lower lids show.
       const open = closed(v.eyes) ? null : v.eyeGlow;
@@ -347,7 +403,16 @@ export class Renderer {
       if (ember !== undefined) {
         const slow = ambient(v.time);
         const flicker = 0.85 + 0.15 * Math.sin(slow * 9.1) * Math.sin(slow * 5.3 + 2);
-        lights.push({ col: geo.left(h.x, h.sprite.w) + ember.x, row: geo.footRow(h.z) - h.sprite.h + 1 + (ember.y >> 1), radius: 9, rgb: LANTERN_RGB, gain: 0.55 * flicker });
+        // The embers themselves, warm: like its own eyes and lantern, the only warmth in the gloom.
+        const hx = geo.leftOf(h);
+        const hy = (geo.footRow(h.z) - h.sprite.h + 1) * 2;
+        layer.owning = true;
+        for (const e of shelterEmbers(v.life.biome, h.variant)) {
+          const hot = e.hot !== (Math.floor(slow * 3 + e.x) % 4 === 0);
+          layer.dot(hx + e.x, hy + e.y, hot ? 0xffc870 : 0xd8643a, true);
+        }
+        layer.owning = false;
+        lights.push({ col: geo.leftOf(h) + ember.x, row: geo.footRow(h.z) - h.sprite.h + 1 + (ember.y >> 1), radius: 9, rgb: LANTERN_RGB, gain: 0.55 * flicker });
       }
     }
     return lights;
@@ -364,9 +429,16 @@ export class Renderer {
       else if (k.kind === 'moth') color = 0xd8d0c0;
       else if (k.kind === 'firefly') {
         if (Math.sin(time * 2.2 + k.phase * 5) <= 0.1) continue;
-        color = COLORS.firefly;
+        // The nearer, the bigger: a pinpoint far off, a spark with arms of light close by.
+        const x = geo.col(k.x);
+        const near = k.z > 0.7 ? 2 : k.z > 0.45 ? 1 : 0;
+        layer.dot(x, y, lighten(COLORS.firefly, near > 0 ? 0.5 : 0), true);
+        if (near >= 1) layer.dot(x + 1, y, COLORS.firefly, true);
+        if (near >= 2) for (const [dx, dy] of [[-1, 0], [0, -1], [0, 1], [2, 0]]) layer.dot(x + dx, y + dy, mix(COLORS.firefly, 0x2698a5, 0.4), true);
+        continue;
       } else if (v.sky.daylight < 0.3) color = 0x101018;
-      const art = critterArt(k.kind, Math.floor(k.t * (k.kind === 'bird' ? 4 : 6)), color);
+      if (k.kind === 'bat') color = 0x161424;
+      const art = critterArt(k.kind, Math.floor(k.t * (k.kind === 'bird' ? 4 : k.kind === 'bat' ? 9 : 6)), color);
       drawColorsAt(layer, art, geo.col(k.x) - (art.w >> 1), y - art.h, k.vx < 0);
     }
     for (const p of scene.particles) {
@@ -405,6 +477,7 @@ export class Renderer {
       this.mist = { key, field };
     }
     const gloom = BIOMES[v.life.biome].gloom !== undefined;
+    const focus = W * forestFocus(v.scene.layout.home.x < 0.5);
     const color = gloom ? mix(0x9ad8d4, sky.horizon, 0.45) : mix(0xe4eaf0, sky.horizon, 0.35);
     const mid = geo.horizon * 2 + 2;
     for (let r = y0 >> 1; r < (y1 + 1) >> 1; r++) {
@@ -413,7 +486,7 @@ export class Renderer {
         // Thickest just below the horizon, thinning above and towards the front.
         const band = y < mid ? (y - y0) / Math.max(1, mid - y0) : 1 - (y - mid) / Math.max(1, y1 - mid);
         // Under the canopy the mist gathers towards the glow in the middle.
-        const centre = gloom ? 0.5 + 0.7 * Math.max(0, 1 - Math.abs(x + 0.5 - W / 2) / (W * 0.45)) : 1;
+        const centre = gloom ? 0.5 + 0.7 * Math.max(0, 1 - Math.abs(x + 0.5 - focus) / (W * 0.45)) : 1;
         // In smooth steps of a tenth: mist has no edges, so no dither either.
         return Math.round(k * band * band * centre * this.mist.field[(y - y0) * W + x] * 10) / 10;
       };
@@ -454,10 +527,13 @@ export class Renderer {
     const span = geo.rows + 4;
     // Drops catch what light there is, but never fade to nothing.
     const floor = (k: number): number => Math.max(0.55, k);
-    const dropColor = lit(snow ? COLORS.snow : COLORS.rain, floor(sky.lightR), floor(sky.lightG), floor(sky.lightB));
-    const trail = mix(dropColor, 0x000000, 0.35);
+    // Under the canopy the leaves catch most of it: fewer drops get through, dimmer, tinted by the glow.
+    const under = BIOMES[v.life.biome].gloom !== undefined;
+    const bright = lit(snow ? COLORS.snow : COLORS.rain, floor(sky.lightR), floor(sky.lightG), floor(sky.lightB));
+    const dropColor = under ? mix(bright, 0x2698a5, 0.45) : bright;
+    const trail = mix(dropColor, 0x000000, under ? 0.55 : 0.35);
     for (let c = 0; c < geo.cols; c++) {
-      const count = w.precip * WEATHER.dropDensity * (span / 6);
+      const count = w.precip * WEATHER.dropDensity * (span / 6) * (under ? 0.4 : 1);
       const whole = Math.floor(count) + ((hash2(c, 99, this.seed) % 1000) / 1000 < count % 1 ? 1 : 0);
       for (let k = 0; k < whole; k++) {
         const hs = hash2(c, k, this.seed ^ 0xd209);
@@ -479,7 +555,7 @@ export class Renderer {
 /** How props look now: snowy, frozen, lit windows and the water's shimmer. */
 function lookOf(v: View): Look {
   const snowy = snows(v.life.biome, v.sky.season);
-  return { biome: v.life.biome, season: v.sky.season, snowy, frozen: snowy, night: v.sky.daylight < 0.35, frame: Math.floor(ambient(v.time) * 2), sky: lit(v.sky.horizon, 1, 1, 1), sway: 0 };
+  return { biome: v.life.biome, season: v.sky.season, snowy, frozen: snowy, night: v.sky.daylight < 0.35, frame: Math.floor(ambient(v.time) * 2), sky: lit(v.sky.horizon, 1, 1, 1), sway: 0, cycle: cycleStep(v.time) };
 }
 
 /** The light the water shows: the low sun's warm glow, the moon's peach one, or by day a white glint. */
@@ -531,7 +607,7 @@ function drawLife(layer: Layer, v: View): void {
   const home = layout.home;
   const ember = home.sprite.smoke;
   if (ember !== undefined && (sky.hour < 9.5 || sky.hour > 16.5 || snows(v.life.biome, sky.season))) {
-    const x0 = geo.left(home.x, home.sprite.w) + ember.x + 1;
+    const x0 = geo.leftOf(home) + ember.x + 1;
     const y0 = (geo.footRow(home.z) - home.sprite.h + 1) * 2 + ember.y;
     const smoke = mix(0xdcdfe4, sky.horizon, 0.25);
     for (let k = 0; k < 7; k++) {
@@ -604,7 +680,7 @@ function drawLife(layer: Layer, v: View): void {
 
   // Sparks from the embers at night, rising and going out.
   if (ember !== undefined && sky.daylight < 0.35) {
-    const x0 = geo.left(home.x, home.sprite.w) + ember.x + 1;
+    const x0 = geo.leftOf(home) + ember.x + 1;
     const y0 = (geo.footRow(home.z) - home.sprite.h + 1) * 2 + ember.y;
     for (let k = 0; k < 3; k++) {
       const cycle = Math.floor(time * 0.45 + k * 0.37);
@@ -677,7 +753,10 @@ function drawLife(layer: Layer, v: View): void {
 /** What the frame is drawn with just now: the big trunk away from the home, a sway in the wind. */
 function surroundArgs(v: View): [BiomeName, Season, boolean, number, number, number, number, number, -1 | 1] {
   const { geo, sky } = v;
-  const side: -1 | 1 = v.scene.layout.home.x < 0.5 ? 1 : -1;
+  // The big trunk stands away from its home, so the home stays in view; under the canopy it lives in the
+  // great tree, so the big trunk is on its side.
+  const homeLeft = v.scene.layout.home.x < 0.5;
+  const side: -1 | 1 = BIOMES[v.life.biome].gloom !== undefined ? (homeLeft ? -1 : 1) : homeLeft ? 1 : -1;
   const sway = Math.abs(sky.wind) > 0.2 ? Math.floor(ambient(v.time) * (0.6 + Math.abs(sky.wind))) % 2 : 0;
   return [v.life.biome, sky.season, snows(v.life.biome, sky.season), geo.cols, geo.rows * 2, geo.horizon * 2, v.life.seed, sway, side];
 }
@@ -685,6 +764,24 @@ function surroundArgs(v: View): [BiomeName, Season, boolean, number, number, num
 /** Bare branches, trunks, boughs or moss framing the scene from just in front of the glass. */
 function drawSurround(layer: Layer, v: View): void {
   drawColors(layer, surroundArt(...surroundArgs(v)), 0, 0);
+}
+
+/**
+ * An owl on the great bough of its tree, by night (art/owl.aseprite): there most of the night, now and then
+ * away; it blinks, and turns its head to look at something below.
+ */
+function drawOwl(layer: Layer, v: View): void {
+  const { geo, sky, time } = v;
+  if (BIOMES[v.life.biome].gloom === undefined || sky.daylight > 0.3) return;
+  if (hash2(Math.floor(time / 600), 3, v.life.seed ^ 0x0e1) % 3 === 0) return;
+  const blink = time % 4.3 < 0.18;
+  const turned = time % 23 > 17;
+  const art = art2('owl', blink ? 'blink' : turned ? 'turn' : 'owl');
+  const homeLeft = v.scene.layout.home.x < 0.5;
+  // On the top of the great bough of the canopy piece (art/forest-frame canopy-big), above column 47.
+  const crop = frameCrop(geo.cols, true);
+  const x0 = homeLeft ? 46 - crop : geo.cols - 1 + crop - 46 - (art.w - 1);
+  drawColorsAt(layer, art, x0, 11, !homeLeft);
 }
 
 /** Eyes in the dark of the canopy: a violet pair opens now and then, watches a while, blinks, and is gone. */
@@ -739,10 +836,25 @@ function drawForeground(layer: Layer, v: View): void {
   const frame = Math.floor(ambient(v.time) * (0.8 + Math.abs(sky.wind) * 1.5));
   const snowy = snows(v.life.biome, sky.season);
   const homeSide: -1 | 1 = v.scene.layout.home.x < 0.5 ? -1 : 1;
+  const under = BIOMES[v.life.biome].gloom !== undefined;
+  // Under the canopy, the nearest growth: dark fronds right in front of the glass along the bottom, between
+  // its hollow and the far corner (art/forest-near.aseprite). They stand in front of everything, even it.
+  if (under) {
+    for (const [share, frame] of [[0.3, 'fronds-a'], [0.74, 'fronds-b']] as const) {
+      const art = art2('forest-near', frame, {}, '', homeSide > 0, true);
+      const x = homeSide < 0 ? share : 1 - share;
+      drawColorsAt(layer, art, Math.round(x * (geo.cols - 1)) - (art.w >> 1), geo.rows * 2 - art.h * 2, false);
+    }
+  }
   for (const side of [-1, 1] as const) {
+    // Under the canopy its home is in the corner on its side: the great mushrooms grow only in the other.
+    if (under && side === homeSide) continue;
     // The heavy growth is on the side away from its shelter, so the shelter stays in view.
-    const art = foregroundArt(v.life.biome, side, sky.season, snowy, frame + (side > 0 ? 1 : 0), side !== homeSide);
-    const col = side < 0 ? -2 : geo.cols - art.w + 2;
+    // On a narrow window both corners are light and stand partly outside it, so the scene still shows.
+    const narrow = Math.max(0, Math.round((100 - geo.cols) / 3));
+    // Each corner glints a step apart from the other.
+    const art = foregroundArt(v.life.biome, side, sky.season, snowy, frame + (side > 0 ? 1 : 0), side !== homeSide && narrow === 0, (cycleStep(v.time) + (side > 0 ? 2 : 0)) % 4);
+    const col = side < 0 ? -2 - narrow : geo.cols - art.w + 2 + narrow;
     drawColorsAt(layer, art, col, (geo.rows - art.h) * 2, side > 0);
   }
 }
@@ -770,18 +882,102 @@ function shadowLean(v: View, col: number): number {
 /** Props that stand up off the ground cast a shadow at their foot. */
 const FLAT: ReadonlySet<string> = new Set(['pond', 'snowdrift']);
 
+/** The depths at which veils of mist hang between the things in the forest. */
+const VEILS: readonly number[] = [0.18, 0.4, 0.62];
+
+/** How thick each veil is, cell by cell, for a window: worked out once for its size and its glow. */
+const veils = new Map<string, Float32Array>();
+
+/**
+ * A veil of the glow's misty light over everything drawn so far that stands behind depth `z`: in the glow's
+ * own colour, thicker round it and low down where the mist lies, thinning towards the dark sides and up
+ * into the canopy, and fading out just above the ground at its depth so it has no edge.
+ */
+function drawVeil(layer: Layer, v: View, z: number): void {
+  const { geo } = v;
+  const W = geo.cols;
+  const foot = geo.footRow(z);
+  const homeLeft = v.scene.layout.home.x < 0.5;
+  const id = `${W}:${geo.rows}:${z}:${homeLeft}`;
+  let k = veils.get(id);
+  if (k === undefined) {
+    k = new Float32Array((foot + 1) * W);
+    const focus = W * forestFocus(homeLeft);
+    for (let r = 0; r <= foot; r++) {
+      const up = Math.max(0, Math.min(1, 1 - (foot - r) / Math.max(1, geo.horizon * 1.4)));
+      const low = Math.min(1, (foot - r + 0.5) / 2.5);
+      for (let c = 0; c < W; c++) {
+        const near = Math.exp(-(((c + 0.5 - focus) / (W * 0.32)) ** 2));
+        k[r * W + c] = Math.round(0.18 * (0.25 + 0.75 * near) * (0.35 + 0.65 * up) * low * 20) / 20;
+      }
+    }
+    if (veils.size > 16) veils.clear();
+    veils.set(id, k);
+  }
+  const haze = 0x2698a5;
+  for (let r = 0; r <= foot; r++) {
+    for (let c = 0; c < W; c++) {
+      const a = k[r * W + c];
+      if (a > 0) layer.blend(c, r, haze, a, a);
+    }
+  }
+}
+
+/**
+ * A trunk standing at its depth and rising out of sight into the canopy (art/forest-trunk.aseprite): its
+ * roots on the ground, its bark repeated up from them to the top of the window. Thin and pale in the haze
+ * far off, wide and dark near; lit on the side that faces the glow.
+ */
+const trunks = new Map<string, ColorSprite>();
+
+function trunkArt(v: View, p: Prop, footPx: number): { art: ColorSprite; dx: number } {
+  const cls = TRUNKS[p.variant % 3];
+  // Six steps of haze from the back to the front: the farthest all but dissolve into the light.
+  const shade = p.z < 0.12 ? 4 : p.z < 0.24 ? 3 : p.z < 0.38 ? 2 : p.z < 0.52 ? 1 : p.z < 0.7 ? 0 : -1;
+  const turned = p.x > forestFocus(v.scene.layout.home.x < 0.5);
+  const roots = grounded(pixels('forest-trunk', `${cls}-roots`));
+  const bark = pixels('forest-trunk', `${cls}-bark`);
+  const bw = extent(bark).w;
+  // Where the trunk stands in its roots piece: the roots spread the same either side of it.
+  const dx = (roots.w - bw) >> 1;
+  const id = `${cls}:${shade}:${turned}:${footPx}`;
+  let art = trunks.get(id);
+  if (art === undefined) {
+    const h = footPx + 1;
+    const px = new Uint8Array(roots.w * h);
+    // Bark from the roots up, a tile at a time, so it lines up with them.
+    for (let y = h - roots.h - 1; y >= 0; y--) {
+      const ty = ((((h - roots.h - 1 - y) % 8) + 8) % 8);
+      for (let x = 0; x < bw; x++) px[y * roots.w + dx + x] = bark.px[(7 - ty) * bark.w + x];
+    }
+    for (let y = 0; y < roots.h; y++) for (let x = 0; x < roots.w; x++) if (roots.px[y * roots.w + x] !== 0) px[(h - roots.h + y) * roots.w + x] = roots.px[y * roots.w + x];
+    let whole: Pixels = { w: roots.w, h, px };
+    whole = aerial(turned ? mirrored(whole) : whole, shade);
+    art = paintPixels(whole);
+    if (trunks.size > 64) trunks.clear();
+    trunks.set(id, art);
+  }
+  return { art, dx };
+}
+
 function drawProp(layer: Layer, v: View, p: Prop, look: Look): void {
   const { geo } = v;
   const foot = geo.footRow(p.z);
-  const left = geo.left(p.x, p.sprite.w);
-  if (!FLAT.has(p.kind)) {
+  const left = geo.leftOf(p);
+  if (p.kind === 'trunk' && BIOMES[v.life.biome].gloom !== undefined) {
+    const { art } = trunkArt(v, p, foot * 2 + 1);
+    drawColorsAt(layer, art, left, 0);
+    return;
+  }
+  // What stands against the window's edge is part of the great trees there: it casts no shadow of its own.
+  if (!FLAT.has(p.kind) && p.edge === undefined) {
     const mid = left + (p.sprite.w >> 1);
     const lean = shadowLean(v, mid);
     const half = Math.max(2, Math.round(p.sprite.w * (p.kind === 'home' ? 0.48 : 0.32) + Math.abs(lean) * 0.5));
     for (let c = -half; c < half; c++) layer.shade(mid + lean + c, foot, c === -half || c === half - 1 ? 0.8 : 0.6, true);
   }
   const sway = SWAYS.has(p.kind) ? swayOf(v, p.x) : 0;
-  drawColors(layer, propArt(p.kind, p.variant, sway === 0 ? look : { ...look, sway }), left, foot - p.sprite.h + 1);
+  drawColors(layer, propArt(p.kind, p.variant, sway === 0 ? look : { ...look, sway }, p.z), left, foot - p.sprite.h + 1);
 }
 
 /** How far a tree at x leans in the wind just now: each at its own rhythm, more in a gale. */
@@ -799,24 +995,24 @@ function blinking(t: number, seed: number): boolean {
   return t - beat * BLINK_EVERY_SEC < BLINK_SEC && hash2(beat, 7, seed) % 3 !== 0;
 }
 
-/** The creature's materials: its cloak's ramp, leather boots and mittens, the dark face and its glowing eyes. */
-function creatureMaterials(v: View): Readonly<Record<string, Material>> {
+/** The creature's inks: its cloak's ramp, leather boots and mittens, the dark face and its glowing eyes. */
+function creatureInks(v: View): Inks {
   const cloak = ramp(v.life.cloak);
   const boot = ramp(COLORS.boot);
-  const glowing = (c: number): Material => ({ ramp: flat(c, c), glow: true });
+  const metal = ramp(COLORS.lanternMetal);
+  const glowing = (rgb: number): { rgb: number; glow: true } => ({ rgb, glow: true });
+  const tones = (first: number, colors: readonly number[]): Inks => Object.fromEntries(colors.map((rgb, i) => [first + i, { rgb }]));
   return {
-    c: { ramp: cloak },
-    p: { ramp: ramp(cloak.shadow) },
-    b: { ramp: boot },
-    k: { ramp: { ...boot, base: boot.light } },
-    q: { ramp: flat(COLORS.clasp, cloak.outline) },
-    F: glowing(COLORS.face),
-    e: glowing(v.eyeGlow),
-    g: glowing(0xffffff),
-    t: glowing(EYE_GLOW.sad),
-    m: { ramp: ramp(COLORS.lanternMetal) },
-    y: glowing(COLORS.lantern),
-    Y: glowing(lighten(COLORS.lantern, 0.6)),
+    ...tones(INK.cloak, [cloak.outline, cloak.dark, cloak.shadow, cloak.base, cloak.light, cloak.gleam]),
+    ...tones(INK.boot, [boot.outline, boot.dark, boot.shadow, boot.base, boot.light]),
+    ...tones(INK.metal, [metal.outline, metal.dark, metal.base, metal.light]),
+    [INK.clasp]: { rgb: COLORS.clasp },
+    [INK.face]: glowing(COLORS.face),
+    [INK.eye]: glowing(v.eyeGlow),
+    [INK.glint]: glowing(0xffffff),
+    [INK.tear]: glowing(EYE_GLOW.sad),
+    [INK.glass]: glowing(COLORS.lantern),
+    [INK.flame]: glowing(lighten(COLORS.lantern, 0.6)),
   };
 }
 
@@ -856,10 +1052,10 @@ function drawCreature(layer: Layer, v: View, foot: number): Light[] {
     const home = v.scene.layout.home;
     const door = home.sprite.door;
     if (door === undefined) return [];
-    const hx = geo.left(home.x, home.sprite.w);
+    const hx = geo.leftOf(home);
     const hy = (geo.footRow(home.z) - home.sprite.h + 1) * 2;
     const frame = figure(frameName('stand', time, 0), front, false);
-    drawColors(throughDoor(layer, (x, y) => inDoorway(door, x - hx, y - hy), body.doorway), paint(withEyes(frame, v.eyes), creatureMaterials(v)), left, top);
+    drawColors(throughDoor(layer, (x, y) => inDoorway(door, x - hx, y - hy), body.doorway), paintPixels(withEyes(frame, v.eyes), creatureInks(v)), left, top);
     return [];
   }
 
@@ -871,9 +1067,9 @@ function drawCreature(layer: Layer, v: View, foot: number): Light[] {
   // The stride counts the columns and rows it has walked, so its feet keep pace with the ground.
   const frame = figure(frameName(body.pose, time, Math.floor(col / 2) + foot), front, carries);
   const eyes = !closed(v.eyes) && blinking(time, life.seed) ? '- -' : v.eyes;
-  const mats = creatureMaterials(v);
+  const inks = creatureInks(v);
   layer.owning = true;
-  drawColors(layer, paint(withEyes(frame, eyes), mats), left, top);
+  drawColors(layer, paintPixels(withEyes(frame, eyes), inks), left, top);
   layer.owning = false;
 
   const lights: Light[] = [];
@@ -882,7 +1078,7 @@ function drawCreature(layer: Layer, v: View, foot: number): Light[] {
     if (frame.lamp !== null) lamp = { col: left + frame.lamp.x, row: top + (frame.lamp.y >> 1) };
     else {
       // Sitting, digging or eating, it sets the lantern down in front of it.
-      const lantern = paint(LANTERN_ON_GROUND.drawing, mats);
+      const lantern = paintPixels(LANTERN_ON_GROUND.pixels, inks);
       const at = front > 0 ? left + FIGURE_W - 1 : left - lantern.w + 1;
       drawColors(layer, lantern, at, foot - lantern.h + 1);
       lamp = { col: at + 2, row: foot - 2 };
@@ -956,42 +1152,82 @@ function light(layer: Layer, v: View, lights: readonly Light[]): void {
   }
 }
 
+/**
+ * Enlarges a frame of the scene into the window, each of its pixels `s` terminal pixels each way. A cell
+ * holding a letter (a particle's) puts it in the top-left cell of its block.
+ */
+function enlarge(src: Frame, dst: Frame, s: number, rows: number): void {
+  const pixel = (x: number, y: number): number => {
+    const i = (y >> 1) * src.width + x;
+    const g = src.glyph[i];
+    if (g === UPPER) return (y & 1) === 0 ? src.fg[i] : src.bg[i];
+    if (g === LOWER) return (y & 1) === 0 ? src.bg[i] : src.fg[i];
+    if (g === FULL) return src.fg[i];
+    return src.bg[i];
+  };
+  const maxY = src.height * 2 - 1;
+  for (let r = 0; r < Math.min(rows, dst.height); r++) {
+    const yt = Math.min(maxY, Math.floor((2 * r) / s));
+    const yb = Math.min(maxY, Math.floor((2 * r + 1) / s));
+    for (let c = 0; c < dst.width; c++) {
+      const x = Math.min(src.width - 1, Math.floor(c / s));
+      const si = (yt >> 1) * src.width + x;
+      const g = src.glyph[si];
+      const i = r * dst.width + c;
+      if (g !== SPACE && g !== UPPER && g !== LOWER && g !== FULL) {
+        const corner = c % s === 0 && r % s === 0;
+        dst.glyph[i] = corner ? g : SPACE;
+        dst.fg[i] = src.fg[si];
+        dst.bg[i] = src.bg[si];
+        continue;
+      }
+      const top = pixel(x, yt);
+      const bottom = pixel(x, yb);
+      dst.glyph[i] = top === bottom ? SPACE : UPPER;
+      dst.fg[i] = top;
+      dst.bg[i] = bottom;
+    }
+  }
+}
+
 /** A speech bubble above its head (or its doorway), with a tail; a thought bubble while it waits for words. */
-function drawBubble(layer: Layer, v: View): void {
+function drawBubble(f: Frame, v: View, s: number, rows: number): void {
   const { geo, body, bubble } = v;
   if (bubble === null || !body.visible) return;
-  const f = layer.frame;
+  // Where it points, in the scene's cells, then in the window's (the scene may be enlarged `s` times).
   let anchorCol: number;
   let anchorRow: number;
   if (body.inside) {
     const h = v.scene.layout.home;
-    anchorCol = geo.col(h.x);
+    anchorCol = geo.col(geo.door(h).x);
     anchorRow = geo.footRow(h.z) - h.sprite.h;
   } else {
     anchorCol = geo.col(body.x);
     anchorRow = geo.footRow(body.z) - FIGURE_ROWS - 1 - Math.round(body.lift);
   }
+  anchorCol = anchorCol * s + (s >> 1);
+  anchorRow = (anchorRow + 1) * s - 1;
   const think = bubble.kind === 'think';
-  const lines = think ? ['…'] : wrap(bubble.text, Math.max(8, Math.min(34, geo.cols - 6)));
+  const lines = think ? ['…'] : wrap(bubble.text, Math.max(8, Math.min(34, f.width - 6)));
   const inner = Math.max(...lines.map((l) => Array.from(l).length));
   const width = inner + 4;
   const height = lines.length + 2;
-  let left = anchorCol - (width >> 1) + (body.facing > 0 ? 2 : -2);
-  left = Math.max(0, Math.min(geo.cols - width, left));
+  let left = anchorCol - (width >> 1) + (body.facing > 0 ? 2 : -2) * s;
+  left = Math.max(0, Math.min(f.width - width, left));
   let top = anchorRow - height + 1;
   if (top < 0) top = 0;
   const fg = think ? COLORS.thinkFg : COLORS.bubbleFg;
   const edge = COLORS.bubbleEdge;
   const bg = COLORS.bubbleBg;
   const put = (c: number, r: number, ch: string, color: number): void => {
-    if (c < 0 || c >= f.width || r < 0 || r >= geo.rows) return;
+    if (c < 0 || c >= f.width || r < 0 || r >= rows) return;
     const i = r * f.width + c;
     f.glyph[i] = code(ch);
     f.fg[i] = color;
     f.bg[i] = bg;
   };
   const putOn = (c: number, r: number, ch: string, color: number): void => {
-    if (c < 0 || c >= f.width || r < 0 || r >= geo.rows) return;
+    if (c < 0 || c >= f.width || r < 0 || r >= rows) return;
     const i = r * f.width + c;
     f.glyph[i] = code(ch);
     f.fg[i] = color;

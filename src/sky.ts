@@ -184,7 +184,11 @@ export function skyAt(ms: number, seed: number, biome: BiomeName): Sky {
   let light: [number, number, number] = [r * dim, g * dim, b * dim];
   if (gloom !== undefined) {
     const k = 0.45 + 0.55 * daylight;
-    light = [Math.max(light[0] * gloom.light[0], 0.42), Math.max(light[1] * gloom.light[1], 0.52), Math.max(light[2] * gloom.light[2], 0.58)];
+    // Clouds hardly reach under the canopy; heavy rain a little. At the height of the day it is lit just as
+    // it was drawn; the night takes it down to a cold floor, a little lighter under the moon.
+    const wetDim = 1 - WEATHER.dimming * weather.precip * 0.5;
+    const floor = [0.42, 0.52, 0.58];
+    light = floor.map((f, i) => Math.max(f + moonlight * [0.8, 0.92, 1.1][i], (f + (1 - f) * daylight) * gloom.light[i] * wetDim)) as [number, number, number];
     zenith = mix(zenith, scale(gloom.zenith, k), 0.9);
     horizon = mix(horizon, scale(gloom.horizon, k), 0.9);
   }

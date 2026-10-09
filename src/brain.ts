@@ -5,9 +5,11 @@ import type { Pose } from './art.ts';
 import { FIGURE_ROWS, FIGURE_W } from './figure.ts';
 import { MAX_CAIRN, clamp01, isNightFor, warm } from './creature.ts';
 import type { Feelings, Life, Mood } from './creature.ts';
+import { forestFocus } from './scene.ts';
 import type { Critter, Geometry, Prop, Scene } from './scene.ts';
 import type { Sky } from './sky.ts';
 import type { Topic } from './speech.ts';
+import { visitAt } from './visitor.ts';
 
 export type Gaze = 'center' | 'left' | 'right' | 'up' | 'down';
 
@@ -86,7 +88,7 @@ export type Script = Generator<void, void, number>;
 
 export const ACTIVITIES = [
   'idle', 'stroll', 'sit', 'nap', 'sleep', 'forage', 'eat', 'drink', 'chase', 'critter', 'play', 'stargaze', 'shelter',
-  'dance', 'ponder', 'dig', 'hum', 'stack', 'visit', 'knock', 'gift', 'ask', 'hide', 'wander',
+  'dance', 'ponder', 'dig', 'hum', 'stack', 'visit', 'knock', 'gift', 'ask', 'hide', 'wander', 'watch',
 ] as const;
 export type ActivityName = (typeof ACTIVITIES)[number];
 export const REACTIONS = ['listen', 'petted', 'woken', 'startle', 'greet', 'arrive', 'return', 'go', 'wave', 'jump', 'spin'] as const;
@@ -279,7 +281,8 @@ const raining = (c: Ctx): boolean => c.sky.weather.precip > 0.25;
 const present = (c: Ctx): boolean => c.idleSec() < PRESENT_SEC && c.focused();
 const bedtime = (c: Ctx): boolean => isNightFor(c.life.traits, c.sky.hour);
 const visibleCritter = (c: Ctx): Critter | null =>
-  c.scene.critters.find((k) => k.kind !== 'bird' && k.x > 0.05 && k.x < 0.95) ?? null;
+  // It chases the small ones; not birds overhead, not bats, not the deer.
+  c.scene.critters.find((k) => k.kind !== 'bird' && k.kind !== 'bat' && k.kind !== 'deer' && k.x > 0.05 && k.x < 0.95) ?? null;
 
 const ACT: Readonly<Record<ActivityName, Activity>> = {
   idle: {
@@ -566,6 +569,33 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       c.body.gaze = null;
       c.life.needs.fun = clamp01(c.life.needs.fun + 0.08);
       c.feelings.joy = clamp01(c.feelings.joy + 0.2);
+    },
+  },
+  // When the visitor walks through the glow, it stops whatever it would do next and watches it go by,
+  // eyes wide, without a sound; afterwards a word, and a line in its diary.
+  watch: {
+    cooldown: 300,
+    score: (c) => (!c.life.asleep && !c.body.inside && visitAt(c.now(), c.life.seed, c.life.biome, c.sky.daylight) !== null ? 3 : 0),
+    *run(c) {
+      c.body.pose = 'stand';
+      c.body.eyes = 'o o';
+      yield* wait(1.5);
+      let seen = 0;
+      while (visitAt(c.now(), c.life.seed, c.life.biome, c.sky.daylight) !== null && seen < 150) {
+        const visit = visitAt(c.now(), c.life.seed, c.life.biome, c.sky.daylight);
+        // Its gaze follows it across: it walks from one side of the glow to the other.
+        const focus = forestFocus(c.scene.layout.home.x < 0.5);
+        const at = visit === null ? focus : focus + visit.dir * (visit.progress - 0.5) * 0.72;
+        c.body.gaze = at < c.body.x - 0.08 ? 'left' : at > c.body.x + 0.08 ? 'right' : 'up';
+        c.body.eyes = null;
+        seen += yield;
+      }
+      c.body.gaze = null;
+      yield* wait(2);
+      c.say('visitor');
+      c.diary('Something tall walked through the light at the end of the path. It did not look back.');
+      yield* hush(c, 5);
+      c.body.pose = 'stand';
     },
   },
   ponder: {

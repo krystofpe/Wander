@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node src/main.ts",
     "test": "node --test",
-    "bench": "node src/main.ts --bench"
+    "bench": "node src/main.ts --bench",
+    "art": "aseprite -b --script tools/export-art.lua"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.132.1"

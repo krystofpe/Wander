@@ -7,6 +7,7 @@ import { Game } from '../src/game.ts';
 import { newLife } from '../src/creature.ts';
 import { rng } from '../src/noise.ts';
 import { displayText, wrap } from '../src/render.ts';
+import { pixelScale } from '../src/scene.ts';
 
 function rendered(biome: BiomeName, hour: number, cols = 120, rows = 40): { game: Game; frame: Frame } {
   const now = new Date(2026, 9, 8, hour).getTime();
@@ -97,4 +98,29 @@ test('the creature is drawn in half-block pixels, its eyes glowing in its dark f
   assert.ok(cells.some((i) => frame.bg[i] === COLORS.face || frame.fg[i] === COLORS.face), 'its dark face');
   const glow = game.view().eyeGlow;
   assert.ok(cells.some((i) => frame.fg[i] === glow || frame.bg[i] === glow), 'its eyes in their glow colour');
+});
+
+test('a big window draws the scene at its own size, enlarged pixel for pixel, the words at full size', () => {
+  assert.equal(pixelScale(120, 38), 1);
+  assert.equal(pixelScale(190, 101), 2);
+  assert.equal(pixelScale(300, 160), 3);
+  assert.equal(pixelScale(240, 30), 1, 'not when it is too short to');
+  const { game, frame } = rendered('forest', 13, 190, 103);
+  const view = game.view();
+  assert.equal(view.scale, 2);
+  assert.equal(view.geo.cols, 95);
+  // The scene's pixels come in two by two blocks: each pair of columns is the same.
+  let same = 0;
+  let pairs = 0;
+  for (let r = 0; r < 90; r++) {
+    for (let c = 0; c + 1 < frame.width; c += 2) {
+      const i = r * frame.width + c;
+      if (frame.glyph[i] !== 32 && frame.glyph[i] !== 0x2580) continue;
+      pairs++;
+      if (frame.fg[i] === frame.fg[i + 1] && frame.bg[i] === frame.bg[i + 1]) same++;
+    }
+  }
+  assert.ok(same / pairs > 0.97, `${same} of ${pairs} pairs alike`);
+  // The status bar is at the bottom of the window, in the window's own cells.
+  assert.match(frame.rowText(101), /^ Ulo, 1 day · /);
 });

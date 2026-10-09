@@ -1,0 +1,71 @@
+GIMP Palette
+Name: Wander
+Columns: 8
+#
+# The one palette every sprite in art/ is drawn in (indexed). Index 0 is transparent.
+# 1-16 are the forest's own colours, lit by the scene's light. The ones marked "glow" are the same colours
+# but glowing: the night does not darken them. The rest are roles the game paints at run time (a creature's
+# cloak, its eyes' mood, embers at night): the colours here only show how they look by default.
+#
+  0   0   0	transparent
+  6  14  28	night
+  7  25  39	deep
+  8  42  52	dark
+ 13  57  70	teal-0
+ 16  73  82	teal-1
+ 22  87 104	teal-2
+ 21 104 116	teal-3
+ 32 115 138	teal-4
+ 38 152 165	glow
+ 54 191 207	spore
+ 32  51  61	grey-0
+ 37  90 109	grey-1
+ 36  40  82	violet-0
+ 42  59  94	violet-1
+ 70 102 160	violet-2
+140 129 193	violet-3
+ 21 104 116	glow teal-3
+ 32 115 138	glow teal-4
+ 38 152 165	glow glow
+ 54 191 207	glow spore
+ 70 102 160	glow violet-2
+140 129 193	glow violet-3
+ 16  12  10	hollow
+138  90  64	ember
+255 210 122	ember hot
+ 18  16  30	cloak outline
+ 30  30  60	cloak dark
+ 41  41  87	cloak shadow
+ 58  52 112	cloak base
+106  78 162	cloak light
+186 168 204	cloak gleam
+ 37  23  23	boot outline
+ 49  31  31	boot dark
+ 70  49  42	boot shadow
+ 90  70  54	boot base
+139 122  86	boot light
+240 200 104	clasp
+  7   7  11	face
+ 30  24  20	metal outline
+ 44  36  30	metal dark
+ 58  48  40	metal base
+106  90  72	metal light
+255 210 122	lantern glass
+255 236 200	lantern flame
+255 200 120	eye
+255 255 255	glint
+120 160 255	tear
+200 200 200	tint
+240 240 240	tint light
+120 120 120	tint dark
+138 240 244	pale
+138 240 244	glow pale
+ 74 122 134	stone-2
+122 168 176	stone-3
+176 212 216	stone-4
+192 184 232	violet-4
+122 168 176	glow stone-3
+ 38 152 165	glow cycle 1
+ 54 191 207	glow cycle 2
+138 240 244	glow cycle 3
+ 54 191 207	glow cycle 4

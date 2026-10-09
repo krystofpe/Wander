@@ -7,7 +7,7 @@ import { draw, drawColorsAt, flat, paint } from '../src/kit.ts';
 import type { Canvas } from '../src/art.ts';
 import { cairnArt, critterArt, footprint, itemArt, propArt } from '../src/scenery.ts';
 import { rng } from '../src/noise.ts';
-import { Geometry, Scene, layoutScene } from '../src/scene.ts';
+import { Geometry, Scene, forestFocus, layoutScene } from '../src/scene.ts';
 import { skyAt } from '../src/sky.ts';
 
 test('painted pixels are drawn two to a cell, half a cell down when asked, and mirrored', () => {
@@ -64,8 +64,9 @@ test('every shelter has a dark hollow where its eyes can show, and embers that g
         assert.ok(rgb >= 0 && (rgb >> 16) + ((rgb >> 8) & 255) + (rgb & 255) < 90, `${biome} doorway at ${c},${y}`);
       }
     }
-    assert.ok(art.glow.some((g) => g === 1), `${biome} has glowing embers`);
-    assert.ok(!propArt('home', 0, { ...look, night: false }).glow.some((g) => g === 1), `${biome} embers are ash by day`);
+    // More of it glows at night than by day: the embers are alight.
+    const glowing = (night: boolean): number => propArt('home', 0, { ...look, night }).glow.filter((g) => g === 1).length;
+    assert.ok(glowing(true) > glowing(false), `${biome} embers are alight at night and ash by day`);
     assert.ok(footprint('home', 0, biome).smoke !== undefined, `${biome} smoke rises from somewhere`);
   }
 });
@@ -132,4 +133,15 @@ test('critters come by in the daytime and leave again', () => {
   }
   assert.ok(seen > 0);
   assert.ok(scene.critters.length <= 3);
+});
+
+test('under the canopy the scene is laid out round its home tree: thick with growth, the glow left open', () => {
+  assert.ok(forestFocus(true) > 0.55 && forestFocus(false) < 0.45, 'the glow stands off on the open side');
+  for (let seed = 1; seed < 30; seed++) {
+    const l = layoutScene(seed, 'forest');
+    const left = l.home.x < 0.5;
+    assert.equal(l.home.edge, left ? -1 : 1, 'its home stands against the edge of the window');
+    assert.ok(l.props.filter((p) => p.kind === 'fern').length >= 3, `ferns grow all round (seed ${seed})`);
+    for (const p of l.props) if (p.kind === 'tree') assert.ok(Math.abs(p.x - forestFocus(left)) >= 0.13, `no tree stands in front of the glow (seed ${seed})`);
+  }
 });

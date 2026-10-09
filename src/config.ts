@@ -99,6 +99,13 @@ export const LANTERN_RGB: readonly [number, number, number] = [1.0, 0.72, 0.42];
 export const LANTERN_GAIN = 1.25;
 /** Seconds between chances to blink (two in three are taken), and how long the eyes stay shut. */
 export const BLINK_EVERY_SEC = 3.7;
+
+/**
+ * The visitor: something tall that now and then walks through the glow at the end of the path, in the
+ * dark only. It may come once in every `everyMin` minutes of the world's clock (with this `chance`), and
+ * takes `crossSec` seconds to cross.
+ */
+export const VISITOR = { everyMin: 23, chance: 0.6, crossSec: 110 } as const;
 export const BLINK_SEC = 0.14;
 
 export const WEATHER = {
@@ -211,8 +218,10 @@ export type PropKind =
   | 'snowdrift'
   | 'mushrooms'
   | 'glowshroom'
+  | 'fern'
+  | 'trunk'
   | 'home';
-export type CritterKind = 'butterfly' | 'bird' | 'firefly' | 'frog' | 'moth';
+export type CritterKind = 'butterfly' | 'bird' | 'firefly' | 'frog' | 'moth' | 'hare' | 'deer' | 'bat';
 
 export type BiomeDef = {
   readonly title: string;
@@ -247,12 +256,15 @@ export const BIOMES: Readonly<Record<BiomeName, BiomeDef>> = {
     ridge: { near: 0x1f3f2a, far: 0x3c5a6a, height: 0.4 },
     rain: 0.25,
     cold: false,
-    props: [['tree', 1], ['bush', 1], ['glowshroom', 3]],
-    gloom: { light: [0.92, 0.96, 1.0], zenith: 0x060e1c, horizon: 0x2698a5, mist: 0.4 },
+    // Lush and deep: trunks at every depth rising into the canopy, young trees, bushes in flower, big ferns
+    // everywhere, and the glowing mushrooms among them.
+    props: [['trunk', 9], ['tree', 3], ['bush', 3], ['fern', 7], ['glowshroom', 4]],
+    gloom: { light: [1, 1, 1], zenith: 0x060e1c, horizon: 0x2698a5, mist: 0.4 },
     forage: 'bush',
     water: 'pond',
-    dayCritters: ['butterfly', 'bird'],
-    nightCritters: ['firefly', 'moth'],
+    // Weighted by how often each comes: a list may name one more than once.
+    dayCritters: ['butterfly', 'butterfly', 'bird', 'bird', 'hare', 'hare', 'deer'],
+    nightCritters: ['firefly', 'firefly', 'firefly', 'moth', 'bat', 'bat', 'frog'],
     finds: ['an acorn cap', 'a jay feather', 'a beetle shell', 'a perfectly round pebble', 'a pinecone', 'a ring of bark', 'a key to nothing'],
     forageFood: 'berries',
   },

@@ -30,7 +30,7 @@ import { rng } from './noise.ts';
 import { Renderer } from './render.ts';
 import type { Segment, View } from './render.ts';
 import type { Away } from './save.ts';
-import { Geometry, Scene } from './scene.ts';
+import { Geometry, Scene, pixelScale } from './scene.ts';
 import { diffFrames } from './screen.ts';
 import { flashAt, localHour, skyAt, weatherAt } from './sky.ts';
 import type { Sky } from './sky.ts';
@@ -187,6 +187,7 @@ const DOING: Readonly<Record<string, string>> = {
   ask: 'asking them something',
   hide: 'hiding',
   wander: 'wandering beyond the edge of your world',
+  watch: 'watching something tall walk through the light at the end of the path',
   listen: 'at the glass, listening to them',
   greet: 'at the glass',
 };
@@ -225,6 +226,8 @@ export class Game implements Ctx {
   private hasFocus = true;
   private blurredAt = -1;
   private mouse: { col: number; row: number; at: number } | null = null;
+  /** Terminal pixels to a pixel of the art, each way (see pixelScale). */
+  private scale = 1;
   private typed = '';
   private offerItem: string | null = null;
   private offerTaken = false;
@@ -256,7 +259,8 @@ export class Game implements Ctx {
     this.cols = setup.cols;
     this.rows = setup.rows;
     this.scene = new Scene(life.seed, life.biome, this.rand);
-    this.geo = new Geometry(setup.cols, this.sceneRows());
+    this.scale = pixelScale(setup.cols, this.sceneRows());
+    this.geo = new Geometry(Math.ceil(setup.cols / this.scale), Math.ceil(this.sceneRows() / this.scale));
     this.sky = skyAt(this.worldMs, life.seed, life.biome);
     this.wasWet = this.sky.weather.precip > 0.25;
     this.mood = moodOf(life.needs, this.feelings, life.traits, life.asleep);
@@ -454,7 +458,8 @@ export class Game implements Ctx {
     }
     this.lastInput = this.real;
     if (e.type === 'mouse') {
-      this.mouseEvent(e.col, e.row, e.button, e.action);
+      // Into the scene's own cells, which are bigger than the terminal's on a big window.
+      this.mouseEvent(Math.floor(e.col / this.scale), Math.floor(e.row / this.scale), e.button, e.action);
       return;
     }
     if (e.type === 'key' && e.key === 'ctrl-c') {
@@ -580,7 +585,7 @@ export class Game implements Ctx {
       const home = this.scene.layout.home;
       const door = home.sprite.door;
       if (door === undefined) return false;
-      const x = col - this.geo.left(home.x, home.sprite.w) - door.x;
+      const x = col - this.geo.leftOf(home) - door.x;
       const y = (row - (this.geo.footRow(home.z) - home.sprite.h + 1)) * 2 - door.y;
       return x >= 0 && x < door.w && y >= -1 && y < door.h;
     }
@@ -870,10 +875,13 @@ export class Game implements Ctx {
     return this.hudVisible() ? Math.max(1, this.rows - 2) : this.rows;
   }
 
-  /** Keeps the geometry in step with the window and the status bar. */
+  /** Keeps the geometry in step with the window and the status bar: on a big window, at the art's own size. */
   private fit(): void {
     const rows = this.sceneRows();
-    if (this.geo.cols !== this.cols || this.geo.rows !== rows) this.geo = new Geometry(this.cols, rows);
+    this.scale = pixelScale(this.cols, rows);
+    const cols = Math.ceil(this.cols / this.scale);
+    const sceneRows = Math.ceil(rows / this.scale);
+    if (this.geo.cols !== cols || this.geo.rows !== sceneRows) this.geo = new Geometry(cols, sceneRows);
   }
 
   /** The eyes it shows now: an action's, the mouse's pull, where it looks, or its mood's. */
@@ -920,6 +928,7 @@ export class Game implements Ctx {
     else if (this.pending > 0 && !this.life.asleep) bubble = { text: '…', kind: 'think' };
     return {
       geo: this.geo,
+      scale: this.scale,
       sky: this.sky,
       scene: this.scene,
       life: this.life,
@@ -927,6 +936,7 @@ export class Game implements Ctx {
       eyes,
       eyeGlow: this.eyeGlow(eyes),
       time: this.real,
+      world: this.worldMs,
       flash: flashAt(this.real, this.life.seed, this.sky.weather),
       bubble,
       hud: this.hudVisible() ? [this.statusBar(), this.hintBar()] : null,

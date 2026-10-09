@@ -2,7 +2,7 @@
 // steps (shadows turn cool towards blue, highlights warm towards yellow, saturation highest in the
 // middle, a fifth of the lightness apart) and two neutrals. Every frame of the scenery is mapped onto it.
 import type { BiomeName } from './config.ts';
-import { fromHsl, toHsl, turn } from './color.ts';
+import { fromHsl, mix, toHsl, turn } from './color.ts';
 
 /** A ramp's middle step: hue in degrees, saturation 0..1, and its lightness (0.47 unless given); or its five steps given outright. */
 type Base = readonly [number, number, number?] | readonly [number, number, number, number, number];
@@ -135,12 +135,75 @@ function lutOf(biome: BiomeName): Lut {
 }
 
 /**
+ * The forest by night: each of its colours swapped for one of about the same lightness from a night
+ * forest in violet and indigo (the second reference), as a palette swap. What glows goes blue rather than
+ * violet, so it still stands out against the dark. Biomes without one keep their colours at night.
+ */
+const NIGHT: Partial<Readonly<Record<BiomeName, Readonly<Record<number, number>>>>> = {
+  forest: {
+    // Darks: navy and indigo.
+    0x060e1c: 0x060f2d,
+    0x071927: 0x0d154c,
+    0x082a34: 0x1f2169,
+    0x0d3946: 0x2d318e,
+    0x104952: 0x4b31a2,
+    // Mid tones: violet and blue.
+    0x165768: 0x484ab4,
+    0x156874: 0x434aca,
+    0x20738a: 0x6362d5,
+    // The glow at the end of the path, and what glows: pale blue.
+    0x2698a5: 0x6896dc,
+    0x36bfcf: 0x8ab4f0,
+    0x8af0f4: 0xc8d8ff,
+    // Bark and stone: dusky purples, pale lilac.
+    0x20333d: 0x2a1e48,
+    0x255a6d: 0x41407e,
+    0x4a7a86: 0x5e58a3,
+    0x7aa8b0: 0x9c93e9,
+    0xb0d4d8: 0xd0bed3,
+    // The violets go deeper and brighter: the eyes in the dark.
+    0x242852: 0x2a1b5e,
+    0x2a3b5e: 0x4b31a2,
+    0x4666a0: 0x7a5fd0,
+    0x8c81c1: 0xb49cff,
+    0xc0b8e8: 0xe0d4ff,
+    0x0a0b10: 0x08081a,
+    0xdcdedc: 0xe4dcf0,
+  },
+};
+
+/**
+ * A biome's palette at each quarter of the way from day to night: the palette fades from one to the other
+ * in whole quarters, as Living Worlds faded between its palettes. Index 0 is the day.
+ */
+const nightSteps = new Map<BiomeName, number[][]>();
+
+function stepsByNight(biome: BiomeName): number[][] {
+  let steps = nightSteps.get(biome);
+  if (steps === undefined) {
+    const day = lutOf(biome).colors;
+    const swap = NIGHT[biome];
+    steps = [0, 1, 2, 3, 4].map((q) => day.map((c) => (swap?.[c] === undefined ? c : mix(c, swap[c], q / 4))));
+    nightSteps.set(biome, steps);
+  }
+  return steps;
+}
+
+/**
  * Maps a colour onto the biome's palette: drained of warmth first, unless it glows (a window, the lantern's
  * light, a star), so the glowing things are the only warm ones. No dither here: the sky and the mist
- * already step and break their own edges, and dithering every surface would only be noise.
+ * already step and break their own edges, and dithering every surface would only be noise. `night` (0 to 1)
+ * turns the palette towards the biome's night colours.
  */
-export function toPalette(biome: BiomeName, color: number, glow = false): number {
+export function toPalette(biome: BiomeName, color: number, glow = false, night = 0): number {
   const lut = lutOf(biome);
   const key = ((color >> 19) << 10) | (((color >> 11) & 31) << 5) | ((color >> 3) & 31);
-  return lut.colors[(glow ? lut.near : lut.cold)[key]];
+  const index = (glow ? lut.near : lut.cold)[key];
+  if (night <= 0) return lut.colors[index];
+  return stepsByNight(biome)[Math.min(4, Math.round(night * 4))][index];
+}
+
+/** How far towards its night colours a biome's palette has turned, from the daylight: none by day, all of it in the dark. */
+export function nightOf(daylight: number): number {
+  return Math.max(0, Math.min(1, (0.6 - daylight) / 0.45));
 }

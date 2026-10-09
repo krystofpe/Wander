@@ -7,10 +7,14 @@ import type { Canvas } from './art.ts';
 import { lit, mix } from './color.ts';
 import { dither } from './kit.ts';
 import { landmarkArt } from './scenery.ts';
+import { GLOWING, PALETTE, aerial, extent, grounded, pixels } from './sprites.ts';
+import type { Pixels } from './sprites.ts';
+import type { Visit } from './visitor.ts';
 import { WHITE, tone } from './palette.ts';
 import type { Role } from './palette.ts';
 import { hash2, makeNoise } from './noise.ts';
 import type { Noise2D } from './noise.ts';
+import { forestFocus } from './scene.ts';
 import type { Geometry } from './scene.ts';
 import { moonPosition, snows, sunPosition } from './sky.ts';
 import type { Sky } from './sky.ts';
@@ -23,6 +27,10 @@ export type BackdropView = {
   readonly time: number;
   readonly slow: number;
   readonly flash: boolean;
+  /** The visitor walking through the glow, if it is. */
+  readonly visit?: Visit | null;
+  /** Under the canopy, whether its home tree is on the left: the glow and the path are laid out round it. */
+  readonly homeLeft?: boolean;
   /** Where the path to its door starts: the doorway's middle column, the pixel row under the home, its width. */
   readonly path: { readonly x: number; readonly y: number; readonly w: number } | null;
   /** The column the biome's landmark stands at: where the least of the nearer scenery hides it. */
@@ -89,8 +97,8 @@ export class Backdrop {
   /** Where the sky's bands break, kept for each size of window. */
   private jitter = new Float32Array(0);
   private clouds: { key: string; tone: Uint8Array } = { key: '', tone: new Uint8Array(0) };
-  private ground: { key: string; px: Int32Array; path: Uint8Array } = { key: '', px: new Int32Array(0), path: new Uint8Array(0) };
-  private ridge: { key: string; px: Int32Array; glow: Uint8Array; layer: Uint8Array; tops: Int16Array[] } = { key: '', px: new Int32Array(0), glow: new Uint8Array(0), layer: new Uint8Array(0), tops: [] };
+  private ground: { key: string; px: Int32Array; path: Uint8Array; glow: Uint8Array } = { key: '', px: new Int32Array(0), path: new Uint8Array(0), glow: new Uint8Array(0) };
+  private ridge: { key: string; px: Int32Array; glow: Uint8Array; layer: Uint8Array; tops: Int16Array[]; band?: Uint8Array } = { key: '', px: new Int32Array(0), glow: new Uint8Array(0), layer: new Uint8Array(0), tops: [] };
 
   constructor(seed: number) {
     this.seed = seed;
@@ -396,13 +404,15 @@ export class Backdrop {
     const { geo } = v;
     const W = geo.cols;
     const H = geo.horizon * 2;
-    const cx = W / 2;
+    const homeLeft = v.homeLeft ?? true;
+    const cx = W * forestFocus(homeLeft);
     const biome = v.biome;
-    const key = `${W}:${H}:${biome}`;
+    const key = `${W}:${H}:${biome}:${homeLeft}`;
     if (this.ridge.key !== key) {
       const px = new Int32Array(W * H).fill(-1);
       const glow = new Uint8Array(W * H);
       const layerOf = new Uint8Array(W * H);
+      const band = new Uint8Array(W * H);
       const tops: Int16Array[] = [];
       // Five bands from the dark to the glow's core; the brightest cyan is kept for spores and spots.
       const steps = [tone(biome, 'sky', 0), tone(biome, 'sky', 1), tone(biome, 'sky', 2), tone(biome, 'water', 3), tone(biome, 'sky', 3)];
@@ -411,80 +421,54 @@ export class Backdrop {
       for (let y = 0; y < H; y++) {
         const v2 = y / H;
         const tall = Math.exp(-(((v2 - 0.58) / 0.5) ** 2));
+        // And light low behind the whole forest: a band along the foot of the trees, all the way across,
+        // brightest towards the glow, so every trunk stands out against it.
+        const low = Math.exp(-(((v2 - 0.86) / 0.24) ** 2));
         for (let x = 0; x < W; x++) {
-          const u = (x + 0.5 - cx) / (W * 0.21);
+          const u = (x + 0.5 - cx) / (W * 0.29);
           const wide = Math.exp(-(u * u) / 2);
-          const k = Math.max(0, Math.min(4, Math.floor(wide * tall * 5 + (this.jitter[y * W + x] ?? 0.5) * 0.8 - 0.4)));
+          const across = low * (0.55 + 0.45 * Math.exp(-(((x + 0.5 - cx) / (W * 0.5)) ** 2)));
+          const light = Math.max(wide * tall, across * 0.82);
+          const k = Math.max(0, Math.min(4, Math.floor(light * 5 + (this.jitter[y * W + x] ?? 0.5) * 0.8 - 0.4)));
           px[y * W + x] = steps[k];
+          band[y * W + x] = k;
         }
       }
-      // Rows of trunks, far to near: thin and pale in the glow, then thicker and darker.
-      const tiers: [number, number, number, number][] = [
-        [tone(biome, 'foliage', 2), 8, 2, 0.02],
-        [tone(biome, 'foliage', 1), 13, 3, 0.12],
-        [tone(biome, 'foliage', 0), 19, 4, 0.24],
+      // Trunks in three depths, far to near, drawn by hand in art/forest-far.aseprite and placed round the
+      // open middle where the path ends. Each is the glow behind it a step darker for every step nearer:
+      // the farthest are barely there, the nearest dark against the light.
+      // A thick forest: trunks close together, more of them the further off, filling the open side too.
+      const tiers: [readonly number[], number][] = [
+        [[-0.46, -0.41, -0.36, -0.31, -0.27, -0.23, -0.2, -0.15, -0.105, -0.062, -0.028, 0.032, 0.07, 0.112, 0.16, 0.2, 0.25, 0.3, 0.34, 0.39], 0.06],
+        [[-0.44, -0.37, -0.3, -0.26, -0.18, -0.1, 0.105, 0.15, 0.185, 0.27, 0.33, 0.38], 0.12],
+        [[-0.4, -0.35, -0.23, 0.245, 0.31, 0.36], 0.18],
       ];
-      tiers.forEach(([color, spacing, width, gap], n) => {
-        const layerTops = new Int16Array(W).fill(0);
-        tops.push(layerTops);
-        for (let i = -1; i * spacing < W + spacing; i++) {
+      tiers.forEach(([offsets, top], n) => {
+        tops.push(new Int16Array(W));
+        offsets.forEach((off, i) => {
           const hs = hash2(i, n, this.seed ^ 0x7e3);
-          const x0 = i * spacing + (hs % spacing);
-          // Fewer trunks, and the open middle a little wider on one side than the other, so no two rows match.
-          const side = x0 < cx ? 0.85 + ((hs >>> 20) % 30) / 100 : 1.15 - ((hs >>> 20) % 30) / 100;
-          if (Math.abs(x0 - cx) < W * gap * side || hs % 3 === 0) continue;
-          const w = width + ((hs >>> 8) % 2);
-          const top = Math.round(H * (0.12 + n * 0.08)) + ((hs >>> 10) % 5);
-          // A slight lean, so no two stand quite alike.
-          const lean = ((((hs >>> 14) % 100) / 100) - 0.5) * 0.1;
-          const paint = (x: number, y: number): void => {
-            if (x < 0 || x >= W || y < 0 || y >= H) return;
-            px[y * W + x] = color;
-            layerOf[y * W + x] = n + 1;
-          };
-          for (let y = top; y < H; y++) {
-            const xs = Math.round(x0 + lean * (H - y));
-            for (let x = xs; x < xs + w; x++) paint(x, y);
-          }
-          // A branch or two, forking up and outward, thinning to a twig.
-          const branches = 1 + ((hs >>> 12) % 2) + (n === 2 ? 1 : 0);
-          for (let k = 0; k < branches; k++) {
-            const hb = hash2(i * 7 + k, n, this.seed ^ 0x3b1);
-            const side = (hb & 1) === 0 ? -1 : 1;
-            const y1 = top + 2 + ((hb >>> 4) % Math.max(1, Math.round(H * 0.3)));
-            const len = 5 + ((hb >>> 8) % 6);
-            for (let t = 0; t < len; t++) {
-              const bx = Math.round(x0 + (side < 0 ? 0 : w - 1) + side * t);
-              const by = Math.round(y1 - t * 0.7);
-              paint(bx, by);
-              if (t < len * 0.5 && w > 2) paint(bx, by + 1);
+          if (hs % 5 === 0) return;
+          const art = pixels('forest-far', `far-${n + 1}${'abc'[(hs >>> 4) % 3]}`);
+          const { w } = extent(art);
+          const mirror = ((hs >>> 8) & 1) === 1;
+          const x0 = Math.round(cx + (off + (((hs >>> 12) % 21) - 10) / 1000) * W - w / 2);
+          const y0 = Math.round(H * top) + ((hs >>> 20) % 3);
+          for (let y = y0; y < H; y++) {
+            // Below its drawing the trunk runs straight on down to the ground.
+            const sy = Math.min(art.h - 1, y - y0);
+            for (let c = 0; c < w; c++) {
+              if (art.px[sy * art.w + (mirror ? w - 1 - c : c)] === 0) continue;
+              const x = x0 + c;
+              if (x < 0 || x >= W || y < 0) continue;
+              // Its edge on the glow's side catches the light: a step lighter than the rest of it.
+              const lit = art.px[sy * art.w + (mirror ? w - 1 - (c + (x0 + c < cx ? 1 : -1)) : c + (x0 + c < cx ? 1 : -1))] === 0;
+              px[y * W + x] = steps[Math.max(0, band[y * W + x] - (n + 1) + (lit ? 1 : 0))];
+              layerOf[y * W + x] = n + 1;
             }
           }
-        }
+        });
       });
-      // The canopy's dark across the top, its lower edge lumpy, with leaf clusters hanging under it.
-      const dark = tone(biome, 'foliage', 0);
-      const leaf = [tone(biome, 'foliage', 3), tone(biome, 'foliage', 4)];
-      for (let x = 0; x < W; x++) {
-        const edge = H * 0.03 + Math.abs(this.cloudNoise(x / 9 + 77, 1)) * H * 0.06;
-        for (let y = 0; y < edge && y < H; y++) {
-          px[y * W + x] = dark;
-          layerOf[y * W + x] = 4;
-        }
-      }
-      for (let y = 0; y < H * 0.34; y += 2) {
-        for (let x = 0; x < W; x += 2) {
-          const hs = hash2(x, y, this.seed ^ 0x9a1);
-          const depth = y / (H * 0.34);
-          // Dense just under the dark, thinning to nothing lower down.
-          if (hs % 1000 >= (1 - depth) ** 2 * 520) continue;
-          const c = leaf[(hs >>> 8) % 2];
-          for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
-            if (x + dx < W && y + dy < H && layerOf[(y + dy) * W + x + dx] === 0) px[(y + dy) * W + x + dx] = c;
-          }
-        }
-      }
-      this.ridge = { key, px, glow, layer: layerOf, tops };
+      this.ridge = { key, px, glow, layer: layerOf, tops, band };
     }
     // The whole depth is lit by the glow itself, like a sky: the daylight pass leaves it alone.
     const { px, layer } = this.ridge;
@@ -494,6 +478,7 @@ export class Backdrop {
         this.glow[i] = 1;
       }
     }
+    if (v.visit !== undefined && v.visit !== null) this.drawVisitor(v, v.visit);
     // Spores drifting up through the glow, pale, a few at a time.
     const spore = tone(biome, 'sky', 4);
     for (let k = 0; k < 16; k++) {
@@ -501,6 +486,39 @@ export class Backdrop {
       const x = Math.round(cx + (((hs % 1000) / 1000) - 0.5) * W * 0.5 + Math.sin(v.slow * 0.4 + k) * 1.5);
       const y = Math.round(H - ((((hs >>> 10) % 1000) / 1000) * H + v.slow * (1.5 + (hs % 3) * 0.5)) % H);
       if (x >= 0 && x < W && y >= 0 && y < H && layer[y * W + x] === 0 && this.px[y * W + x] !== tone(biome, 'sky', 0)) this.px[y * W + x] = spore;
+    }
+  }
+
+  /**
+   * The visitor (art/visitor.aseprite), walking along the foot of the far trunks: in front of the farthest,
+   * behind the nearer ones; a silhouette two steps darker than the glow behind it, the lights on its
+   * antlers and its eye its own.
+   */
+  private drawVisitor(v: BackdropView, visit: Visit): void {
+    const { geo } = v;
+    const W = geo.cols;
+    const H = geo.horizon * 2;
+    const { layer, band } = this.ridge;
+    if (band === undefined) return;
+    const steps = [tone(v.biome, 'sky', 0), tone(v.biome, 'sky', 1), tone(v.biome, 'sky', 2), tone(v.biome, 'water', 3), tone(v.biome, 'sky', 3)];
+    const span = W * 0.72;
+    const walked = visit.progress * span;
+    // Its legs keep pace with the ground: a frame for every pixel or so it walks.
+    const art = pixels('visitor', `walk${(Math.floor(walked / 0.9) % 4) + 1}`);
+    const { w, h } = extent(art);
+    const x0 = Math.round(W * forestFocus(v.homeLeft ?? true) + visit.dir * (walked - span / 2) - w / 2);
+    const y0 = H - h;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const k = art.px[y * art.w + (visit.dir < 0 ? w - 1 - x : x)];
+        const sx = x0 + x;
+        const sy = y0 + y;
+        if (k === 0 || sx < 0 || sx >= W || sy < 0 || sy >= H) continue;
+        const i = sy * W + sx;
+        if (layer[i] > 1) continue;
+        this.px[i] = GLOWING.has(k) ? PALETTE[k] : steps[Math.max(0, band[i] - 2)];
+        this.glow[i] = 1;
+      }
     }
   }
 
@@ -691,10 +709,10 @@ export class Backdrop {
     const biome = v.biome;
     const def = BIOMES[biome];
     const winter = sky.season === 'winter' && snows(biome, sky.season) && !def.cold;
-    const key = `${W}:${top}:${H}:${biome}:${sky.season}:${sky.horizon}:${v.path?.x}:${v.path?.y}`;
+    const key = `${W}:${top}:${H}:${biome}:${sky.season}:${sky.horizon}:${v.path?.x}:${v.path?.y}:${v.homeLeft}`;
     if (this.ground.key !== key) this.ground = { key, ...this.groundBase(v, winter) };
     this.px.set(this.ground.px.subarray(0, (H - top) * W), top * W);
-    this.glow.fill(0, top * W, H * W);
+    this.glow.set(this.ground.glow.subarray(0, (H - top) * W), top * W);
     const t = v.slow;
     const ground = winter ? WINTER_GROUND : def.ground;
     const path = this.ground.path;
@@ -723,29 +741,6 @@ export class Backdrop {
         }
       }
     }
-    // Under the canopy: tiny glowing caps along the far path, and violet undergrowth in the mid-distance.
-    if (def.gloom !== undefined) {
-      const groundRows = H - top;
-      for (let k = 0; k < 10; k++) {
-        const hs = hash2(k, 3, this.seed ^ 0x61);
-        const y = top + 1 + ((hs >>> 8) % Math.max(1, Math.round(groundRows * 0.45)));
-        const t = (y - top) / Math.max(1, groundRows);
-        const x = Math.round(W / 2 + (hs & 1 ? 1 : -1) * (2 + t * 10 + ((hs >>> 16) % 4)));
-        const pulse = 0.6 + 0.4 * Math.sin(v.slow * 0.8 + k);
-        const c = mix(tone(biome, 'glow', 2), tone(biome, 'glow', 4), pulse);
-        if (x >= 0 && x < W && y >= top && y < H) {
-          this.px[y * W + x] = c;
-          this.glow[y * W + x] = 1;
-        }
-      }
-      for (let k = 0; k < 8; k++) {
-        const hs = hash2(k, 5, this.seed ^ 0x62);
-        const y = top + 2 + ((hs >>> 8) % Math.max(1, Math.round(groundRows * 0.35)));
-        const x = (hs >>> 16) % W;
-        if (Math.abs(x - W / 2) < W * 0.08) continue;
-        for (let i = 0; i < 3 + (hs % 3); i++) put(x + i + ((i + y) % 2), y + (i % 2), tone(biome, 'accent', i % 3 === 0 ? 2 : 1));
-      }
-    }
     // Snow and frost glitter.
     if (winter || def.cold) {
       for (let y = top; y < H; y++) {
@@ -755,6 +750,71 @@ export class Backdrop {
         }
       }
     }
+  }
+
+  /** What grows singly on the forest floor at each depth (0 far … 1 near): small things far off, ferns near. */
+  private static readonly FLOOR: readonly (readonly [number, readonly string[]])[] = [
+    [0.25, ['caps', 'tuft', 'flowers', 'violet', 'moss']],
+    [0.6, ['fern-a', 'flowers', 'tuft', 'caps', 'stones', 'moss', 'fern-c']],
+    [1, ['fern-big', 'fern-b', 'flowers', 'grass', 'roots', 'fern-a']],
+  ];
+
+  /**
+   * The forest floor, thick with growth. Bands of undergrowth (art/forest-undergrowth.aseprite) recede in
+   * rows: a long one far off along the foot of the trees, pale in the haze, open where the glow's light lies
+   * on the ground; broken stands of it nearer, darker. Between them single plants (art/forest-ground.aseprite)
+   * here and there in the clearings, the dark ground showing round them. Back to front, each over the last.
+   * Into `px` (the ground's rows), and which pixels glow into `glow`.
+   */
+  private drawFloor(v: BackdropView, px: Int32Array, glow: Uint8Array): void {
+    const { geo } = v;
+    const W = geo.cols;
+    const top = geo.horizon * 2;
+    const H = geo.rows * 2;
+    const rows = H - top;
+    const focus = W * forestFocus(v.homeLeft ?? true);
+    const items: { foot: number; draw: () => void }[] = [];
+    const stamp = (art: Pixels, x0: number, foot: number, mirror: boolean): void => {
+      for (let y = 0; y < art.h; y++) {
+        for (let c = 0; c < art.w; c++) {
+          const k = art.px[y * art.w + (mirror ? art.w - 1 - c : c)];
+          const sx = x0 + c;
+          const sy = foot - art.h + 1 + y;
+          if (k === 0 || sx < 0 || sx >= W || sy < top || sy >= H) continue;
+          px[(sy - top) * W + sx] = PALETTE[k];
+          glow[(sy - top) * W + sx] = GLOWING.has(k) ? 1 : 0;
+        }
+      }
+    };
+    const strips = ['strip-a', 'strip-b', 'strip-c'];
+    // The far band, unbroken but for the glow; two broken bands nearer.
+    // The far band lies where the glow's light falls on the floor: it is the brightest of the ground.
+    const bands: [number, number, number][] = [[0.06, 3, 1], [0.38, 0, 0.55], [0.72, -1, 0.35]];
+    bands.forEach(([t, shade, cover], n) => {
+      const foot = top + Math.round(t * (rows - 1));
+      for (let x = -6, i = 0; x < W; x += 40, i++) {
+        const hs = hash2(i, n, this.seed ^ 0x51d);
+        if ((hs % 100) / 100 >= cover) continue;
+        if (n === 0 && Math.abs(x + 24 - focus) < W * 0.12) continue;
+        const art = aerial(grounded(pixels('forest-undergrowth', strips[(hs >>> 8) % strips.length])), shade);
+        items.push({ foot, draw: () => stamp(art, x + ((hs >>> 12) % 7) - 3, foot, ((hs >>> 16) & 1) === 1) });
+      }
+    });
+    // Single plants in the clearings.
+    for (let foot = top + 3; foot < H; foot += 4) {
+      const t = (foot - top) / Math.max(1, rows - 1);
+      const kinds = Backdrop.FLOOR.find(([d]) => t <= d)?.[1] ?? Backdrop.FLOOR[2][1];
+      const shade = t < 0.25 ? 1 : t > 0.7 ? -1 : 0;
+      for (let x = (foot * 7) % 13, i = 0; x < W; x += 12 + (i % 3) * 3, i++) {
+        const hs = hash2(x, foot, this.seed ^ 0x6f1);
+        if (hs % 5 < 2) continue;
+        if (t < 0.3 && Math.abs(x - focus) < W * 0.1) continue;
+        const art = aerial(grounded(pixels('forest-ground', kinds[(hs >>> 8) % kinds.length])), shade);
+        items.push({ foot, draw: () => stamp(art, x + ((hs >>> 12) % 5) - 2, foot, ((hs >>> 16) & 1) === 1) });
+      }
+    }
+    items.sort((a, b) => a.foot - b.foot);
+    for (const it of items) it.draw();
   }
 
   /**
@@ -769,17 +829,16 @@ export class Backdrop {
     const H = geo.rows * 2;
     const mask = new Uint8Array((H - top) * W);
     const biome = v.biome;
-    // In the forest the path runs from the pale glow at the back straight down to the front.
-    const p = BIOMES[biome].gloom !== undefined ? { x: W / 2, y: top, w: 4 } : v.path;
+    // Under the canopy there is none (it is never asked for there).
+    const p = v.path;
     if (p === null) return mask;
     const boards = biome === 'swamp';
     const snowy = winter || biome === 'tundra';
     // Its colour in the palette's own steps: a step lighter far away, where the haze is, never a blend.
-    const gloomy = BIOMES[biome].gloom !== undefined;
-    const role: Role = gloomy ? 'ground' : snowy && !boards ? 'stone' : 'earth';
-    const near = gloomy ? 3 : snowy && !boards ? 3 : boards ? 2 : 3;
+    const role: Role = snowy && !boards ? 'stone' : 'earth';
+    const near = snowy && !boards ? 3 : boards ? 2 : 3;
     const y0 = Math.max(top, p.y);
-    const x1 = p.x + (W / 2 - p.x) * 0.45 + (BIOMES[biome].gloom !== undefined ? (this.seed % 9) - 4 : 0);
+    const x1 = p.x + (W / 2 - p.x) * 0.45;
     const wiggle = (this.seed % 628) / 100;
     for (let y = y0; y < H; y++) {
       const t = (y - y0) / Math.max(1, H - 1 - y0);
@@ -807,7 +866,7 @@ export class Backdrop {
   }
 
   /** The ground's texture that never moves: patches of light and shade, flowers, leaves, pebbles, ripples. */
-  private groundBase(v: BackdropView, winter: boolean): { px: Int32Array; path: Uint8Array } {
+  private groundBase(v: BackdropView, winter: boolean): { px: Int32Array; path: Uint8Array; glow: Uint8Array } {
     const { geo, sky } = v;
     const W = geo.cols;
     const top = geo.horizon * 2;
@@ -840,16 +899,30 @@ export class Backdrop {
         const lightAt = gloom !== undefined ? 0.6 : 0.42;
         let c = p > lightAt + d * 0.16 ? light : gloom === undefined && p < -0.46 - d * 0.16 ? dark : gloom === undefined && q > 0.5 + d * 0.1 ? other : base;
         if (gloom !== undefined) {
-          // Towards the glow at the back, the ground pales into the mist, in flat bands with ragged edges.
-          const k = (1 - depth) ** 1.8 * Math.exp(-(((x + 0.5 - W / 2) / (W * 0.13)) ** 2) / 2);
-          const edge = (this.ridgeNoise(x / 5 + 200, y / 3) + 1) * 0.12;
-          c = k > 0.55 + edge ? step('sky', 2) : k > 0.28 + edge ? step('sky', 1) : c;
+          // Under the canopy: a calm dark floor, darker towards the front, a few patches a step lighter. At
+          // the back it goes into the haze: pale round the path's end where the glow reaches it, violet off
+          // to the sides; in flat bands with ragged edges.
+          const fromMid = Math.abs(x + 0.5 - W * forestFocus(v.homeLeft ?? true)) / (W / 2);
+          const haze = (1 - depth) ** 2.4;
+          const jag = (this.ridgeNoise(x / 4 + 200, y / 2) + 1) * 0.07 + d * 0.08;
+          const lit = haze * Math.exp(-((fromMid / 0.26) ** 2) / 2);
+          // The violet lies in drifts either side of the path's end, not across the whole floor.
+          const drift = haze * Math.exp(-(((fromMid - 0.34) / 0.2) ** 2) / 2) * (0.75 + q * 0.5);
+          if (lit > 0.6 + jag) c = step('sky', 2);
+          else if (lit > 0.32 + jag) c = step('sky', 1);
+          else if (drift > 0.62 + jag) c = step('accent', 1);
+          else if (drift > 0.4 + jag) c = step('accent', 0);
+          // The floor steps darker towards the front, from the glow's light far off to near-black at your feet.
+          else c = depth < 0.18 + d * 0.06 ? step('ground', 3) : depth < 0.42 + d * 0.06 ? step('ground', 2) : depth < 0.72 + d * 0.06 ? step('ground', 1) : step('ground', 0);
         }
         if (biome === 'swamp' && this.cloudNoise(x / 15 + 70, y / 5) > 0.45) c = (x + y * 3) % 17 === 0 ? lighten(mix(0x2e4a40, sky.horizon, 0.3), 0.3) : mix(0x2e4a40, sky.horizon, 0.3);
         px[(y - top) * W + x] = c;
       }
     }
-    const onPath = this.drawPath(v, px, winter);
+    // Under the canopy there is no path: the floor is thick with growth instead.
+    const onPath = gloom !== undefined ? new Uint8Array((H - top) * W) : this.drawPath(v, px, winter);
+    const glow = new Uint8Array((H - top) * W);
+    if (gloom !== undefined) this.drawFloor(v, px, glow);
     const put = (x: number, y: number, c: number): void => {
       if (x >= 0 && x < W && y >= top && y < H && onPath[(y - top) * W + x] === 0) px[(y - top) * W + x] = c;
     };
@@ -869,6 +942,6 @@ export class Backdrop {
         }
       }
     }
-    return { px, path: onPath };
+    return { px, path: onPath, glow };
   }
 }

@@ -4,6 +4,8 @@
 // brighter world. Painted pixel by pixel with noise, without outlines.
 import type { BiomeName } from './config.ts';
 import { tone as paletteTone } from './palette.ts';
+import { PALETTE, extent, pixels } from './sprites.ts';
+import { frameCrop } from './scene.ts';
 import { clumpAt } from './scenery.ts';
 import type { ColorSprite } from './kit.ts';
 import { hash2, makeNoise } from './noise.ts';
@@ -186,93 +188,38 @@ export function surroundArt(biome: BiomeName, season: Season, snowy: boolean, w:
   };
   const bark: Tones = { deep: paletteTone(biome, 'earth', 0), body: paletteTone(biome, 'earth', 1), lit: paletteTone(biome, 'earth', 2), rim: paletteTone(biome, 'earth', 3) };
   /**
-   * The forest's frame: a great trunk up each side, near-black, its bark in long vertical fissures with
-   * clusters of moss; the canopy across the top, thick dark boughs sweeping in from the corners and leaf
-   * clusters hanging round them, thinning towards the glow in the middle.
+   * The forest's frame, drawn in art/forest-frame.aseprite: a great trunk up each side with the mist beyond
+   * it, the canopy arching over the glow from the top corners. The canopy sits in the corner, bark repeats
+   * down the trunk below it and the roots stand at the foot; the right side is the left turned round. On a
+   * narrow window the trunks stand partly outside it; on a wide one the canopy spans the top between them.
    */
   const forestFrame = (): void => {
-    const t = (step: number): number => paletteTone(biome, 'earth', step);
-    const f = (step: number): number => paletteTone(biome, 'foliage', step);
-    const trunks: [number, number][] = [[side, Math.round(w * 0.2)], [-side as -1 | 1, Math.round(w * 0.15)]];
-    for (const [on, thick] of trunks) {
-      for (let y = 0; y < h; y++) {
-        const flare = y > h * 0.8 ? (y - h * 0.8) * 0.5 : 0;
-        const width = thick + flare + Math.abs(n(y / 11, 21 + on)) * 2;
-        for (let i = 0; i < width; i++) {
-          const x = on < 0 ? i : w - 1 - i;
-          const d = width - i;
-          // Bark: a near-black base; long fissures, one pixel wide, of the next tone up, running 8 to 24
-          // pixels down the column before they break; a few columns a shade darker still.
-          const col = hash2(i, on, seed ^ 0x11);
-          const run = 8 + (col % 17);
-          const phase = (col >>> 8) % run;
-          const fissure = col % 3 === 0 && (y + phase) % (run + 5) < run;
-          let c = fissure ? (col % 6 === 0 ? t(3) : t(2)) : col % 7 === 0 ? t(0) : t(1);
-          if (d < 1.2) c = t(3);
-          else if (d < 2.4) c = t(2);
-          put(x, y, c);
+    const piece = (name: string, x0: number, y0: number, mirror: boolean, rows = Infinity): void => {
+      const p = pixels('forest-frame', name);
+      const { w: pw, h: ph } = extent(p);
+      for (let y = 0; y < Math.min(ph, rows); y++) {
+        for (let x = 0; x < pw; x++) {
+          const k = p.px[y * p.w + x];
+          if (k !== 0) put(mirror ? x0 - x : x0 + x, y0 + y, PALETTE[k]);
         }
       }
-      // Moss: clusters of 2x2 on the bark, more lower down and on the lit side.
-      for (let k = 0; k < 40; k++) {
-        const hs = hash2(k, on, seed ^ 0x55);
-        const i = (hs % Math.max(1, thick - 2)) + 1;
-        const y = ((hs >>> 8) % h);
-        if ((hs >>> 16) % 3 === 0 && y < h * 0.4) continue;
-        const x = on < 0 ? i : w - 1 - i;
-        const c = f((hs >>> 20) % 2 + 1);
-        for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) put(x + dx, y + dy, c);
-      }
-    }
-    // The canopy: leaf clusters, 2 by 2, packed tight at the top and the corners and thinning towards the
-    // glow in the middle; only a thin solid dark along the very top. The glow shows between the clusters.
-    const dark = f(0);
-    const reach = (x: number): number => {
-      const fromEdge = Math.min(x, w - 1 - x) / w;
-      return sky * (0.44 * Math.max(0, 1 - fromEdge / 0.45) ** 1.1 + 0.14) + Math.abs(n(x / 7 + sway * 0.2, 5)) * 3;
     };
-    for (let x = 0; x < w; x++) for (let y = 0; y < 2 + Math.abs(n(x / 6, 9)) * 2 && y < h; y++) put(x, y, dark);
-    // Clumps of leaves on a jittered grid, each one tone, lit a step on its upper left; a clump is there
-    // with a chance that falls from nine in ten at the top to one in ten at the canopy's ragged lower edge.
-    for (let y = 0; y < sky * 0.6; y++) {
-      for (let x = 0; x < w; x++) {
-        const r0 = reach(x);
-        if (y > r0 + 3) continue;
-        const c = clumpAt(x, y, 3, seed ^ 0x3a);
-        if (c.d > 2.7) continue;
-        const fill = 0.9 - 0.8 * Math.max(0, Math.min(1, c.cy / r0)) ** 1.5;
-        if ((c.hs % 1000) / 1000 > fill) continue;
-        // Darker up in the thick of it, lighter where the glow reaches the lower clumps.
-        const base = c.cy < r0 * 0.45 ? (c.hs % 4 === 0 ? 1 : 2) : c.hs % 4 === 0 ? 3 : 2;
-        const lit = (x + 0.5 - c.cx) + (y + 0.5 - c.cy) * 1.2 < -1.6 && c.hs % 3 !== 0;
-        put(x, y, f(lit ? base + 1 : c.d > 2.1 ? Math.max(0, base - 1) : base));
-      }
-    }
-    // Boughs: three thick dark branches from each top corner, sweeping down towards the middle.
-    for (const on of [-1, 1] as const) {
-      for (let k = 0; k < 3; k++) {
-        const hs = hash2(k, on + 5, seed);
-        const x0 = on < 0 ? w * 0.12 : w * 0.88;
-        const x1 = w / 2 + on * -1 * w * (0.02 + k * 0.06) + ((hs % 7) - 3);
-        const y1 = sky * (0.18 + k * 0.1) + ((hs >>> 4) % 4);
-        const steps = Math.round(Math.abs(x1 - x0));
-        for (let i = 0; i <= steps; i++) {
-          const u = i / Math.max(1, steps);
-          const x = Math.round(x0 + (x1 - x0) * u);
-          const y = Math.round(-2 + y1 * u * u);
-          const thick = Math.max(2, Math.round(5 - u * 3));
-          for (let j = 0; j < thick; j++) put(x, y + j, j === thick - 1 && thick > 1 ? t(2) : t(0));
-          // Twigs: short forks down and out from the bough, thinning to a pixel.
-          if (i % Math.max(4, Math.round(steps / 5)) === 2 && u > 0.2) {
-            const dir = (hash2(i, k, seed) & 1) === 0 ? -1 : 1;
-            const len = 3 + (hash2(i, k + 9, seed) % 4);
-            for (let q = 1; q <= len; q++) {
-              put(x + dir * q * (on < 0 ? 1 : -1) * -1, y + thick - 1 + q, t(0));
-              if (q < len / 2) put(x + dir * q * (on < 0 ? 1 : -1) * -1 + 1, y + thick - 1 + q, t(0));
-            }
-          }
-        }
-      }
+    const out = frameCrop(w, false);
+    const span = extent(pixels('forest-frame', 'span')).w;
+    for (let x = 60 - out; x < w - 60 + out; x += span) piece('span', x, 0, false);
+    for (const [on, size] of [[side, 'big'], [-side, 'small']] as const) {
+      const mirror = on > 0;
+      // The great tree is its home's: its foot, with the hollow, is drawn with the scene (it stands in
+      // front of some things and behind others), so the frame stops where it begins.
+      const home = size === 'big';
+      const crop = frameCrop(w, home);
+      const x0 = mirror ? w - 1 + crop : -crop;
+      const canopy = extent(pixels('forest-frame', `canopy-${size}`)).h;
+      const roots = home ? extent(pixels('shelter-forest', 'shelter')).h : extent(pixels('forest-frame', `roots-${size}`)).h;
+      const tile = extent(pixels('forest-frame', `bark-${size}`)).h;
+      for (let y = canopy; y < h - roots; y += tile) piece(`bark-${size}`, x0, y, mirror, h - roots - y);
+      piece(`canopy-${size}`, x0, 0, mirror, Math.max(0, h - roots));
+      if (!home) piece(`roots-${size}`, x0, h - roots, mirror);
     }
   };
 

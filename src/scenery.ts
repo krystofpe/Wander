@@ -7,6 +7,8 @@ import type { Ramp } from './color.ts';
 import { BASE, DARK, GLEAM, LIGHT, OUTLINE, SHADOW, draw, fill, flat, paint } from './kit.ts';
 import type { ColorSprite, Drawing, Material, Shape } from './kit.ts';
 import { hash2, rng } from './noise.ts';
+import { INK, PALETTE, aerial, cycleInks, cycles, grounded, mirrored, paintPixels, pixels, slice, snowCapped, tinted } from './sprites.ts';
+import type { Inks, Pixels } from './sprites.ts';
 import type { Season } from './sky.ts';
 
 /** What a prop looks like now: where, when, and the frame of its own motion (water's shimmer). */
@@ -24,6 +26,8 @@ export type Look = {
   readonly sky: number;
   /** Pixels the top of a tree, a palm or reeds leans with the wind. */
   readonly sway: number;
+  /** The step of the colour cycle: glints on the mushrooms, the light on the water. */
+  readonly cycle?: number;
 };
 
 /** Where a home's doorway is, from its top-left: the pixels it spans, and the cell left of its middle at eye height. */
@@ -289,53 +293,6 @@ function snowdrift(v: number): Drawing {
   return draw(W, H, [shape(W, H, 'S', (x, y) => y < H - 1 && H - 1 - y <= a * Math.sin((Math.PI * (x + 0.5)) / W) + b * Math.sin((Math.PI * 2 * (x + 0.5)) / W) * 0.4, { texture: speckle(v, 11) })]);
 }
 
-/**
- * Mushrooms that glow: a wide flat dome of a cap, its rim a shade darker, bright spots clustered where the
- * light is strongest near its crown, a row of pale gills along its underside, and a pale tapering stem.
- * A cluster of a main cap and one or two smaller. `capW` is the main cap's width in pixels.
- */
-function glowshroom(v: number, capW = 12): Drawing {
-  const r = rng(v * 7307 + 9);
-  const W = Math.round(capW * 1.9);
-  const H = Math.round(capW * 1.05) + (Math.round(capW * 1.05) % 2);
-  const shapes: Shape[] = [];
-  const caps: [number, number][] = [[capW * 0.55, capW]];
-  caps.push([capW * 1.4, capW * 0.6]);
-  if (r() < 0.6) caps.push([capW * 1.05, capW * 0.4]);
-  for (const [cx, cw] of caps) {
-    const capH = Math.max(2, Math.round(cw * 0.42));
-    const stemW = Math.max(2, Math.round(cw * 0.28));
-    const foot = H - 1;
-    const stemH = Math.max(2, Math.round(cw * 0.55));
-    const capY = foot - stemH;
-    // The cap: a dome, flat along its underside.
-    const cap = (x: number, y: number): boolean => y <= capY && y > capY - capH - 1 && inEllipse(x, y, cx, capY + 0.5, cw / 2, capH + 0.5);
-    shapes.push(
-      shape(W, H, 'Q', cap, {
-        cast: true,
-        texture: (x, y, t) => {
-          if (t === OUTLINE) return t;
-          if (y >= capY - 1) return DARK;
-          const hs = hash2(x, y, v);
-          // Spots: bright, mostly up towards the crown.
-          if (hs % 5 === 0 && y < capY - capH * 0.3) return GLEAM;
-          if (hs % 11 === 0) return GLEAM;
-          return y < capY - capH * 0.6 ? LIGHT : BASE;
-        },
-      }),
-    );
-    // Gills: a row of pale dots just under the cap's edge.
-    shapes.push(shape(W, H, 'g', (x, y) => y === capY + 1 && Math.abs(x + 0.5 - cx) < cw * 0.42 && (x + Math.round(cx)) % 2 === 0, { bare: true, flat: BASE }));
-    // The stem: pale, tapering a little towards the cap, dark down one side.
-    shapes.push(
-      shape(W, H, 'q', (x, y) => y > capY && y <= foot && Math.abs(x + 0.5 - cx) <= stemW / 2 + ((y - capY) / stemH) * 0.6, {
-        texture: (x, _y, t) => (t === OUTLINE ? t : x + 0.5 > cx + stemW * 0.2 ? DARK : x + 0.5 < cx - stemW * 0.2 ? LIGHT : BASE),
-      }),
-    );
-  }
-  return draw(W, H, shapes);
-}
-
 function mushrooms(v: number): Drawing {
   const r = rng(v * 991 + 1);
   const W = 14;
@@ -394,26 +351,8 @@ function home(biome: BiomeName, snowy: boolean): Home {
     { rows: ['.G.', 'GGG'], x: x0, y: H - 4, bare: true, flat: BASE },
   ];
   switch (biome) {
-    case 'forest': {
-      // A great fallen trunk lying low across the ground, its hollow dug beneath where the earth fell away;
-      // the stump of a torn root at one end. Low, so it hides none of the glow behind.
-      H = 28;
-      door = { x: 13, y: 13, w: 12, h: 14 };
-      const log = (x: number, y: number): boolean => nearSegment(x, y, 1, 7, 32, 5, 5.2) && y >= 1;
-      const bank = (x: number, y: number): boolean => y < H - 1 && y >= 11 && inEllipse(x, y, 19, H + 4, 19, 17);
-      const rootEnd = (x: number, y: number): boolean => inEllipse(x, y, 34, 7, 5.5, 6.5) && y >= 1;
-      shapes = [
-        shape(W, H, 'e', bank, { texture: speckle(5, 9) }),
-        shape(W, H, 'Y', rootEnd, { texture: (x, y, t) => (t === OUTLINE ? t : (x + y) % 5 === 0 ? DARK : t) }),
-        ...[0.3, 1.1, 2.0, 2.9, 3.9, 5.0].map((a, i) => pole('T', 34 + Math.cos(a) * 4, 7 + Math.sin(a) * 5, 34 + Math.cos(a + 0.1) * (7 + (i % 2)), 7 + Math.sin(a + 0.1) * (8 + (i % 3)), 0.7)),
-        shape(W, H, 'T', log, { texture: bark, cast: true }),
-        shape(W, H, 'h', (x, y) => log(x, y) && !log(x, y - 2) && hash2(x, 0, 5) % 3 !== 0, { bare: true, texture: speckle(9, 4) }),
-        hollow(door),
-        ...fire(31),
-      ];
-      embers = { x: 32, y: H - 4 };
-      break;
-    }
+    // The forest's shelter is drawn by hand (art/shelter-forest.aseprite); it never comes here.
+    case 'forest':
     case 'meadow': {
       // A lean-to of poles and patched rags, propped against a boulder out of the wind.
       H = 28;
@@ -549,9 +488,93 @@ function build(kind: PropKind, variant: number, look: Look): { d: Drawing; door?
     case 'mushrooms':
       return { d: mushrooms(variant) };
     case 'glowshroom':
-      return { d: glowshroom(variant, 10 + (variant % 3) * 2) };
+      // Glowing mushrooms grow only under the canopy, where they are drawn by hand; anywhere else, plain ones.
+      return { d: mushrooms(variant) };
+    case 'fern':
+      // Big ferns too grow only under the canopy; anywhere else, a bush.
+      return { d: bush(variant, snowy) };
+    case 'trunk':
+      // Trunks rising into the canopy are drawn by the renderer; their footprint is their roots.
+      return { d: deadtree(variant) };
   }
 }
+
+/**
+ * Props drawn by hand in Aseprite, by biome: their sheet, a frame for each variant in turn, and smaller
+ * frames for when they stand far off (an odd variant: things look smaller the further away they are).
+ */
+const DRAWN: Partial<Readonly<Record<BiomeName, Partial<Readonly<Record<PropKind, { readonly sheet: string; readonly frames: readonly string[]; readonly far?: readonly string[] }>>>>>> = {
+  forest: {
+    glowshroom: { sheet: 'glowshroom', frames: ['cluster-a', 'cluster-b', 'single'], far: ['cluster-c', 'small'] },
+    bush: { sheet: 'bush-forest', frames: ['bush-a', 'bush-c'], far: ['bush-b', 'bush-d'] },
+    // Young trees in leaf, now and then a broken old one.
+    tree: { sheet: 'tree-forest', frames: ['young-a', 'young-b', 'young-a', 'young-b', 'snag-a'] },
+    fern: { sheet: 'fern-forest', frames: ['fern-a', 'fern-c'], far: ['fern-b'] },
+    pond: { sheet: 'pool', frames: ['pool1', 'pool2', 'pool3', 'pool4'] },
+  },
+};
+
+/** The widths of trunk, nearest last; a trunk's variant picks one (art/forest-trunk.aseprite). */
+export const TRUNKS = ['thin', 'mid', 'wide'] as const;
+
+/** Shelters drawn by hand, by biome: a frame with `door` and `smoke` slices. */
+const SHELTERS: Partial<Readonly<Record<BiomeName, string>>> = { forest: 'shelter-forest' };
+
+/**
+ * A prop's hand-drawn pixels, cut down to what is drawn and standing on its bottom row, if it has them.
+ * Water's frames are its shimmer, not its variants.
+ */
+const hands = new Map<string, Pixels | null>();
+
+function drawn(kind: PropKind, variant: number, biome: BiomeName, frame = 0): Pixels | null {
+  const id = `${kind}:${variant}:${biome}:${kind === 'pond' ? frame : 0}`;
+  let p = hands.get(id);
+  if (p === undefined) {
+    p = drawnNow(kind, variant, biome, frame);
+    hands.set(id, p);
+  }
+  return p;
+}
+
+function drawnNow(kind: PropKind, variant: number, biome: BiomeName, frame: number): Pixels | null {
+  // A trunk's footprint is its roots; the renderer draws the rest of it up into the canopy.
+  if (kind === 'trunk') return BIOMES[biome].gloom === undefined ? null : grounded(pixels('forest-trunk', `${TRUNKS[variant % 3]}-roots`));
+  if (kind === 'home') {
+    const sheet = SHELTERS[biome];
+    if (sheet === undefined) return null;
+    // Drawn for the left; an odd variant stands on the right, turned round.
+    const p = pixels(sheet, 'shelter');
+    return variant % 2 === 1 ? mirrored(p) : p;
+  }
+  const d = DRAWN[biome]?.[kind];
+  if (d === undefined) return null;
+  if (kind === 'pond') return grounded(pixels(d.sheet, d.frames[frame % d.frames.length]));
+  const list = d.far !== undefined && variant % 2 === 1 ? d.far : d.frames;
+  return grounded(pixels(d.sheet, list[(variant >> 1) % list.length]));
+}
+
+/** Where the embers in front of a hand-drawn shelter are, from its top-left in pixels, and which burn hottest. */
+export function shelterEmbers(biome: BiomeName, variant = 0): readonly { readonly x: number; readonly y: number; readonly hot: boolean }[] {
+  const p = drawn('home', variant, biome);
+  if (p === null) return [];
+  const out: { x: number; y: number; hot: boolean }[] = [];
+  p.px.forEach((k, i) => (k === INK.ember || k === INK.emberHot) && out.push({ x: i % p.w, y: Math.floor(i / p.w), hot: k === INK.emberHot }));
+  return out;
+}
+
+/** Embers: ash by day, a little warm; alight at night (and drawn over again, flickering, as they burn). */
+const ASH: Inks = { [INK.ember]: { rgb: 0x4a3a34 }, [INK.emberHot]: { rgb: 0x6a4a38 } };
+const ALIGHT: Inks = { [INK.ember]: { rgb: 0xd8643a, glow: true }, [INK.emberHot]: { rgb: 0xffc870, glow: true } };
+
+/** A pool frozen over: its dark water turned to grey ice, the glow on it paler. */
+const ICE: Inks = {
+  [INK.night]: { rgb: PALETTE[INK.grey1] },
+  [INK.deep]: { rgb: PALETTE[INK.grey1] },
+  [INK.dark]: { rgb: PALETTE[INK.stone2] },
+  [INK.teal0]: { rgb: PALETTE[INK.stone2] },
+  [INK.teal2]: { rgb: PALETTE[INK.stone3] },
+  [INK.teal3]: { rgb: PALETTE[INK.stone4] },
+};
 
 const sprites = new Map<string, ColorSprite>();
 const footprints = new Map<string, Footprint>();
@@ -564,6 +587,21 @@ export const SWAYS: ReadonlySet<PropKind> = new Set(['tree', 'pine', 'reeds']);
 export function footprint(kind: PropKind, variant: number, biome: BiomeName): Footprint {
   const id = `${kind}:${variant}:${biome}`;
   let f = footprints.get(id);
+  const hand = drawn(kind, variant, biome);
+  if (f === undefined && hand !== null) {
+    const sheet = SHELTERS[biome] ?? '';
+    const turned = kind === 'home' && variant % 2 === 1;
+    const flip = <T extends { x: number; w: number }>(b: T | undefined): T | undefined => (b === undefined || !turned ? b : { ...b, x: hand.w - b.x - b.w });
+    const door = kind === 'home' ? flip(slice(sheet, 'door')) : undefined;
+    const smoke = kind === 'home' ? flip(slice(sheet, 'smoke')) : undefined;
+    f = {
+      w: hand.w,
+      h: hand.h / 2,
+      ...(door === undefined ? {} : { door: { ...door, col: door.x + (door.w >> 1) - 1, row: (door.y + 5) >> 1 } }),
+      ...(smoke === undefined ? {} : { smoke: { x: smoke.x, y: smoke.y } }),
+    };
+    footprints.set(id, f);
+  }
   if (f === undefined) {
     const { d, door, smoke } = build(kind, variant, { biome, ...PLAIN });
     f = { w: d.w, h: Math.ceil(d.h / 2), ...(door === undefined ? {} : { door: { ...door, col: door.x + (door.w >> 1) - 1, row: (door.y + 5) >> 1 } }), ...(smoke === undefined ? {} : { smoke }) };
@@ -573,13 +611,20 @@ export function footprint(kind: PropKind, variant: number, biome: BiomeName): Fo
 }
 
 /** A prop painted for how things look now. */
-export function propArt(kind: PropKind, variant: number, look: Look): ColorSprite {
+export function propArt(kind: PropKind, variant: number, look: Look, z = 0.6): ColorSprite {
   const water = kind === 'pond';
-  const id = `${kind}:${variant}:${look.biome}:${look.season}:${look.snowy}:${look.frozen}:${kind === 'home' && look.night}:${water ? `${look.frame % WATER_FRAMES}:${look.sky}` : 0}:${SWAYS.has(kind) ? look.sway : 0}`;
+  const hand = drawn(kind, variant, look.biome, look.frame);
+  const cycle = hand !== null && cycles(hand) ? (look.cycle ?? 0) : 0;
+  // Hand-drawn things under the canopy go paler into the haze at the back and darker at the front.
+  const depth = hand !== null && kind !== 'home' && BIOMES[look.biome].gloom !== undefined ? (z < 0.25 ? 2 : z < 0.45 ? 1 : z > 0.78 ? -1 : 0) : 0;
+  const id = `${kind}:${variant}:${look.biome}:${look.season}:${look.snowy}:${look.frozen}:${kind === 'home' && look.night}:${water ? `${look.frame % WATER_FRAMES}:${look.sky}` : 0}:${SWAYS.has(kind) ? look.sway : 0}:${cycle}:${depth}`;
   let s = sprites.get(id);
   if (s === undefined) {
-    const { d } = build(kind, variant, look);
-    s = paint(d, materials(look));
+    if (hand !== null) {
+      const inks = { ...(kind === 'pond' && look.frozen ? ICE : look.night ? ALIGHT : ASH), ...cycleInks(cycle) };
+      const seen = aerial(hand, depth);
+      s = paintPixels(look.snowy && kind !== 'pond' ? snowCapped(seen) : seen, inks);
+    } else s = paint(build(kind, variant, look).d, materials(look));
     if (sprites.size > 400) sprites.clear();
     sprites.set(id, s);
   }
@@ -589,103 +634,61 @@ export function propArt(kind: PropKind, variant: number, look: Look): ColorSprit
 // ── Small things: critters, food, the toy, the cairn ───────────────────────
 // Drawn facing right; each critter has two frames. Keys: `a` its colour, `b` its body, `e` an eye.
 
-const CRITTER_ROWS: Readonly<Record<CritterKind, readonly [readonly string[], readonly string[]]>> = {
-  butterfly: [['aa.aa', 'aabaa', '.a.a.'], ['.a.a.', '.aba.', '..b..']],
-  moth: [['aa.aa', 'aabaa', '.a.a.'], ['.a.a.', '.aba.', '..b..']],
-  bird: [['a...a', '.a.a.', '..a..'], ['.....', 'aaaaa', '..a..']],
-  firefly: [['a'], ['a']],
-  frog: [['.e..e.', 'aaaaaa', 'aaaaaa', 'a.aa.a'], ['.e..e.', 'aaaaaa', 'aaaaaa', '.a..a.']],
-};
-
-/** Flyers that are too small for an outline: a dark line would swallow them. */
-const BARE: ReadonlySet<CritterKind> = new Set(['firefly', 'bird']);
-
-/** A critter's frame, in its colour. */
-export function critterArt(kind: CritterKind, frame: number, color: number): ColorSprite {
-  const id = `critter:${kind}:${frame % 2}:${color}`;
-  let s = sprites.get(id);
-  if (s === undefined) {
-    const rows = CRITTER_ROWS[kind][frame % 2];
-    const w = rows[0].length + 2;
-    const h = rows.length + 2 + (rows.length % 2);
-    const d = draw(w, h, [{ rows, x: 1, y: 1, bare: BARE.has(kind), texture: (_x, _y, t) => Math.max(t, SHADOW) }]);
-    s = paint(d, {
-      a: { ramp: soft(color), glow: kind === 'firefly' },
-      b: { ramp: flat(0x2a2420, 0x2a2420) },
-      e: { ramp: flat(0x101010, 0x101010) },
-    });
-    sprites.set(id, s);
-  }
-  return s;
+/** A critter's frame, in its colour (art/critters.aseprite); fireflies glow. */
+export function critterArt(kind: CritterKind, frame: number, color: number, light?: number): ColorSprite {
+  return tinted('critters', `${kind}${(frame % 2) + 1}`, color, kind === 'firefly', false, true, light);
 }
 
-/** Things it can hold or find, by the glyph the game knows them by. */
-const ITEM_ROWS: Readonly<Record<string, readonly string[]>> = {
-  '•': ['.l.', 'rrr', 'r+r', '.r.'],
-  '°': ['.d.', 'ddd', 'd+d', '.d.'],
-  '*': ['..s..', '.sss.', 'ss+ss', '.s.s.'],
-  '▪': ['cccc', 'c.cc', 'cc.c'],
-  'ó': ['.l.', '.p.', 'p+p', 'ppp'],
-  o: ['.oo.', 'o+oo', 'oooo'],
+/** Things it can hold or find, by the glyph the game knows them by (art/items.aseprite), and whether they glow. */
+const ITEMS: Readonly<Record<string, readonly [string, boolean]>> = {
+  '•': ['berry', false],
+  '°': ['ring', true],
+  '*': ['star', true],
+  '▪': ['block', false],
+  'ó': ['sprout', false],
+  o: ['pebble', false],
 };
 
 /** A small thing: food, a find, a stone; anything unknown is a little gem in its colour. */
 export function itemArt(glyph: string, color: number): ColorSprite {
-  const id = `item:${glyph}:${color}`;
-  let s = sprites.get(id);
-  if (s === undefined) {
-    const rows = ITEM_ROWS[glyph] ?? ['.x.', 'x+x', '.x.'];
-    const h = rows.length + 2;
-    const d = draw(rows[0].length + 2, h + (h % 2), [{ rows, x: 1, y: 1 }]);
-    const glow = glyph === '*' || glyph === '°';
-    s = paint(d, {
-      l: { ramp: soft(0x4f9a3a) },
-      r: { ramp: soft(color) },
-      d: { ramp: soft(color), glow },
-      s: { ramp: soft(color), glow },
-      c: { ramp: soft(color) },
-      p: { ramp: soft(color) },
-      o: { ramp: soft(color) },
-      x: { ramp: soft(color), glow: true },
-    });
-    sprites.set(id, s);
-  }
-  return s;
+  const [frame, glow] = ITEMS[glyph] ?? ['gem', true];
+  return tinted('items', frame, color, glow);
 }
 
-/** The glowing toy: a ball with a glint. */
+/** The glowing toy: a ball with a glint (art/toy.aseprite). */
 export function toyArt(color: number): ColorSprite {
-  const id = `toy:${color}`;
-  let s = sprites.get(id);
-  if (s === undefined) {
-    s = paint(draw(6, 6, [{ rows: ['.tt.', 't+tt', 'tttt', '.tt.'], x: 1, y: 1 }]), { t: { ramp: soft(color), glow: true } });
-    sprites.set(id, s);
-  }
-  return s;
+  return tinted('toy', 'toy', color, true);
 }
 
-/** Its cairn of `stones`: three at the bottom, then two, two, one, one. */
+/** Its cairn of `stones`: three at the bottom, then two, two, one, one; each stone from art/cairn.aseprite. */
 export function cairnArt(stones: number, snowy: boolean): ColorSprite {
   const id = `cairn:${stones}:${snowy}`;
   let s = sprites.get(id);
   if (s === undefined) {
+    const stone = pixels('cairn', 'stone');
     const levels = [3, 2, 2, 1, 1];
     const W = 18;
     const H = 18;
-    const shapes: Shape[] = [];
+    const px = new Uint8Array(W * H);
     let left = stones;
     for (let level = 0; level < levels.length && left > 0; level++) {
       const n = Math.min(levels[level], left);
       left -= n;
       for (let i = 0; i < n; i++) {
-        const cx = W / 2 + (i - (n - 1) / 2) * 5;
-        const cy = H - 3 - level * 3;
-        const inside = (x: number, y: number): boolean => inEllipse(x, y, cx, cy, 2.8 - level * 0.2, 1.8);
-        shapes.push(shape(W, H, 'R', inside, { texture: speckle(level * 3 + i, 5), cast: true }));
-        if (snowy) shapes.push(snowOn(W, H, inside, 1));
+        const x0 = Math.round(W / 2 + (i - (n - 1) / 2) * 5 - stone.w / 2);
+        const y0 = H - stone.h - level * 3;
+        // Every other stone turned round, so they do not all sit alike.
+        const flip = (level + i) % 2 === 1;
+        for (let y = 0; y < stone.h; y++) {
+          for (let x = 0; x < stone.w; x++) {
+            const k = stone.px[y * stone.w + (flip ? stone.w - 1 - x : x)];
+            if (k !== 0 && x0 + x >= 0 && x0 + x < W) px[(y0 + y) * W + x0 + x] = k;
+          }
+        }
       }
     }
-    s = paint(draw(W, H, shapes), { R: { ramp: soft(0xa8a49c) }, S: { ramp: soft(0xe6eef6) } });
+    const p = { w: W, h: H, px };
+    s = paintPixels(snowy ? snowCapped(p) : p);
     sprites.set(id, s);
   }
   return s;
@@ -709,8 +712,8 @@ function blade(W: number, H: number, key: string, x: number, y: number, len: num
 
 function foreground(biome: BiomeName, seed: number, sway: number, heavy = true): Drawing {
   const r = rng(seed * 2971 + 3);
-  const W = biome === 'forest' ? 44 : 26;
-  const H = biome === 'forest' ? 30 : 22;
+  const W = 26;
+  const H = 22;
   const shapes: Shape[] = [];
   const y = H - 1;
   const grass = (key: string, count: number, tall: number): void => {
@@ -730,26 +733,6 @@ function foreground(biome: BiomeName, seed: number, sway: number, heavy = true):
         shapes.push({ rows: ['Z', 'Z', 'Z'], x: Math.round(fx + sway), y: top - 2, bare: true });
       }
       break;
-    case 'forest': {
-      // Glowing mushrooms low in the corner, the biggest right in front of the glass; no grass in the gloom.
-      for (const [capW, x0, dy] of (heavy ? [[11, 2, 0], [18, 16, 0]] : [[9, 1, 0]]) as readonly (readonly [number, number, number])[]) {
-        const d = glowshroom(seed + capW, capW);
-        d.mat.forEach((row, yy) => Array.from(row).forEach((k, xx) => k !== '.' && shapes.push({ rows: [k], x: xx + x0, y: yy + (H - d.h) + dy, bare: true, flat: d.tone[yy * d.w + xx] })));
-      }
-      break;
-      // A fern: a curved stem with leaflets, and grass round it.
-      grass('G', 6, 14);
-      const stem: [number, number][] = [];
-      for (let k = 0; k <= 8; k++) stem.push([4 + k * 1.8 + sway * (k / 8), y - k * 2.1 + (k * k) / 6]);
-      stem.forEach(([sx, sy], k) => {
-        if (k === 0 || k > 7) return;
-        const len = 5 - k * 0.45;
-        shapes.push(blade(W, H, 'G', sx, sy, len, -len * 0.6, 0.8));
-        shapes.push(blade(W, H, 'G', sx, sy + 0.5, len * 0.8, len * 0.9, 0.8));
-      });
-      shapes.push(shape(W, H, 'G', (px, py) => stem.some(([sx, sy], k) => k > 0 && nearSegment(px, py, stem[k - 1][0], stem[k - 1][1], sx, sy, 0.6))));
-      break;
-    }
     case 'tundra': {
       const rock = (px: number, py: number): boolean => py < H - 1 && inEllipse(px, py, 7, H - 4, 8, 6);
       shapes.push(shape(W, H, 'R', rock, { texture: speckle(seed) }));
@@ -770,9 +753,14 @@ function foreground(biome: BiomeName, seed: number, sway: number, heavy = true):
 }
 
 /** The foreground for a corner: darker than the scene, swaying with the wind in two frames. */
-export function foregroundArt(biome: BiomeName, side: -1 | 1, season: Season, snowy: boolean, frame: number, heavy = true): ColorSprite {
-  const id = `fg:${biome}:${side}:${season}:${snowy}:${frame % 2}:${heavy}`;
+export function foregroundArt(biome: BiomeName, side: -1 | 1, season: Season, snowy: boolean, frame: number, heavy = true, cycle = 0): ColorSprite {
+  const id = `fg:${biome}:${side}:${season}:${snowy}:${frame % 2}:${heavy}:${biome === 'forest' ? cycle : 0}`;
   let s = sprites.get(id);
+  // The forest's corners are drawn by hand (art/forest-corner.aseprite): great glowing mushrooms.
+  if (s === undefined && biome === 'forest') {
+    s = paintPixels(grounded(pixels('forest-corner', heavy ? 'heavy' : 'light')), cycleInks(cycle));
+    sprites.set(id, s);
+  }
   if (s === undefined) {
     const [leafLight, leafDark] = LEAVES.summer;
     // Green in spring and summer; golden, dry grass in autumn; pale straw under snow.
@@ -886,30 +874,13 @@ export function landmarkArt(biome: BiomeName, frame: number, night: boolean, haz
 // ── Signs: hearts, notes, sleep and the marks above its head ───────────────
 // Drawn in pixels, so nothing in the scene is a letter. `x` is the sign's colour, `+` its glint.
 
-const SIGN_ROWS: Readonly<Record<string, readonly string[]>> = {
-  '♥': ['x.x', 'xxx', '.x.'],
-  '♪': ['.xx', '.x.', 'xx.'],
-  '♫': ['xxx', 'x.x', 'x.x'],
-  z: ['xxx', '.x.', 'xxx'],
-  Z: ['xxxx', '..x.', '.x..', 'xxxx'],
-  '?': ['xxx', '..x', '.x.', '...', '.x.'],
-  '!': ['x', 'x', 'x', '.', 'x'],
-  '…': ['x.x.x'],
-};
+/** Signs by the glyph the game knows them by (art/signs.aseprite). */
+const SIGNS: Readonly<Record<string, string>> = { '♥': 'heart', '♪': 'note', '♫': 'notes', z: 'z', Z: 'Z', '?': 'question', '!': 'bang', '…': 'dots' };
 
 /** Whether a glyph has a pixel sign. */
-export const hasSign = (glyph: string): boolean => glyph in SIGN_ROWS;
+export const hasSign = (glyph: string): boolean => glyph in SIGNS;
 
 /** A sign in its colour, with a dark rim so it reads on any ground. */
 export function signArt(glyph: string, color: number): ColorSprite {
-  const id = `sign:${glyph}:${color}`;
-  let s = sprites.get(id);
-  if (s === undefined) {
-    const rows = SIGN_ROWS[glyph] ?? SIGN_ROWS['?'];
-    const w = rows[0].length + 2;
-    const h = rows.length + 2;
-    s = paint(draw(w, h + (h % 2), [{ rows, x: 1, y: 1, flat: BASE }]), { x: { ramp: { ...soft(color), base: color }, glow: true } });
-    sprites.set(id, s);
-  }
-  return s;
+  return tinted('signs', SIGNS[glyph] ?? 'question', color, true);
 }

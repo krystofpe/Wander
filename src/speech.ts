@@ -41,6 +41,7 @@ export const LINES = {
   snow: ['Snow. Everything is quiet.', 'Each flake is different. I checked.', 'The world is being erased, softly.'],
   thunder: ['!!', 'That was close.', 'The sky is angry about something.'],
   stargaze: ['The stars are out.', 'That one is mine. That one is yours.', 'The moon is {moon} tonight.'],
+  visitor: ['...did you see it too?', 'It did not look at us.', 'It comes when the light is low. I think it is looking for something.', 'Gone again.', 'I do not think it knows we are here.'],
   wish: ['A falling star. I wished for... no. I cannot say.', 'Did you see it? Wish.'],
   ponder: [
     'Where does the wind go when it stops?',

@@ -1,6 +1,6 @@
 # Wander
 
-A small hooded figure lives in your terminal. Its face is darkness; only its eyes glow. It shelters in a hollow under a fallen tree, deep in a dim teal forest where the day never quite arrives: a pale glow at the end of the path, glowing mushrooms, mist, and now and then a pair of eyes watching from the canopy. It is all drawn in pixel art, two square pixels to a terminal cell. Its eyes, its lantern and a few embers are the only warm lights. (A meadow, a tundra and a swamp exist too, with `--biome`.) It goes about its own life there: it forages, digs for treasures, stacks stones, chases butterflies, watches the stars, hides from the rain, and sleeps at night. Now and then it turns to you, the one beyond the glass.
+A small hooded figure lives in your terminal. Its face is darkness; only its eyes glow. It lives in a hollow at the foot of a great tree, deep in a dim forest where the day never quite arrives, teal by day and violet by night: ferns and undergrowth thick on the ground, a pale glow far off between the trees, glowing mushrooms, mist, hares and a deer by day, bats, fireflies and an owl by night, and now and then a pair of eyes watching from the canopy. It is all drawn in pixel art, two square pixels to a terminal cell. Its eyes, its lantern and a few embers are the only warm lights. (A meadow, a tundra and a swamp exist too, with `--biome`.) It goes about its own life there: it forages, digs for treasures, stacks stones, chases butterflies, watches the stars, hides from the rain, and sleeps at night. Now and then it turns to you, the one beyond the glass.
 
 ## Run
 
@@ -74,6 +74,16 @@ node src/main.ts --bench --size 160x48
 
 The bench draws a rainy night with the lantern lit and prints milliseconds and bytes per frame.
 
-Everything tunable lives in `src/config.ts`: needs and how fast they drain, the brain's temperature and whims, cooldowns, the Claude settings, and each biome's ground, ridge, props, critters, finds and gloom. Each biome's palette is in `src/palette.ts`. The creature is drawn in `src/figure.ts`, props and shelters in `src/scenery.ts`, the sky and distance in `src/backdrop.ts`, the frame round the scene in `src/surround.ts`, all through the pixel kit in `src/kit.ts`.
+Everything tunable lives in `src/config.ts`: needs and how fast they drain, the brain's temperature and whims, cooldowns, the Claude settings, and each biome's ground, ridge, props, critters, finds and gloom. Each biome's palette is in `src/palette.ts`.
+
+### Art
+
+The creature and the forest are drawn by hand in [Aseprite](https://www.aseprite.org): the files in `art/` are the source, every one in indexed colour in the one palette of `art/palette.gpl`. Some of its colours are roles the game paints as it draws: the cloak, the mood in the eyes, embers that glow only at night, the colour of a critter or a find; colours named `glow …` are not darkened by the night. The four named `glow cycle 1` to `4` take four colours in turn, each a step behind the one before (colour cycling, as Mark Ferrari did it): pixels painted with them glint or shimmer with nothing moving, as the spots on the mushrooms do. Frames are named by their tags; slices mark anchors (the shelter's `door` and `smoke`). After changing a file, export it:
+
+```bash
+npm run art        # aseprite -b --script tools/export-art.lua
+```
+
+This writes `src/sprites.json`, which is all the game reads: it needs no Aseprite to run. `src/sprites.ts` loads it. The creature's frames are put together in `src/figure.ts`, props and shelters in `src/scenery.ts`, the glow, far trunks and forest floor in `src/backdrop.ts`, and the frame of trunks and canopy round the scene in `src/surround.ts`. The meadow, tundra and swamp are still drawn from shapes with the pixel kit in `src/kit.ts`.
 
 The design is in `docs/superpowers/specs/2026-10-08-wander-creature-design.md`. The earlier Wander, a landscape you walk through (with real places from OpenStreetMap), is on the `feat/real-world` branch.

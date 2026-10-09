@@ -74,13 +74,13 @@ test('weather is the same for the same time and seed, and stays in range', () =>
   }
 });
 
-test('the desert is dry, the swamp is wet, and the tundra snows', () => {
+test('the meadow is drier than the swamp, and the tundra snows', () => {
   const share = (biome: (typeof BIOME_NAMES)[number]): number => {
     let wet = 0;
     for (let i = 0; i < 2000; i++) if (weatherAt(at(2026, 6, 1) + i * 25 * 60000, 7, biome).kind !== 'none') wet++;
     return wet / 2000;
   };
-  assert.ok(share('desert') < 0.1);
+  assert.ok(share('meadow') < share('swamp'));
   assert.ok(share('swamp') > 0.15);
   for (let i = 0; i < 2000; i++) {
     const w = weatherAt(at(2026, 6, 1) + i * 25 * 60000, 7, 'tundra');

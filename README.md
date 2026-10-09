@@ -1,10 +1,10 @@
 # Wander
 
-A small hooded figure lives in your terminal. Its face is darkness; only its eyes glow. It has a little home in a forest, meadow, shore, tundra, desert or swamp, drawn in coloured ASCII. It goes about its own life there: it forages, digs for treasures, stacks stones, chases butterflies, watches the stars, hides from the rain, and sleeps at night. Now and then it turns to you, the one beyond the glass.
+A small hooded figure lives in your terminal. Its face is darkness; only its eyes glow. It shelters in a hollow under a fallen tree, deep in a dim teal forest where the day never quite arrives: a pale glow at the end of the path, glowing mushrooms, mist, and now and then a pair of eyes watching from the canopy. It is all drawn in pixel art, two square pixels to a terminal cell. Its eyes, its lantern and a few embers are the only warm lights. (A meadow, a tundra and a swamp exist too, with `--biome`.) It goes about its own life there: it forages, digs for treasures, stacks stones, chases butterflies, watches the stars, hides from the rain, and sleeps at night. Now and then it turns to you, the one beyond the glass.
 
 ## Run
 
-Needs Node 25 or newer.
+Needs Node 25 or newer and a terminal with true colour. The scene is drawn for about 120 by 36 cells or more; it still works down to 50 by 16.
 
 ```bash
 node src/main.ts
@@ -51,7 +51,7 @@ What goes to Anthropic: what you type to it, its name and personality, its needs
 
 | Option | Does |
 |---|---|
-| `--biome NAME` | `forest`, `meadow`, `shore`, `tundra`, `desert` or `swamp`; for an existing creature, it moves house |
+| `--biome NAME` | `forest` (the default), `meadow`, `tundra` or `swamp`; for an existing creature, it moves |
 | `--name NAME` | Names a new creature |
 | `--seed N` | A new creature from this seed (any word works) |
 | `--new` | Starts over; the old creature is kept as `creature.json.bak` |
@@ -74,6 +74,6 @@ node src/main.ts --bench --size 160x48
 
 The bench draws a rainy night with the lantern lit and prints milliseconds and bytes per frame.
 
-Everything tunable lives in `src/config.ts`: needs and how fast they drain, the brain's temperature and whims, cooldowns, the Claude settings, palettes, and each biome's ground, ridge, props, critters and finds. The sprites are plain text in `src/art.ts`.
+Everything tunable lives in `src/config.ts`: needs and how fast they drain, the brain's temperature and whims, cooldowns, the Claude settings, and each biome's ground, ridge, props, critters, finds and gloom. Each biome's palette is in `src/palette.ts`. The creature is drawn in `src/figure.ts`, props and shelters in `src/scenery.ts`, the sky and distance in `src/backdrop.ts`, the frame round the scene in `src/surround.ts`, all through the pixel kit in `src/kit.ts`.
 
 The design is in `docs/superpowers/specs/2026-10-08-wander-creature-design.md`. The earlier Wander, a landscape you walk through (with real places from OpenStreetMap), is on the `feat/real-world` branch.

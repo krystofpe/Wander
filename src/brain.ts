@@ -1,7 +1,8 @@
 // The brain: every activity scores itself from needs, personality, time, weather and the scene; the next one is
 // a weighted random pick. Each activity is a little script (a generator) stepped once per frame.
-import { BIOMES, BRAIN, COLORS, COOLDOWN_SEC, IDLE_KNOCK_SEC, PRESENT_SEC, SELF_FEED_CAP, SELF_PLAY_CAP } from './config.ts';
+import { BIOMES, BRAIN, COLORS, COOLDOWN_SEC, IDLE_KNOCK_SEC, MOON_FINDS, PRESENT_SEC, SELF_FEED_CAP, SELF_PLAY_CAP } from './config.ts';
 import type { Pose } from './art.ts';
+import { FIGURE_ROWS, FIGURE_W } from './figure.ts';
 import { MAX_CAIRN, clamp01, isNightFor, warm } from './creature.ts';
 import type { Feelings, Life, Mood } from './creature.ts';
 import type { Critter, Geometry, Prop, Scene } from './scene.ts';
@@ -26,13 +27,15 @@ export type Body = {
   visible: boolean;
   /** Inside its home: only its eyes show, in the doorway. */
   inside: boolean;
+  /** Stepping through its doorway: 0 outside, rising to 1 as it fades into the dark inside. */
+  doorway: number;
   holding: { readonly glyph: string; readonly color: number } | null;
   /** A small sign above its head: ?, !, ♪, z. */
   icon: string | null;
 };
 
 export function newBody(x: number, z: number): Body {
-  return { x, z, facing: 1, pose: 'stand', eyes: null, gaze: null, lift: 0, visible: true, inside: false, holding: null, icon: null };
+  return { x, z, facing: 1, pose: 'stand', eyes: null, gaze: null, lift: 0, visible: true, inside: false, doorway: 0, holding: null, icon: null };
 }
 
 /** Moments when it may speak with Claude's words instead of its own. */
@@ -117,10 +120,10 @@ function* until(done: () => boolean, limit: number): Script {
 export function dry(c: { readonly scene: Scene; readonly geo: Geometry }, x: number, z: number): { x: number; z: number } {
   const w = c.scene.layout.water;
   if (w === null) return { x, z };
-  // Its four rows must clear the pond's two, or it seems to stand in the water.
+  // Its feet must clear the pond's two rows, or it seems to stand in the water.
   const span = Math.max(1, c.geo.rows - 1 - c.geo.horizon);
   const clear = Math.max(0.15, 5 / span);
-  const halfCols = w.sprite.w / 2 + 4;
+  const halfCols = (w.sprite.w + FIGURE_W) / 2;
   if (Math.abs(x - w.x) * c.geo.cols > halfCols || z < w.z - 0.1 || z > w.z + clear) return { x, z };
   return { x, z: Math.min(1, w.z + clear) };
 }
@@ -172,7 +175,7 @@ function* follow(c: Ctx, target: () => { x: number; z: number } | null, near: ()
   b.pose = 'stand';
 }
 
-/** A hop: up two rows and down again. */
+/** A hop: up and down again, `height` in eighths of its own height. */
 function* hop(c: Ctx, height = 1.5): Script {
   const b = c.body;
   const pose = b.pose;
@@ -180,10 +183,50 @@ function* hop(c: Ctx, height = 1.5): Script {
   let t = 0;
   while (t < 0.5) {
     t += yield;
-    b.lift = Math.max(0, Math.sin((Math.min(t, 0.5) / 0.5) * Math.PI) * height);
+    b.lift = Math.max(0, Math.sin((Math.min(t, 0.5) / 0.5) * Math.PI) * height * (FIGURE_ROWS / 8));
   }
   b.lift = 0;
   b.pose = pose === 'jump' ? 'stand' : pose;
+}
+
+/** Walks to its door and steps in: framed by the doorway, it fades into the dark inside. */
+function* goIn(c: Ctx, run = false): Script {
+  const door = c.geo.door(c.scene.layout.home);
+  yield* walkTo(c, door.x, door.z, run);
+  yield* through(c, 1);
+  c.body.inside = true;
+  c.body.doorway = 0;
+}
+
+/** Steps out of the dark of its doorway and walks a few steps from the door. */
+function* comeOut(c: Ctx): Script {
+  c.body.inside = false;
+  c.body.doorway = 1;
+  yield* through(c, 0);
+  const home = c.scene.layout.home;
+  yield* walkTo(c, c.body.x, Math.min(1, home.z + 0.1));
+}
+
+/** Moves its doorway fade to `to` (1 gone into the dark, 0 outside) over BRAIN.doorwaySec. */
+function* through(c: Ctx, to: number): Script {
+  const b = c.body;
+  b.pose = 'stand';
+  const from = b.doorway;
+  let t = 0;
+  while (t < BRAIN.doorwaySec) {
+    b.doorway = from + (to - from) * (t / BRAIN.doorwaySec);
+    t += yield;
+  }
+  b.doorway = to;
+}
+
+const fullMoon = (c: Ctx): boolean => Math.abs(c.sky.moon - 0.5) < 0.06;
+const darkMoon = (c: Ctx): boolean => c.sky.moon < 0.05 || c.sky.moon > 0.95;
+
+/** Something it finds: by the full or the new moon at night, sometimes a stranger thing than the biome holds. */
+function pickFind(c: Ctx): string {
+  const list = c.sky.daylight < 0.25 && c.random() < 0.5 && fullMoon(c) ? MOON_FINDS.full : c.sky.daylight < 0.25 && c.random() < 0.5 && darkMoon(c) ? MOON_FINDS.dark : BIOMES[c.life.biome].finds;
+  return list[Math.floor(c.random() * list.length)];
 }
 
 /** Waits for its bubble to finish (or `limit` seconds). */
@@ -214,8 +257,9 @@ function particles(c: Ctx, glyph: string, color: number, count: number, opts: { 
 }
 
 /** Screen position of the top of its head. */
+/** The top of its hood: where its thoughts and hearts rise from. */
 export function headOf(c: { readonly body: Body; readonly geo: Geometry }): { col: number; row: number } {
-  return { col: c.geo.col(c.body.x), row: c.geo.footRow(c.body.z) - 3 - Math.round(c.body.lift) };
+  return { col: c.geo.col(c.body.x), row: c.geo.footRow(c.body.z) - FIGURE_ROWS + 1 - Math.round(c.body.lift) };
 }
 
 const nearestOf = (props: readonly Prop[], x: number): Prop | null =>
@@ -235,7 +279,7 @@ const raining = (c: Ctx): boolean => c.sky.weather.precip > 0.25;
 const present = (c: Ctx): boolean => c.idleSec() < PRESENT_SEC && c.focused();
 const bedtime = (c: Ctx): boolean => isNightFor(c.life.traits, c.sky.hour);
 const visibleCritter = (c: Ctx): Critter | null =>
-  c.scene.critters.find((k) => k.kind !== 'bird' && k.kind !== 'gull' && k.x > 0.05 && k.x < 0.95) ?? null;
+  c.scene.critters.find((k) => k.kind !== 'bird' && k.x > 0.05 && k.x < 0.95) ?? null;
 
 const ACT: Readonly<Record<ActivityName, Activity>> = {
   idle: {
@@ -305,9 +349,8 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
     *run(c) {
       const already = c.life.asleep && c.body.inside;
       if (!already) {
-        const door = c.geo.door(c.scene.layout.home);
         if (c.random() < 0.5) c.say('sleepy');
-        yield* walkTo(c, door.x, door.z);
+        yield* goIn(c);
       }
       c.body.inside = true;
       c.body.eyes = '- -';
@@ -323,10 +366,9 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       c.life.asleep = false;
       c.body.eyes = '‿ ‿';
       yield* wait(1.5);
-      c.body.inside = false;
+      yield* comeOut(c);
       c.body.eyes = null;
       c.say('wakeUp');
-      c.body.z = Math.min(1, c.body.z + 0.08);
       yield* hush(c, 4);
     },
   },
@@ -477,7 +519,7 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
   },
   stargaze: {
     cooldown: 120,
-    score: (c) => (c.sky.daylight < 0.25 && c.sky.weather.cloud < 0.5 && !bedtime(c) ? 0.4 + 0.3 * c.life.traits.curious : 0),
+    score: (c) => (c.sky.daylight < 0.25 && c.sky.weather.cloud < 0.5 && !bedtime(c) ? 0.4 + 0.3 * c.life.traits.curious + (fullMoon(c) ? 0.3 : 0) : 0),
     *run(c) {
       yield* walkTo(c, 0.2 + c.random() * 0.6, 0.6 + c.random() * 0.3);
       c.body.pose = 'sit';
@@ -503,12 +545,9 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
     score: (c) => (raining(c) && c.life.traits.rainLover < 0.5 ? 0.7 + (0.5 - c.life.traits.rainLover) * 1.5 : 0),
     *run(c) {
       c.say('rainDislike');
-      const door = c.geo.door(c.scene.layout.home);
-      yield* walkTo(c, door.x, door.z, true);
-      c.body.inside = true;
+      yield* goIn(c, true);
       yield* until(() => !raining(c), 90 + c.random() * 90);
-      c.body.inside = false;
-      c.body.z = Math.min(1, c.body.z + 0.08);
+      yield* comeOut(c);
     },
   },
   dance: {
@@ -562,14 +601,13 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
         t += dt;
         if (c.random() < dt * 6) {
           const foot = c.geo.footRow(c.body.z);
-          c.scene.emit({ glyph: c.random() < 0.5 ? '.' : ',', color: COLORS.dirt, col: c.geo.col(c.body.x) + c.body.facing * 3, row: foot - 1, vc: c.body.facing * (2 + c.random() * 3), vr: -4 - c.random() * 3, life: 0.8, gravity: 18 });
+          c.scene.emit({ glyph: c.random() < 0.5 ? '.' : ',', color: COLORS.dirt, col: c.geo.col(c.body.x) + c.body.facing * 6, row: foot - 1, vc: c.body.facing * (2 + c.random() * 3), vr: -4 - c.random() * 3, life: 0.8, gravity: 18 });
         }
       }
       c.body.pose = 'stand';
       c.body.gaze = null;
       if (c.random() < 0.15 + 0.25 * c.life.traits.curious) {
-        const finds = BIOMES[c.life.biome].finds;
-        const item = finds[Math.floor(c.random() * finds.length)];
+        const item = pickFind(c);
         c.life.found.push(item);
         if (c.life.found.length > 12) c.life.found.shift();
         c.life.stats.finds++;
@@ -715,12 +753,11 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       return c.life.traits.shy > 0.6 && c.life.bond < 0.3 && present(c) ? 0.3 * c.life.traits.shy : 0;
     },
     *run(c) {
-      const big = c.scene.layout.props.filter((p) => p.sprite.h >= 4 && p.kind !== 'home');
+      // Only what stands about as tall as it does hides it.
+      const big = c.scene.layout.props.filter((p) => p.sprite.h >= FIGURE_ROWS - 2 && p.kind !== 'home');
       const cover = nearestOf(big, c.body.x);
       if (cover === null || c.random() < 0.4) {
-        const door = c.geo.door(c.scene.layout.home);
-        yield* walkTo(c, door.x, door.z, true);
-        c.body.inside = true;
+        yield* goIn(c, true);
       } else {
         yield* walkTo(c, cover.x, Math.max(0, cover.z - 0.05), true);
       }
@@ -728,10 +765,7 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       c.say('hide');
       yield* until(() => c.feelings.fright < 0.1, 20 + c.random() * 20);
       c.body.eyes = null;
-      if (c.body.inside) {
-        c.body.inside = false;
-        c.body.z = Math.min(1, c.body.z + 0.08);
-      }
+      if (c.body.inside) yield* comeOut(c);
       yield* walkTo(c, c.body.x, Math.min(1, c.body.z + 0.25));
     },
   },
@@ -748,8 +782,7 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       yield* walkTo(c, left ? -0.06 : 1.06, c.body.z, false, 40);
       c.body.visible = false;
       yield* wait(120 + c.random() * 240);
-      const finds = BIOMES[c.life.biome].finds;
-      const item = finds[Math.floor(c.random() * finds.length)];
+      const item = pickFind(c);
       c.life.found.push(item);
       c.life.stats.finds++;
       c.body.visible = true;
@@ -839,8 +872,7 @@ const REACT: Readonly<Record<ReactionName, (c: Ctx) => Script>> = {
     c.body.eyes = '‿ ‿';
     c.body.inside = true;
     yield* wait(1.2);
-    c.body.inside = false;
-    c.body.z = Math.min(1, c.body.z + 0.1);
+    yield* comeOut(c);
     c.body.eyes = deep && c.life.bond < 0.5 ? '> <' : '‿ ‿';
     c.say(deep && c.life.bond < 0.5 ? 'wokenGrumpy' : 'woken');
     yield* hush(c, 5);
@@ -1020,6 +1052,7 @@ export class Brain {
     b.gaze = null;
     b.icon = null;
     b.holding = null;
+    b.doorway = 0;
     if (b.inside && !this.c.life.asleep) b.inside = false;
   }
 

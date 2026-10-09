@@ -21,6 +21,7 @@ import {
   warm,
 } from './creature.ts';
 import type { Feelings, Life, Mood } from './creature.ts';
+import { FACE_ROW, FIGURE_ROWS, FIGURE_W } from './figure.ts';
 import { Frame } from './frame.ts';
 import type { InputEvent } from './input.ts';
 import { situationText } from './mind.ts';
@@ -576,11 +577,15 @@ export class Game implements Ctx {
     const b = this.body;
     if (!b.visible) return false;
     if (b.inside) {
-      const door = this.geo.door(this.scene.layout.home);
-      return Math.abs(col - this.geo.col(door.x)) <= 2 && Math.abs(row - (this.geo.footRow(door.z) - 1)) <= 1;
+      const home = this.scene.layout.home;
+      const door = home.sprite.door;
+      if (door === undefined) return false;
+      const x = col - this.geo.left(home.x, home.sprite.w) - door.x;
+      const y = (row - (this.geo.footRow(home.z) - home.sprite.h + 1)) * 2 - door.y;
+      return x >= 0 && x < door.w && y >= -1 && y < door.h;
     }
     const foot = this.geo.footRow(b.z) - Math.round(b.lift);
-    return Math.abs(col - this.geo.col(b.x)) <= 3 && row <= foot && row >= foot - 3;
+    return Math.abs(col - this.geo.col(b.x)) <= FIGURE_W / 2 - 2 && row <= foot && row > foot - FIGURE_ROWS;
   }
 
   // ── What you do ──────────────────────────────────────────────────────────
@@ -886,8 +891,8 @@ export class Game implements Ctx {
     if (m === null || this.real - m.at > 4 || this.body.inside || !this.body.visible) return null;
     const head = headOf(this);
     const dx = m.col - head.col;
-    const dy = (m.row - head.row - 1) * 2;
-    if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return 'center';
+    const dy = (m.row - head.row - FACE_ROW) * 2;
+    if (Math.abs(dx) < FIGURE_W / 3 && Math.abs(dy) < FIGURE_W / 3) return 'center';
     if (Math.abs(dy) > Math.abs(dx)) return dy < 0 ? 'up' : 'down';
     return dx < 0 ? 'left' : 'right';
   }

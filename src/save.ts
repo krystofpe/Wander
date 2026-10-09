@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { BIOMES, BIOME_NAMES, BOND, SELF_FEED_CAP, SELF_PLAY_CAP } from './config.ts';
+import { BIOMES, BIOME_NAMES, BOND, FORMER_BIOMES, SELF_FEED_CAP, SELF_PLAY_CAP } from './config.ts';
 import type { BiomeName } from './config.ts';
 import { MAX_CAIRN, addDiary, clamp01, drain, isNightFor, newLife } from './creature.ts';
 import type { Life } from './creature.ts';
@@ -39,6 +39,8 @@ export function revive(data: unknown, path = 'the save file'): Life {
   const seed = num(o.seed, 1) >>> 0;
   const base = newLife(seed, num(o.born, Date.now()));
   const biome = (BIOME_NAMES as readonly string[]).includes(str(o.biome, '')) ? (o.biome as BiomeName) : base.biome;
+  // A creature from a biome that is gone has moved, and remembers where from.
+  const former = FORMER_BIOMES[str(o.biome, '')];
   const needs = (o.needs ?? {}) as Record<string, unknown>;
   const traits = (o.traits ?? {}) as Record<string, unknown>;
   const stats = (o.stats ?? {}) as Record<string, unknown>;
@@ -46,7 +48,7 @@ export function revive(data: unknown, path = 'the save file'): Life {
     Array.isArray(v)
       ? v.flatMap((e) => (typeof e === 'object' && e !== null && typeof (e as { text?: unknown }).text === 'string' ? [{ t: num((e as { t?: unknown }).t, 0), text: (e as { text: string }).text }] : []))
       : [];
-  return {
+  const life: Life = {
     version: 1,
     seed,
     name: str(o.name, base.name),
@@ -90,6 +92,8 @@ export function revive(data: unknown, path = 'the save file'): Life {
     },
     asked: strings(o.asked),
   };
+  if (former !== undefined) addDiary(life, life.lastSeen, `Left the ${former.toLowerCase()}, which is no more, for the ${BIOMES[biome].title.toLowerCase()}.`);
+  return life;
 }
 
 /** Writes the save atomically: a temporary file, then a rename. */

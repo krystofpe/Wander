@@ -44,6 +44,8 @@ export const BRAIN = {
   /** Columns per real second when walking, and when running. */
   walkSpeed: 7,
   runSpeed: 14,
+  /** Seconds it takes to step through its doorway, in or out. */
+  doorwaySec: 0.6,
   /** Rows per real second when moving towards or away from the front. */
   depthSpeed: 2.2,
   /** Seconds of a pending thought bubble before giving up on Claude. */
@@ -86,15 +88,18 @@ export const AI = {
 export const MIN_COLS = 50;
 export const MIN_ROWS = 16;
 /** Share of the scene's rows that is sky. */
-export const SKY_SHARE = 0.5;
+export const SKY_SHARE = 0.55;
 /** Steps per second of the scenery's own motion (grass, clouds, stars, water, lantern flicker); less means less output. */
 export const AMBIENT_HZ = 8;
 /** Bits kept per colour channel: 5 gives 32 levels. Lower means less output per frame. */
 export const COLOR_BITS = 5;
 /** Columns, horizontally, the lantern reaches (rows count double). */
-export const LANTERN_RADIUS = 11;
+export const LANTERN_RADIUS = 18;
 export const LANTERN_RGB: readonly [number, number, number] = [1.0, 0.72, 0.42];
 export const LANTERN_GAIN = 1.25;
+/** Seconds between chances to blink (two in three are taken), and how long the eyes stay shut. */
+export const BLINK_EVERY_SEC = 3.7;
+export const BLINK_SEC = 0.14;
 
 export const WEATHER = {
   /** World minutes per weather slot. */
@@ -113,30 +118,30 @@ export const WEATHER = {
 
 /** Sunlight through the day: [hour, red, green, blue, daylight], interpolated linearly. */
 export const LIGHT_KEYS: readonly (readonly [number, number, number, number, number])[] = [
-  [0, 0.22, 0.26, 0.45, 0],
-  [4.5, 0.22, 0.26, 0.45, 0],
-  [6, 1.0, 0.62, 0.55, 0.5],
-  [7.5, 1.0, 0.92, 0.84, 0.9],
-  [12, 1.0, 1.0, 1.0, 1],
-  [16.5, 1.0, 0.96, 0.9, 0.95],
-  [18.5, 1.0, 0.6, 0.38, 0.5],
-  [20, 0.42, 0.37, 0.58, 0.15],
-  [21, 0.22, 0.26, 0.45, 0],
-  [24, 0.22, 0.26, 0.45, 0],
+  [0, 0.26, 0.29, 0.42, 0],
+  [4.5, 0.26, 0.29, 0.42, 0],
+  [6, 0.78, 0.6, 0.58, 0.5],
+  [7.5, 0.84, 0.84, 0.88, 0.9],
+  [12, 0.9, 0.92, 0.98, 1],
+  [16.5, 0.88, 0.86, 0.88, 0.95],
+  [18.5, 0.86, 0.56, 0.44, 0.5],
+  [20, 0.38, 0.34, 0.48, 0.15],
+  [21, 0.26, 0.29, 0.42, 0],
+  [24, 0.26, 0.29, 0.42, 0],
 ];
 /** Sky colours through the day: [hour, zenith, horizon], interpolated linearly. */
 export const SKY_KEYS: readonly (readonly [number, number, number])[] = [
-  [0, 0x05070f, 0x0f1830],
-  [4.5, 0x05070f, 0x0f1830],
-  [5.6, 0x26305a, 0xd0806a],
-  [6.6, 0x3a5a98, 0xf0b080],
-  [8, 0x3d7bd0, 0xa8d0f0],
-  [12, 0x2f6fd0, 0x9cc8f0],
-  [16.5, 0x3a72c8, 0xb0d0ea],
-  [18.4, 0x34407a, 0xf08a50],
-  [19.6, 0x1a2048, 0x6a3a5a],
-  [20.8, 0x070a16, 0x182040],
-  [24, 0x05070f, 0x0f1830],
+  [0, 0x0c1018, 0x1e2634],
+  [4.5, 0x0c1018, 0x1e2634],
+  [5.6, 0x262a3e, 0x8a6a6a],
+  [6.6, 0x4a566e, 0xb89a8a],
+  [8, 0x5a6e88, 0xa8b2ba],
+  [12, 0x56708c, 0xaab8c0],
+  [16.5, 0x586a84, 0xb2b6b8],
+  [18.4, 0x3a3e58, 0xb47a62],
+  [19.6, 0x1e2032, 0x5a4252],
+  [20.8, 0x0e121c, 0x222a3a],
+  [24, 0x0c1018, 0x1e2634],
 ];
 
 export const COLORS = {
@@ -150,6 +155,9 @@ export const COLORS = {
   thinkFg: 0x5a5d66,
   face: 0x07070b,
   lantern: 0xffd27a,
+  lanternMetal: 0x3a3028,
+  boot: 0x5a4636,
+  clasp: 0xf0c868,
   rain: 0xa9c4e8,
   snow: 0xf4f8ff,
   star: 0xf4f0d8,
@@ -186,7 +194,9 @@ export const EYE_GLOW: Readonly<Record<string, number>> = {
 };
 
 // ── Biomes ─────────────────────────────────────────────────────────────────
-export const BIOME_NAMES = ['forest', 'meadow', 'shore', 'tundra', 'desert', 'swamp'] as const;
+export const BIOME_NAMES = ['forest', 'meadow', 'tundra', 'swamp'] as const;
+/** Biomes there once were; a creature saved in one moves to another. */
+export const FORMER_BIOMES: Readonly<Record<string, string>> = { shore: 'Shore', desert: 'Desert' };
 export type BiomeName = (typeof BIOME_NAMES)[number];
 
 export type PropKind =
@@ -195,28 +205,21 @@ export type PropKind =
   | 'bush'
   | 'rock'
   | 'pond'
-  | 'cactus'
-  | 'palm'
   | 'reeds'
   | 'stump'
   | 'deadtree'
-  | 'driftwood'
   | 'snowdrift'
-  | 'ruin'
   | 'mushrooms'
-  | 'tidepool'
-  | 'oasis'
+  | 'glowshroom'
   | 'home';
-export type CritterKind = 'butterfly' | 'bird' | 'firefly' | 'crab' | 'frog' | 'gull' | 'lizard' | 'moth';
+export type CritterKind = 'butterfly' | 'bird' | 'firefly' | 'frog' | 'moth';
 
 export type BiomeDef = {
   readonly title: string;
-  /** Ground texture glyphs, how many cells carry one, and the daylight colours. */
-  readonly ground: { readonly glyphs: string; readonly density: number; readonly fg: number; readonly bg: number };
-  /** The distant ridge: its glyphs, near and far colours, and how high it rises (share of the sky). */
-  readonly ridge: { readonly glyphs: string; readonly near: number; readonly far: number; readonly height: number; readonly smooth: boolean };
-  /** True when the horizon is open sea instead of a ridge. */
-  readonly sea: boolean;
+  /** The ground: how thick its tufts of grass grow (green biomes), its light and its base colour. */
+  readonly ground: { readonly density: number; readonly fg: number; readonly bg: number };
+  /** The distant ridge: its near and far colours, and how high it rises (share of the sky). */
+  readonly ridge: { readonly near: number; readonly far: number; readonly height: number };
   /** Share of weather slots with rain (or snow). */
   readonly rain: number;
   /** Snow instead of rain all year. */
@@ -225,7 +228,7 @@ export type BiomeDef = {
   readonly props: readonly (readonly [PropKind, number])[];
   /** Where it finds food for itself. */
   readonly forage: PropKind;
-  /** Where it drinks, if anywhere besides the sea. */
+  /** Where it drinks, if anywhere. */
   readonly water: PropKind | null;
   readonly dayCritters: readonly CritterKind[];
   readonly nightCritters: readonly CritterKind[];
@@ -233,17 +236,19 @@ export type BiomeDef = {
   readonly finds: readonly string[];
   /** What it forages, for its words and diary. */
   readonly forageFood: string;
+  /** Under a dense canopy: how much of the daylight gets through, per channel, and the sky seen between the trunks. */
+  readonly gloom?: { readonly light: readonly [number, number, number]; readonly zenith: number; readonly horizon: number; readonly mist: number };
 };
 
 export const BIOMES: Readonly<Record<BiomeName, BiomeDef>> = {
   forest: {
     title: 'Forest',
-    ground: { glyphs: `,.'"♣`, density: 0.32, fg: 0x6fae4e, bg: 0x2c5424 },
-    ridge: { glyphs: '♠♣', near: 0x1f3f2a, far: 0x3c5a6a, height: 0.4, smooth: false },
-    sea: false,
+    ground: { density: 0.32, fg: 0x6fae4e, bg: 0x2c5424 },
+    ridge: { near: 0x1f3f2a, far: 0x3c5a6a, height: 0.4 },
     rain: 0.25,
     cold: false,
-    props: [['tree', 3], ['pine', 2], ['bush', 2], ['mushrooms', 1], ['stump', 1], ['rock', 1]],
+    props: [['tree', 1], ['bush', 1], ['glowshroom', 3]],
+    gloom: { light: [0.92, 0.96, 1.0], zenith: 0x060e1c, horizon: 0x2698a5, mist: 0.4 },
     forage: 'bush',
     water: 'pond',
     dayCritters: ['butterfly', 'bird'],
@@ -253,12 +258,11 @@ export const BIOMES: Readonly<Record<BiomeName, BiomeDef>> = {
   },
   meadow: {
     title: 'Meadow',
-    ground: { glyphs: `,.'"`, density: 0.4, fg: 0xa6dc72, bg: 0x4a8a34 },
-    ridge: { glyphs: '∩n', near: 0x4f7a48, far: 0x7a98a8, height: 0.3, smooth: true },
-    sea: false,
+    ground: { density: 0.4, fg: 0xa6dc72, bg: 0x4a8a34 },
+    ridge: { near: 0x4f7a48, far: 0x7a98a8, height: 0.3 },
     rain: 0.2,
     cold: false,
-    props: [['tree', 1], ['bush', 2], ['rock', 2], ['mushrooms', 1]],
+    props: [['tree', 1], ['bush', 1], ['rock', 1]],
     forage: 'bush',
     water: 'pond',
     dayCritters: ['butterfly', 'bird'],
@@ -266,29 +270,13 @@ export const BIOMES: Readonly<Record<BiomeName, BiomeDef>> = {
     finds: ['a four-leaf clover', 'a snail shell', 'a blue feather', 'a smooth stone', 'a dandelion clock', 'a lost button', 'a star fragment'],
     forageFood: 'wild strawberries',
   },
-  shore: {
-    title: 'Shore',
-    ground: { glyphs: '.:·', density: 0.3, fg: 0xb39a5f, bg: 0xdfca92 },
-    ridge: { glyphs: '~≈', near: 0x2b6f91, far: 0x163b78, height: 0.12, smooth: true },
-    sea: true,
-    rain: 0.2,
-    cold: false,
-    props: [['palm', 2], ['driftwood', 1], ['rock', 2], ['tidepool', 1]],
-    forage: 'tidepool',
-    water: null,
-    dayCritters: ['gull', 'crab'],
-    nightCritters: ['crab'],
-    finds: ['a spiral shell', 'a piece of sea glass', 'a crab claw', 'a bottle cap', 'a pearl', 'a message with no words', 'a sand dollar'],
-    forageFood: 'seaweed',
-  },
   tundra: {
     title: 'Tundra',
-    ground: { glyphs: `.'·`, density: 0.25, fg: 0x8d9caa, bg: 0xc9d3dc },
-    ridge: { glyphs: '▲^', near: 0xd4dbe6, far: 0x8a9ab8, height: 0.55, smooth: false },
-    sea: false,
+    ground: { density: 0.25, fg: 0x8d9caa, bg: 0xc9d3dc },
+    ridge: { near: 0xd4dbe6, far: 0x8a9ab8, height: 0.55 },
     rain: 0.3,
     cold: true,
-    props: [['pine', 3], ['snowdrift', 2], ['rock', 1]],
+    props: [['pine', 2], ['snowdrift', 1], ['rock', 1]],
     forage: 'pine',
     water: 'pond',
     dayCritters: ['bird'],
@@ -296,29 +284,13 @@ export const BIOMES: Readonly<Record<BiomeName, BiomeDef>> = {
     finds: ['an ice crystal that will not melt', 'a white feather', 'a frozen berry', 'a reindeer bell', 'a smooth grey stone', 'a shard of the aurora'],
     forageFood: 'pine nuts',
   },
-  desert: {
-    title: 'Desert',
-    ground: { glyphs: '.·:~', density: 0.25, fg: 0xb98f4c, bg: 0xe0bd78 },
-    ridge: { glyphs: '∩', near: 0xc89858, far: 0xd8b48a, height: 0.28, smooth: true },
-    sea: false,
-    rain: 0.04,
-    cold: false,
-    props: [['cactus', 3], ['rock', 2], ['ruin', 1]],
-    forage: 'cactus',
-    water: 'oasis',
-    dayCritters: ['lizard', 'bird'],
-    nightCritters: ['moth'],
-    finds: ['a sun-bleached bone', 'an old coin', 'a scarab', 'a shard of green glass', 'a rose of sand', 'a compass that points home'],
-    forageFood: 'cactus fruit',
-  },
   swamp: {
     title: 'Swamp',
-    ground: { glyphs: `",~.`, density: 0.35, fg: 0x8fa05c, bg: 0x3a4628 },
-    ridge: { glyphs: '♣♠', near: 0x2c3626, far: 0x56645a, height: 0.35, smooth: false },
-    sea: false,
+    ground: { density: 0.35, fg: 0x8fa05c, bg: 0x3a4628 },
+    ridge: { near: 0x2c3626, far: 0x56645a, height: 0.35 },
     rain: 0.3,
     cold: false,
-    props: [['deadtree', 2], ['reeds', 3], ['mushrooms', 2], ['stump', 1]],
+    props: [['deadtree', 2], ['reeds', 2], ['mushrooms', 1]],
     forage: 'mushrooms',
     water: 'pond',
     dayCritters: ['frog', 'bird'],
@@ -327,6 +299,12 @@ export const BIOMES: Readonly<Record<BiomeName, BiomeDef>> = {
     forageFood: 'mushrooms',
   },
 };
+
+/** What it may find on a night of the full moon, or on the darkest nights of the new moon. */
+export const MOON_FINDS = {
+  full: ['a stone that is warm to hold', 'a moth with a face on its wings', 'a ring of pale grass', 'a key that fits nothing here'],
+  dark: ['a feather black all the way through', 'a seed that hums', 'a shard of something that fell', 'a cold ember'],
+} as const;
 
 /** Leaf colours by season: [light, dark]. Winter means snow on the branches. */
 export const LEAVES: Readonly<Record<string, readonly [number, number]>> = {

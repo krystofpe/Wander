@@ -38,8 +38,8 @@ test('options: defaults, and clear refusals', () => {
   assert.deepEqual(parseOptions([]), {
     seed: null, biome: null, name: null, speed: 1, hour: null, offline: false, save: null, fresh: false, bell: false, bench: false, cols: 160, rows: 48, frames: 300,
   });
-  const o = parseOptions(['--biome', 'Shore', '--name', 'ulo', '--speed', '60', '--hour', '21.5', '--offline', '--new', '--seed', 'hello']);
-  assert.equal(o.biome, 'shore');
+  const o = parseOptions(['--biome', 'Swamp', '--name', 'ulo', '--speed', '60', '--hour', '21.5', '--offline', '--new', '--seed', 'hello']);
+  assert.equal(o.biome, 'swamp');
   assert.equal(o.name, 'Ulo');
   assert.equal(o.speed, 60);
   assert.equal(o.hour, 21.5);

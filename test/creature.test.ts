@@ -28,7 +28,7 @@ test('a new life is the same for the same seed, and differs between seeds', () =
   assert.equal(a.diary[0].text, `${a.name} arrived.`);
   const names = new Set(Array.from({ length: 40 }, (_, i) => newLife(i, 0).name));
   assert.ok(names.size > 10);
-  assert.equal(newLife(5, 0, { biome: 'shore', name: 'Ulo' }).biome, 'shore');
+  assert.equal(newLife(5, 0, { biome: 'swamp', name: 'Ulo' }).biome, 'swamp');
   assert.equal(newLife(5, 0, { name: 'Ulo' }).name, 'Ulo');
 });
 

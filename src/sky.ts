@@ -37,6 +37,8 @@ export type Sky = {
   readonly weather: Weather;
   /** −1..1: which way and how hard the wind blows (positive is to the right). */
   readonly wind: number;
+  /** 0..1: how wet everything still is from rain, now or in the last half hour. */
+  readonly wet: number;
 };
 
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -120,7 +122,7 @@ function slotWeather(slot: number, seed: number, biome: BiomeName, season: Seaso
 
 /** Whether rain falls as snow here and now. */
 export function snows(biome: BiomeName, season: Season): boolean {
-  return BIOMES[biome].cold || (season === 'winter' && biome !== 'desert' && biome !== 'shore');
+  return BIOMES[biome].cold || season === 'winter';
 }
 
 /** The weather at a world time: slots of WEATHER.slotMinutes, fading into the next slot. Pure. */
@@ -162,27 +164,44 @@ export function windAt(ms: number, seed: number, weather: Weather): number {
 /** The sky at a world time for a creature's seed and biome. Pure. */
 export function skyAt(ms: number, seed: number, biome: BiomeName): Sky {
   const hour = localHour(ms);
-  const [r, g, b, daylight] = sunlight(hour);
+  const [r0, g0, b0, daylight] = sunlight(hour);
   const weather = weatherAt(ms, seed, biome);
   const dim = 1 - WEATHER.dimming * weather.precip - 0.12 * weather.cloud;
+  // A full moon up in a clear sky silvers the night a little.
+  const phase = moonPhase(ms);
+  const moonlight = moonPosition(hour) === null ? 0 : (1 - daylight) * (1 - Math.abs(phase - 0.5) * 2) * (1 - weather.cloud) * 0.16;
+  // The dark of the moon: nights near the new moon are darker still.
+  const dark = 1 - 0.22 * (1 - daylight) * Math.abs(phase - 0.5) * 2;
+  const [r, g, b] = [r0 * dark + moonlight * 0.8, g0 * dark + moonlight * 0.92, b0 * dark + moonlight * 1.1];
+  const wet = Math.max(weather.precip, weatherAt(ms - 15 * 60000, seed, biome).precip * 0.75, weatherAt(ms - 30 * 60000, seed, biome).precip * 0.45);
   let [zenith, horizon] = skyColors(hour);
   const grey = scale(weather.storm ? 0x5a626e : 0x8a929c, 0.2 + 0.8 * daylight);
   const overcast = weather.cloud * 0.75 + weather.precip * 0.25;
   zenith = mix(zenith, grey, overcast);
   horizon = mix(horizon, grey, overcast * 0.8);
+  // Under a dense canopy the day never quite arrives, and the sky is the glow between far trunks.
+  const gloom = BIOMES[biome].gloom;
+  let light: [number, number, number] = [r * dim, g * dim, b * dim];
+  if (gloom !== undefined) {
+    const k = 0.45 + 0.55 * daylight;
+    light = [Math.max(light[0] * gloom.light[0], 0.42), Math.max(light[1] * gloom.light[1], 0.52), Math.max(light[2] * gloom.light[2], 0.58)];
+    zenith = mix(zenith, scale(gloom.zenith, k), 0.9);
+    horizon = mix(horizon, scale(gloom.horizon, k), 0.9);
+  }
   return {
     hour,
     phase: phaseName(hour),
     daylight,
-    lightR: r * dim,
-    lightG: g * dim,
-    lightB: b * dim,
+    lightR: light[0],
+    lightG: light[1],
+    lightB: light[2],
     zenith,
     horizon,
     season: seasonOf(ms),
-    moon: moonPhase(ms),
+    moon: phase,
     weather,
     wind: windAt(ms, seed, weather),
+    wet,
   };
 }
 

@@ -23,5 +23,5 @@ test('without a terminal the game explains itself and exits with 1', () => {
 test('bad arguments exit with 2 and say what is wrong', () => {
   const r = spawnSync(process.execPath, [main, '--biome', 'moon'], { encoding: 'utf8' });
   assert.equal(r.status, 2);
-  assert.match(r.stderr, /--biome must be one of forest, meadow, shore, tundra, desert, swamp/);
+  assert.match(r.stderr, /--biome must be one of forest, meadow, tundra, swamp/);
 });

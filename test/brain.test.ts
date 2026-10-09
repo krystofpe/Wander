@@ -116,3 +116,20 @@ test('different seeds live different days', () => {
   assert.equal(day(5), day(5));
   assert.notEqual(day(5), day(6));
 });
+
+test('it steps through its doorway into the dark, and out again a few steps from the door', () => {
+  const g = game(14, (life) => (life.needs.rest = 0.05));
+  g.brain.run('sleep');
+  const fades: number[] = [];
+  run(g, 60, (x) => x.body.doorway > 0 && fades.push(x.body.doorway));
+  assert.equal(g.body.inside, true);
+  assert.equal(g.body.doorway, 0, 'once inside, only its eyes show');
+  assert.ok(fades.length > 5 && fades.every((k, i) => i === 0 || k >= fades[i - 1]), 'it fades in steps, deeper each frame');
+  const home = g.scene.layout.home;
+  g.life.needs.rest = 1;
+  const out: number[] = [];
+  run(g, 30, (x) => !x.body.inside && x.body.doorway > 0 && out.push(x.body.doorway));
+  assert.equal(g.body.inside, false);
+  assert.ok(out.length > 5 && out[out.length - 1] < out[0], 'it comes out of the dark');
+  assert.ok(g.body.z > home.z + 0.05, 'and walks a few steps from the door');
+});

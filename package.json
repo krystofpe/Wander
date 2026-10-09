@@ -1,7 +1,7 @@
 {
   "name": "wander",
   "version": "0.2.0",
-  "description": "A small hooded creature that lives its own life in your terminal, drawn in coloured ASCII",
+  "description": "A small hooded creature that lives its own life in your terminal, drawn in pixel art",
   "private": true,
   "type": "module",
   "engines": {

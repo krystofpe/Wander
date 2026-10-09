@@ -1,5 +1,5 @@
 // The creature's life: what is saved, how its needs drain, what mood it is in, what it remembers.
-import { BEDTIME, BIOME_NAMES, BOND, CLOAKS, DRAIN_SEC, SLEEP_DRAIN, SLEEP_REFILL_SEC, WAKE_TIME } from './config.ts';
+import { BEDTIME, BOND, CLOAKS, DRAIN_SEC, SLEEP_DRAIN, SLEEP_REFILL_SEC, WAKE_TIME } from './config.ts';
 import type { BiomeName } from './config.ts';
 import { rng } from './noise.ts';
 
@@ -80,8 +80,9 @@ export function nameFrom(seed: number): string {
   return NAMES[Math.floor(rng(seed ^ 0x4e41)() * NAMES.length)];
 }
 
-export function biomeFrom(seed: number): BiomeName {
-  return BIOME_NAMES[Math.floor(rng(seed ^ 0xb10e)() * BIOME_NAMES.length)];
+export function biomeFrom(_seed: number): BiomeName {
+  // The forest is where the story is; the others stay reachable with --biome.
+  return 'forest';
 }
 
 export function traitsFrom(seed: number): Traits {

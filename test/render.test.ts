@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BIOME_NAMES } from '../src/config.ts';
+import { BIOME_NAMES, COLORS } from '../src/config.ts';
 import type { BiomeName } from '../src/config.ts';
 import { Frame } from '../src/frame.ts';
 import { Game } from '../src/game.ts';
@@ -65,7 +65,7 @@ test('the status bar names it and shows its needs; the hints follow', () => {
 });
 
 test('its words appear in a bubble, and the journal over everything', () => {
-  const { game } = rendered('desert', 10);
+  const { game } = rendered('swamp', 10);
   game.sayText('The sand remembers every step.');
   game.draw();
   const frame = (game as unknown as { previous: Frame }).previous;
@@ -75,10 +75,26 @@ test('its words appear in a bubble, and the journal over everything', () => {
   game.mode = 'journal';
   game.draw();
   const after = (game as unknown as { previous: Frame }).previous;
-  assert.match(Array.from({ length: after.height }, (_, r) => after.rowText(r)).join('\n'), /Ulo, of the desert/);
+  assert.match(Array.from({ length: after.height }, (_, r) => after.rowText(r)).join('\n'), /Ulo, of the swamp/);
 });
 
 test('a window too small says so', () => {
   const { frame } = rendered('meadow', 12, 30, 10);
   assert.match(frame.rowText(5), /Make the window bigger/);
+});
+
+test('the creature is drawn in half-block pixels, its eyes glowing in its dark face', () => {
+  const { game } = rendered('meadow', 13);
+  const g = game as unknown as { body: { x: number; z: number; pose: string; facing: number; lift: number; visible: boolean; inside: boolean; eyes: string | null }; geo: { col(x: number): number; footRow(z: number): number }; previous: Frame };
+  Object.assign(g.body, { pose: 'sit', facing: 1, lift: 0, visible: true, inside: false, eyes: '• •' });
+  game.draw();
+  const frame = g.previous;
+  const col = g.geo.col(g.body.x);
+  const foot = g.geo.footRow(g.body.z);
+  const cells: number[] = [];
+  for (let r = foot - 13; r <= foot; r++) for (let c = col - 12; c < col + 12; c++) cells.push(r * frame.width + c);
+  assert.ok(cells.some((i) => frame.glyph[i] === 0x2580), 'half blocks');
+  assert.ok(cells.some((i) => frame.bg[i] === COLORS.face || frame.fg[i] === COLORS.face), 'its dark face');
+  const glow = game.view().eyeGlow;
+  assert.ok(cells.some((i) => frame.fg[i] === glow || frame.bg[i] === glow), 'its eyes in their glow colour');
 });

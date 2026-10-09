@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { newLife } from '../src/creature.ts';
 import { rng } from '../src/noise.ts';
+import { BIOME_NAMES } from '../src/config.ts';
 import { backUp, catchUp, defaultSavePath, loadLife, revive, saveLife } from '../src/save.ts';
 
 const dir = (): string => mkdtempSync(join(tmpdir(), 'wander-save-'));
@@ -45,6 +46,16 @@ test('missing fields are filled in, and bad values tamed', () => {
   assert.equal(life.cairn, 9);
   assert.deepEqual(life.diary, [{ t: 1, text: 'hi' }]);
   assert.deepEqual(life.found, []);
+});
+
+test('a creature from the shore or the desert, which are gone, moves and remembers it', () => {
+  for (const gone of ['shore', 'desert']) {
+    const life = revive({ version: 1, seed: 3, name: 'Fen', biome: gone, lastSeen: 50, diary: [] });
+    assert.ok((BIOME_NAMES as readonly string[]).includes(life.biome), gone);
+    assert.equal(life.diary.length, 1);
+    assert.match(life.diary[0].text, new RegExp(`^Left the ${gone}, which is no more, for the ${life.biome}\\.$`));
+  }
+  assert.equal(revive({ version: 1, seed: 3, biome: 'moon' }).diary.length, 0, 'a biome that never was is no move');
 });
 
 test('--new keeps the old creature as .bak', () => {

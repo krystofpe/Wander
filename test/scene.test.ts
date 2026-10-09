@@ -1,56 +1,82 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { BIOMES, BIOME_NAMES } from '../src/config.ts';
-import { CREATURE, CRITTERS, FOODS, HOMES, PROPS, doorOf, drawSprite, sprite } from '../src/art.ts';
-import type { Canvas, Sprite } from '../src/art.ts';
+import type { PropKind } from '../src/config.ts';
+import { FOODS } from '../src/art.ts';
+import { draw, drawColorsAt, flat, paint } from '../src/kit.ts';
+import type { Canvas } from '../src/art.ts';
+import { cairnArt, critterArt, footprint, itemArt, propArt } from '../src/scenery.ts';
 import { rng } from '../src/noise.ts';
 import { Geometry, Scene, layoutScene } from '../src/scene.ts';
 import { skyAt } from '../src/sky.ts';
 
-/** Code points that take two columns, roughly: CJK, fullwidth, emoji. */
-const wide = (cp: number): boolean => (cp >= 0x1100 && cp <= 0x115f) || (cp >= 0x2e80 && cp <= 0xa4cf) || (cp >= 0xff00 && cp <= 0xff60) || cp >= 0x1f300;
+test('painted pixels are drawn two to a cell, half a cell down when asked, and mirrored', () => {
+  const calls: string[] = [];
+  const canvas: Canvas = {
+    width: 9,
+    height: 9,
+    put: () => calls.push('put'),
+    halves: (c, r, top, bottom, glowTop, glowBottom) => calls.push(`${c},${r} ${top} ${bottom}${glowTop ? ' glow' : ''}${glowBottom ? ' glow' : ''}`),
+  };
+  const mats = { a: { ramp: flat(1, 1) }, g: { ramp: flat(3, 3), glow: true } };
+  const s = paint(draw(2, 2, [{ rows: ['a.', 'ag'], x: 0, y: 0, bare: true }]), mats);
+  drawColorsAt(canvas, s, 0, 2);
+  assert.deepEqual(calls, ['0,1 1 1', '1,1 null 3 glow'], 'on whole cells');
+  calls.length = 0;
+  drawColorsAt(canvas, s, 0, 3);
+  assert.deepEqual(calls, ['0,1 null 1', '0,2 1 null', '1,2 3 null glow'], 'half a cell down');
+  calls.length = 0;
+  drawColorsAt(canvas, s, 0, 2, true);
+  assert.deepEqual(calls, ['0,1 null 3 glow', '1,1 1 1'], 'mirrored');
+});
 
-function grid(s: Sprite, opts: Parameters<typeof drawSprite>[5] = {}): string[] {
-  const g = Array.from({ length: s.h }, () => Array<string>(s.w).fill('.'));
-  const canvas: Canvas = { width: s.w, height: s.h, put: (c, r, glyph) => (g[r][c] = String.fromCodePoint(glyph)) };
-  drawSprite(canvas, s, 0, 0, new Proxy({}, { get: () => ({ fg: 1 }) }), opts);
-  return g.map((r) => r.join(''));
-}
-
-test('every sprite is single-width, and its mask lines up with it', () => {
-  const all: [string, Sprite][] = [...Object.entries(CREATURE), ...Object.entries(PROPS), ...Object.entries(HOMES)];
-  for (const [name, s] of all) {
-    assert.equal(s.glyphs.length, s.h, name);
-    for (let r = 0; r < s.h; r++) {
-      assert.equal(s.glyphs[r].length, s.w, `${name} row ${r}`);
-      assert.equal(s.keys[r].length, s.w, `${name} row ${r}`);
-      for (const cp of s.glyphs[r]) assert.ok(!wide(cp), `${name} has a wide glyph`);
+test('every prop of every biome is drawn the size its footprint says, and stands on whole cells', () => {
+  for (const biome of BIOME_NAMES) {
+    const def = BIOMES[biome];
+    const kinds: PropKind[] = ['home', ...def.props.map(([k]) => k), def.forage, ...(def.water === null ? [] : [def.water])];
+    for (const kind of kinds) {
+      for (const variant of [0, 1, 2, 3, 7]) {
+        const fp = footprint(kind, variant, biome);
+        for (const season of ['spring', 'summer', 'autumn', 'winter'] as const) {
+          const art = propArt(kind, variant, { biome, season, snowy: season === 'winter', frozen: season === 'winter', night: false, frame: variant, sky: 0x9cc8f0, sway: 0 });
+          assert.equal(art.w, fp.w, `${biome} ${kind}`);
+          assert.equal(art.h, fp.h, `${biome} ${kind}`);
+          // Something on its bottom row of pixels: nothing floats above the ground.
+          const bottom = art.rgb.subarray((art.h * 2 - 1) * art.w, art.h * 2 * art.w);
+          assert.ok(bottom.some((c) => c >= 0), `${biome} ${kind} reaches the ground`);
+        }
+      }
     }
   }
-  for (const frames of Object.values(CRITTERS)) for (const f of frames) assert.ok(Array.from(f).every((ch) => !wide(ch.codePointAt(0) ?? 0)));
-  for (const f of FOODS) assert.equal(Array.from(f.glyph).length, 1);
 });
 
-test('the creature is 7 by 4 with three face cells; every home has a two-cell door', () => {
-  for (const [name, s] of Object.entries(CREATURE)) {
-    assert.equal(s.w, 7, name);
-    assert.equal(s.h, 4, name);
-    assert.equal(s.glyphs.flat().filter((g) => g === 69).length, 3, name);
-  }
-  for (const [name, home] of Object.entries(HOMES)) {
-    assert.equal(home.w, 12, name);
-    const [c, r] = doorOf(home);
-    assert.equal(home.keys[r][c], 'D', name);
-    assert.equal(home.keys[r][c + 1], 'D', name);
-    assert.equal(home.keys[r + 1][c], 'D', name);
+test('every shelter has a dark hollow where its eyes can show, and embers that glow at night', () => {
+  for (const biome of BIOME_NAMES) {
+    const fp = footprint('home', 0, biome);
+    assert.ok(fp.door !== undefined, biome);
+    const door = fp.door;
+    const look = { biome, season: 'summer' as const, snowy: false, frozen: false, night: true, frame: 0, sky: 0x9cc8f0, sway: 0 };
+    const art = propArt('home', 0, look);
+    // The two cells at its eyes are dark, top and bottom pixels both.
+    for (const c of [door.col, door.col + 1]) {
+      for (const y of [door.row * 2, door.row * 2 + 1]) {
+        const rgb = art.rgb[y * art.w + c];
+        assert.ok(rgb >= 0 && (rgb >> 16) + ((rgb >> 8) & 255) + (rgb & 255) < 90, `${biome} doorway at ${c},${y}`);
+      }
+    }
+    assert.ok(art.glow.some((g) => g === 1), `${biome} has glowing embers`);
+    assert.ok(!propArt('home', 0, { ...look, night: false }).glow.some((g) => g === 1), `${biome} embers are ash by day`);
+    assert.ok(footprint('home', 0, biome).smoke !== undefined, `${biome} smoke rises from somewhere`);
   }
 });
 
-test('drawing mirrors glyphs and puts the eyes in screen order', () => {
-  const s = sprite(['/EEE>'], ['aaaaa']);
-  assert.deepEqual(grid(s, { eyes: '1 2' }), ['/1 2>']);
-  assert.deepEqual(grid(s, { eyes: '1 2', flip: true }), ['<1 2\\']);
-  assert.deepEqual(grid(sprite(['a b']), {}), ['a.b'], 'spaces without a mask are transparent');
+test('critters, food, finds and cairns all have pixels', () => {
+  for (const kind of ['butterfly', 'bird', 'firefly', 'frog', 'moth'] as const) {
+    for (const frame of [0, 1]) assert.ok(critterArt(kind, frame, 0x808080).rgb.some((c) => c >= 0), kind);
+  }
+  for (const f of FOODS) assert.ok(itemArt(f.glyph, f.color).rgb.some((c) => c >= 0), f.name);
+  assert.ok(itemArt('?', 0xffffff).rgb.some((c) => c >= 0), 'anything unknown is a gem');
+  for (let n = 1; n <= 9; n++) assert.ok(cairnArt(n, false).rgb.some((c) => c >= 0));
 });
 
 test('layouts are the same for a seed, inside the scene, with a home, food and water', () => {
@@ -66,10 +92,10 @@ test('layouts are the same for a seed, inside the scene, with a home, food and w
 
 test('geometry maps depth to rows and back', () => {
   const g = new Geometry(100, 40);
-  assert.equal(g.horizon, 20);
-  assert.equal(g.footRow(0), 20);
+  assert.equal(g.horizon, 22);
+  assert.equal(g.footRow(0), 22);
   assert.equal(g.footRow(1), 39);
-  for (let r = 20; r < 40; r++) assert.equal(g.footRow(g.depthOf(r)), r);
+  for (let r = 22; r < 40; r++) assert.equal(g.footRow(g.depthOf(r)), r);
   assert.equal(g.col(0), 0);
   assert.equal(g.col(1), 99);
   const door = g.door(layoutScene(1, 'meadow').home);

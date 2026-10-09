@@ -1,18 +1,20 @@
 // The diorama: where props stand, and the things that move in it (food, the toy, critters, particles).
 import { BIOMES, SKY_SHARE } from './config.ts';
 import type { BiomeName, CritterKind, PropKind } from './config.ts';
-import { FOODS, HOMES, doorOf, propSprite } from './art.ts';
-import type { FoodKind, Sprite } from './art.ts';
+import { FOODS } from './art.ts';
+import type { FoodKind } from './art.ts';
+import { footprint } from './scenery.ts';
+import type { Footprint } from './scenery.ts';
 import { rng } from './noise.ts';
 import type { Sky } from './sky.ts';
 
 /** Positions: x is a share of the width (0 left … 1 right), z a depth (0 back at the horizon … 1 front). */
-export type Prop = { readonly kind: PropKind; readonly x: number; readonly z: number; readonly variant: number; readonly sprite: Sprite };
+export type Prop = { readonly kind: PropKind; readonly x: number; readonly z: number; readonly variant: number; readonly sprite: Footprint };
 
 export type Layout = {
   readonly props: readonly Prop[];
   readonly home: Prop;
-  /** The pond or oasis; null on the shore, where it drinks from the sea. */
+  /** The pond, if the biome has one. */
   readonly water: Prop | null;
   readonly forage: Prop;
   /** Rocks and stumps to sit on. */
@@ -24,37 +26,75 @@ export type Layout = {
 /** Columns the layout is planned for; it stretches to the real width. */
 const PLAN_COLS = 120;
 
-const BACK: ReadonlySet<PropKind> = new Set(['tree', 'pine', 'palm', 'deadtree', 'cactus']);
+const BACK: ReadonlySet<PropKind> = new Set(['tree', 'pine', 'deadtree']);
+/** Low things that grow among the others and need no room of their own. */
+const COVER: ReadonlySet<PropKind> = new Set(['glowshroom', 'mushrooms']);
+const HOME_Z = 0.12;
+const CAIRN_Z = 0.3;
 
 /** The same layout for the same seed and biome, whatever the window size. */
 export function layoutScene(seed: number, biome: BiomeName): Layout {
   const def = BIOMES[biome];
   const r = rng(seed ^ 0x5ce4e);
-  const placed: { x: number; half: number }[] = [];
-  const free = (x: number, half: number): boolean => placed.every((p) => Math.abs(p.x - x) * PLAN_COLS > p.half + half + 2);
-  const place = (half: number, lo: number, hi: number): number => {
-    for (let tries = 0; tries < 40; tries++) {
+  // Under a canopy the path runs down the middle to the glow: nothing may stand in that corridor.
+  const corridor = def.gloom !== undefined;
+  /**
+   * What is placed, at what depth; `keep` marks the home, the water and the cairn, which nothing may stand in
+   * front of; `corridor` the path's open middle, which nothing may stand in at any depth.
+   */
+  const placed: { x: number; z: number; half: number; keep: boolean; corridor?: boolean; cover?: boolean; soft?: boolean }[] = [];
+  /**
+   * Columns between something of half-width `half` at (x, z) and its nearest neighbour. A plain prop may
+   * overlap other plain props a little, and stand anywhere behind the home or the water.
+   */
+  const room = (x: number, z: number, half: number, plain: boolean, cover = false): number => {
+    // Ground cover (`cover`) grows anywhere but on the shelter or other cover: by the water and along the path
+    // too (`soft`). A plain prop may also stand behind the home or the water, except under the canopy, where the
+    // shelter stands low and anything behind it would cover it.
+    const near = placed.filter((p) => (cover ? (p.keep && p.soft !== true) || p.cover === true : true) && !(plain && p.keep && !p.corridor && !corridor && z < p.z - 0.06));
+    return Math.min(Infinity, ...near.map((p) => Math.abs(p.x - x) * PLAN_COLS - p.half - half + (plain && !p.keep ? Math.min(half, p.half) * 0.8 : 0)));
+  };
+  /** The roomiest of some spots between lo and hi at depth z, and whether it is clear. */
+  const find = (half: number, z: number, lo: number, hi: number, plain: boolean, cover = false): { x: number; clear: boolean } => {
+    let best = { x: lo + r() * (hi - lo), room: -Infinity };
+    for (let tries = 0; tries < 60; tries++) {
       const x = lo + r() * (hi - lo);
-      if (free(x, half)) {
-        placed.push({ x, half });
-        return x;
-      }
+      const rm = room(x, z, half, plain, cover);
+      if (rm > 1) return { x, clear: true };
+      if (rm > best.room) best = { x, room: rm };
     }
-    const x = lo + r() * (hi - lo);
-    placed.push({ x, half });
+    return { x: best.x, clear: false };
+  };
+  /** Places something that must be there, crowded or not; `keep` keeps everything in front off it, `soft` lets ground cover grow by it. */
+  const place = (half: number, z: number, lo: number, hi: number, keep: boolean, soft = false): number => {
+    const { x } = find(half, z, lo, hi, false);
+    placed.push({ x, z, half, keep, soft });
+    return x;
+  };
+  /** Places a plain prop only where it has room. */
+  const placeIfClear = (half: number, z: number, lo: number, hi: number, cover = false): number | null => {
+    const { x, clear } = find(half, z, lo, hi, true, cover);
+    if (!clear) return null;
+    placed.push({ x, z, half, keep: false, cover });
     return x;
   };
 
-  const homeSprite = HOMES[biome];
+  if (corridor) placed.push({ x: 0.5, z: 0.5, half: PLAN_COLS * 0.07, keep: true, corridor: true, soft: true });
+  const homeSprite = footprint('home', 0, biome);
   const homeLeft = r() < 0.5;
-  const homeX = place(homeSprite.w / 2, homeLeft ? 0.1 : 0.72, homeLeft ? 0.28 : 0.9);
-  const home: Prop = { kind: 'home', x: homeX, z: 0.12, variant: 0, sprite: homeSprite };
+  // Under the canopy the shelter stands low and to the side, so nothing hides the glow at the back.
+  const homeZ = corridor ? 0.62 : HOME_Z;
+  const homeX = corridor
+    ? place(homeSprite.w / 2, homeZ, homeLeft ? 0.24 : 0.7, homeLeft ? 0.3 : 0.76, true)
+    : place(homeSprite.w / 2, homeZ, homeLeft ? 0.24 : 0.64, homeLeft ? 0.36 : 0.76, true);
+  const home: Prop = { kind: 'home', x: homeX, z: homeZ, variant: 0, sprite: homeSprite };
 
   let water: Prop | null = null;
   if (def.water !== null) {
-    const sprite = propSprite(def.water, 0);
-    const x = place(sprite.w / 2, homeLeft ? 0.55 : 0.12, homeLeft ? 0.85 : 0.42);
-    water = { kind: def.water, x, z: 0.5 + r() * 0.15, variant: 0, sprite };
+    const sprite = footprint(def.water, 0, biome);
+    const z = corridor ? 0.72 + r() * 0.15 : 0.5 + r() * 0.15;
+    const x = corridor ? place(sprite.w / 2, z, homeLeft ? 0.7 : 0.14, homeLeft ? 0.86 : 0.3, true, true) : place(sprite.w / 2, z, homeLeft ? 0.55 : 0.12, homeLeft ? 0.85 : 0.42, true, true);
+    water = { kind: def.water, x, z, variant: 0, sprite };
   }
 
   const props: Prop[] = [home];
@@ -63,23 +103,24 @@ export function layoutScene(seed: number, biome: BiomeName): Layout {
   for (const [kind, count] of def.props) {
     for (let i = 0; i < count; i++) {
       const variant = Math.floor(r() * 1000);
-      const sprite = propSprite(kind, variant);
-      const back = BACK.has(kind);
-      const x = place(sprite.w / 2, 0.03, 0.97);
-      const z = back ? r() * 0.35 : 0.2 + r() * 0.75;
+      const sprite = footprint(kind, variant, biome);
+      // Under the canopy even the trees stand in front, in the dark, and leave the glow behind them open.
+      const z = BACK.has(kind) ? (corridor ? 0.5 + r() * 0.3 : r() * 0.35) : 0.2 + r() * 0.75;
+      const x = placeIfClear(COVER.has(kind) ? 5 : sprite.w / 2, z, 0.03, 0.97, COVER.has(kind));
+      if (x === null) continue;
       const prop: Prop = { kind, x, z, variant, sprite };
       props.push(prop);
       if (kind === def.forage && (forage === null || Math.abs(z - 0.5) < Math.abs(forage.z - 0.5))) forage = prop;
     }
   }
   if (forage === null) {
-    const sprite = propSprite(def.forage, 0);
-    forage = { kind: def.forage, x: place(sprite.w / 2, 0.05, 0.95), z: 0.4, variant: 0, sprite };
+    const sprite = footprint(def.forage, 0, biome);
+    forage = { kind: def.forage, x: place(sprite.w / 2, 0.4, 0.05, 0.95, false), z: 0.4, variant: 0, sprite };
     props.push(forage);
   }
-  const seats = props.filter((p) => p.kind === 'rock' || p.kind === 'stump' || p.kind === 'driftwood' || p.kind === 'snowdrift');
-  const cairnX = place(3, homeLeft ? homeX + 0.1 : homeX - 0.16, homeLeft ? homeX + 0.16 : homeX - 0.1);
-  return { props, home, water, forage, seats, cairn: { x: Math.min(0.95, Math.max(0.05, cairnX)), z: 0.3 } };
+  const seats = props.filter((p) => p.kind === 'rock' || p.kind === 'stump' || p.kind === 'snowdrift');
+  const cairnX = place(3, CAIRN_Z, homeLeft ? homeX + 0.1 : homeX - 0.16, homeLeft ? homeX + 0.16 : homeX - 0.1, true);
+  return { props, home, water, forage, seats, cairn: { x: Math.min(0.95, Math.max(0.05, cairnX)), z: CAIRN_Z } };
 }
 
 /** How the scene maps onto a window: rows of sky and ground, and columns for x. */
@@ -130,8 +171,7 @@ export class Geometry {
 
   /** Where to stand in the doorway of a home. */
   door(home: Prop): { x: number; z: number } {
-    const [dc] = doorOf(home.sprite);
-    const col = this.left(home.x, home.sprite.w) + dc + 1;
+    const col = this.left(home.x, home.sprite.w) + (home.sprite.door?.col ?? home.sprite.w >> 1) + 1;
     return { x: this.x(col), z: home.z };
   }
 }
@@ -162,7 +202,7 @@ export type Particle = {
   readonly gravity: number;
 };
 
-const FLYERS: ReadonlySet<CritterKind> = new Set(['butterfly', 'bird', 'gull', 'firefly', 'moth']);
+const FLYERS: ReadonlySet<CritterKind> = new Set(['butterfly', 'bird', 'firefly', 'moth']);
 const GRAVITY = 30; // rows per second²
 const TOY_LIFE = 45;
 
@@ -284,7 +324,6 @@ export class Scene {
           c.y += Math.cos(c.t * 0.9 + c.phase) * 0.02 * dt;
           break;
         case 'bird':
-        case 'gull':
           c.x += (c.vx * dt) / geo.cols;
           c.y += Math.sin(c.t * 1.3 + c.phase) * 0.01 * dt;
           break;
@@ -299,10 +338,10 @@ export class Scene {
   spawn(kind: CritterKind): Critter {
     const flies = FLYERS.has(kind);
     const fromLeft = this.random() < 0.5;
-    const speed = kind === 'bird' || kind === 'gull' ? 9 + this.random() * 6 : kind === 'butterfly' || kind === 'moth' ? 3 + this.random() * 2 : 2 + this.random() * 2;
+    const speed = kind === 'bird' ? 9 + this.random() * 6 : kind === 'butterfly' || kind === 'moth' ? 3 + this.random() * 2 : 2 + this.random() * 2;
     const inside = kind === 'firefly' || kind === 'moth';
     let y = 0.5;
-    if (kind === 'bird' || kind === 'gull') y = 0.08 + this.random() * 0.25;
+    if (kind === 'bird') y = 0.08 + this.random() * 0.25;
     else if (kind === 'butterfly') y = 0.45 + this.random() * 0.4;
     else if (inside) y = 0.4 + this.random() * 0.5;
     const c: Critter = {

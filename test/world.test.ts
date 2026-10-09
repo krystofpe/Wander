@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { BIOME_IDS } from '../src/biomes.ts';
-import { biomeAt, groundHeight, landmarkAt, landmarksBetween, stretchAt, stretchesBetween, tendencyAt } from '../src/world.ts';
+import { biomeAt, firstStretchOf, groundHeight, landmarkAt, landmarksBetween, stretchAt, stretchesBetween, tendencyAt } from '../src/world.ts';
 
 test('the same seed and distance always give the same place', () => {
   for (const d of [0, 1234.5, 98765.4321, 5e6, 2.5e8]) {
@@ -106,4 +106,13 @@ test('the weather leans with the place', () => {
   const swamp = tendencyAt(0, 0, 'swamp');
   assert.ok(desert.wet < swamp.wet);
   assert.ok(tendencyAt(0, 0, 'tundra').snow > 0.8);
+});
+
+test('the first stretch of a biome is found, and is that biome', () => {
+  for (const id of ['pine', 'coast', 'rail'] as const) {
+    const s = firstStretchOf(77, id);
+    assert.ok(s !== null, id);
+    assert.equal(stretchAt(77, (s.start + s.end) / 2).biome, id);
+    for (const t of stretchesBetween(77, 0, s.start)) assert.notEqual(t.biome, id);
+  }
 });

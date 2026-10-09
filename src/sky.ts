@@ -286,13 +286,21 @@ export function namedWeather(name: string, windSign = 1): Weather | null {
   }
 }
 
+/** Seconds lightning windows last: at most one strike in each. */
+export const FLASH_WINDOW = 7;
+
+/** When the strike in a window falls (real seconds), or null when that window has none; storms only. */
+export function flashIn(window: number, seed: number): number | null {
+  const h = hash2(window, 7, seed ^ 0xf1a5);
+  if (h / 4294967296 > 0.4) return null;
+  return (window + ((h >>> 8) & 1023) / 1024) * FLASH_WINDOW;
+}
+
 /** True during a lightning flash (two quick flickers), from real seconds; only in storms. */
 export function flashAt(realSec: number, seed: number, weather: Weather): boolean {
   if (!weather.storm) return false;
-  const window = Math.floor(realSec / 7);
-  const h = hash2(window, 7, seed ^ 0xf1a5);
-  if (h / 4294967296 > 0.4) return false;
-  const at = ((h >>> 8) & 1023) / 1024;
-  const f = realSec / 7 - window;
-  return (f > at && f < at + 0.012) || (f > at + 0.03 && f < at + 0.04);
+  const at = flashIn(Math.floor(realSec / FLASH_WINDOW), seed);
+  if (at === null) return false;
+  const f = (realSec - at) / FLASH_WINDOW;
+  return (f > 0 && f < 0.012) || (f > 0.03 && f < 0.04);
 }

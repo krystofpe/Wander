@@ -146,6 +146,16 @@ export function stretchesBetween(seed: number, from: number, to: number): Stretc
   return out;
 }
 
+/** The first stretch of a biome at or after `from`, searching up to `limit` metres on; null if there is none. */
+export function firstStretchOf(seed: number, biome: BiomeId, from = 0, limit = 3e6): Stretch | null {
+  let s = stretchAt(seed, from);
+  while (s.start < from + limit) {
+    if (s.biome === biome && s.start >= from) return s;
+    s = { k: s.k + 1, biome: stretchBiome(seed, s.k + 1), start: s.end, end: boundary(seed, s.k + 2) };
+  }
+  return null;
+}
+
 // ── Blending ───────────────────────────────────────────────────────────────
 
 /** Two biomes and how far the blend has gone from `a` to `b` (0..1). Away from any border, a = b and k = 0. */

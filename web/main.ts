@@ -3,13 +3,16 @@ import { BIOMES } from '../src/biomes.ts';
 import type { BiomeId } from '../src/biomes.ts';
 import { catchUp, newJourney, reviveJourney, roadWord } from '../src/journal.ts';
 import type { Journey } from '../src/journal.ts';
-import { stepLife, thoughtContext, weatherOf } from '../src/life.ts';
+import { groundAt, stepLife, thoughtContext, weatherOf } from '../src/life.ts';
 import type { Env, Life, LifeEvent, Stage as LifeStage } from '../src/life.ts';
 import { rng } from '../src/noise.ts';
 import { parseOptions, seedOf } from '../src/options.ts';
-import { dayOf, hourOfDay, localHour, moonPhase, namedWeather, shownHour } from '../src/sky.ts';
+import { PX_PER_M } from '../src/layers.ts';
+import { dayOf, hourOfDay, localHour, moonPhase, namedWeather, shownHour, sunElevation } from '../src/sky.ts';
 import { localThought } from '../src/thoughts.ts';
-import { stretchAt } from '../src/world.ts';
+import { biomeAt, firstStretchOf, landmarkNear, stretchAt } from '../src/world.ts';
+import { Sound, ticker } from './audio/sound.ts';
+import type { Hear } from './audio/heard.ts';
 import { Ui } from './ui.ts';
 import { Renderer } from './render.ts';
 import { loadAtlas } from './sprites.ts';
@@ -101,8 +104,11 @@ async function road(): Promise<{ journey: Journey; mind: string }> {
   }
   const word = opts.seed ?? roadWord(Math.random());
   const j = newJourney(word, Date.now(), moonPhase(Date.now()), opts.hour ?? (tool ? 7.5 : 15.6));
-  if (opts.at !== null) {
-    j.life.at = opts.at;
+  if (opts.at !== null) j.life.at = opts.at;
+  else if (opts.biome !== null) {
+    // Start a little before the middle of the first stretch of that biome.
+    const s = firstStretchOf(j.life.seed, opts.biome);
+    if (s !== null) j.life.at = s.start + (s.end - s.start) * 0.4;
   }
   return { journey: j, mind };
 }
@@ -114,6 +120,20 @@ status.life = life;
 const stage = new Stage(life.seed, journey.moonStart);
 renderer.atlas = await loadAtlas(renderer.gpu);
 const ui = new Ui();
+/** Pictures and stepped captures are silent; everything else has its sound (M turns it off and on). */
+const sound = opts.frozen || opts.manual ? null : new Sound(life.seed, opts.mute);
+Object.assign(status, {
+  sound: () => sound?.status() ?? null,
+  /** Records the sound for `sec` seconds and returns it as base64 WebM (the tools measure it). */
+  record: async (sec: number): Promise<string | null> => {
+    const blob = await sound?.record(sec);
+    if (blob === undefined || blob === null) return null;
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  },
+});
 const shown: string[] = [];
 (status as unknown as { thoughts: string[] }).thoughts = shown;
 
@@ -194,9 +214,10 @@ addEventListener('keydown', (e) => {
   else if (k === 'f') {
     if (document.fullscreenElement === null) void document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
     else void document.exitFullscreen();
-  } else if (k === 'm') soundToggle();
+  } else if (k === 'm') sound?.toggle();
+  else if (k === '+' || k === '=') sound?.volume(1);
+  else if (k === '-') sound?.volume(-1);
 });
-let soundToggle = (): void => {};
 
 const pad = (n: number): string => String(Math.floor(n)).padStart(2, '0');
 const clockText = (h: number): string => `${pad(h)}:${pad((h % 1) * 60)}`;
@@ -223,25 +244,33 @@ function logLines(): string[] {
 const events: LifeEvent[] = [];
 let last = performance.now();
 let anim = opts.t ?? 0;
+let drawnAt = anim;
 let uiAt = 0;
 
-function step(now: number): void {
-  // Real seconds since the last frame, clamped so a hidden tab or a stall does not jump the world.
-  const dt = opts.frozen ? 0 : Math.min(0.1, Math.max(0, (now - last) / 1000));
+/** Lives the time since the last call: his life, its events (thoughts, sounds), the status for the tools. */
+function live(now: number, hidden: boolean): void {
+  // Real seconds since the last call, clamped so a stall does not jump the world (more is allowed while hidden,
+  // where the worker's ticks may come late).
+  const dt = opts.frozen ? 0 : Math.min(hidden ? 1 : 0.1, Math.max(0, (now - last) / 1000));
   last = now;
   anim += dt;
-  if (!opts.frozen) {
-    stepLife(life, dt * opts.speed, dayLength, env, events);
-    for (const e of events) {
-      if (e.type === 'thought') think(now);
-      if (status.events.length < 400 && e.type !== 'drag' && e.type !== 'exhale') {
-        const what = e.type === 'stage' ? e.stage : e.type === 'act' ? e.act : e.type === 'biome' ? e.id : e.type === 'landmark' ? e.kind : '';
-        status.events.push(`${life.clock.toFixed(2)} ${e.type}:${what}`);
-      }
+  if (opts.frozen) return;
+  stepLife(life, dt * opts.speed, dayLength, env, events);
+  for (const e of events) {
+    if (e.type === 'thought') think(now);
+    sound?.event(e);
+    if (status.events.length < 400 && e.type !== 'drag' && e.type !== 'exhale') {
+      const what = e.type === 'stage' ? e.stage : e.type === 'act' ? e.act : e.type === 'biome' ? e.id : e.type === 'landmark' ? e.kind : '';
+      status.events.push(`${life.clock.toFixed(2)} ${e.type}:${what}`);
     }
   }
+}
+
+function step(now: number): void {
+  live(now, false);
   const hour = env.hourAt(life.clock);
-  stage.update(renderer, renderer.atlas, life, hour, opts.realClock, weatherOf(life, env), anim, dt, opts.frozen, null);
+  stage.update(renderer, renderer.atlas, life, hour, opts.realClock, weatherOf(life, env), anim, opts.frozen ? 0 : Math.min(0.1, anim - drawnAt), opts.frozen, null);
+  drawnAt = anim;
   // Text sits in CSS pixels: one art pixel is scale / devicePixelRatio of them.
   const css = renderer.scale / devicePixelRatio;
   ui.setScale(css);
@@ -252,6 +281,43 @@ function step(now: number): void {
     ui.showBar(barText(hour));
     ui.showLog(logLines());
   }
+}
+
+/** What the sound hears of the moment. */
+function hearing(): Hear {
+  const hour = env.hourAt(life.clock);
+  const w = weatherOf(life, env);
+  const W = renderer.nativeW;
+  const mark = landmarkNear(life.seed, life.at, 300);
+  return {
+    seed: life.seed,
+    time: anim,
+    blend: biomeAt(life.seed, life.at),
+    place: stretchAt(life.seed, life.at).k,
+    hour: shownHour(hour, opts.realClock),
+    sun: sunElevation(hour, opts.realClock),
+    weather: w,
+    stage: life.stage,
+    walked: life.walked,
+    ground: groundAt(life, w),
+    fire: life.fire?.heat ?? 0,
+    fireX: life.fire === null ? 0.5 : stage.share + ((life.fire.at - life.at) * PX_PER_M) / W,
+    himX: stage.share,
+    landmark: mark?.kind ?? null,
+    speed: opts.speed,
+  };
+}
+
+// The sound's clock, from a worker: it keeps ticking when the window is hidden and frames stop, and then it also
+// keeps his life going, so the road and its sounds go on in the background.
+if (!opts.frozen && !opts.manual) {
+  ticker(50, () => {
+    if (document.hidden) live(performance.now(), true);
+    if (sound !== null) {
+      const w = weatherOf(life, env);
+      sound.tick(hearing(), w.kind === 'rain' && w.precip > 0.3);
+    }
+  });
 }
 
 if (opts.frozen && params.get('thought') !== null) {

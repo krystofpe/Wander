@@ -41,8 +41,8 @@ export const STEADY_FLAGS = [
   '--disable-features=Translate,MediaRouter',
 ];
 
-/** Headless on the real GPU: without --use-angle=vulkan Chromium renders on SwiftShader, ~1.5 s a 4K frame. */
-export const HEADLESS_FLAGS = ['--use-angle=vulkan', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-precise-memory-info', '--js-flags=--expose-gc', ...STEADY_FLAGS];
+/** Headless on the real GPU (without --use-angle=vulkan Chromium renders on SwiftShader, ~1.5 s a 4K frame), silent at the speakers (the tools record the sound inside the page). */
+export const HEADLESS_FLAGS = ['--use-angle=vulkan', '--mute-audio', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-precise-memory-info', '--js-flags=--expose-gc', ...STEADY_FLAGS];
 
 /** Opens the page in its own Chromium app window, full screen, with a profile of its own. */
 export function openApp(url: string, chromium: string): ChildProcess {

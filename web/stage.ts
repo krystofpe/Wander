@@ -43,6 +43,11 @@ export class Stage {
   headX = 0;
   headY = 0;
 
+  /** His share of the screen width (the sound places things by it). */
+  get share(): number {
+    return this.framing;
+  }
+
   constructor(seed: number, moonStart: number) {
     this.moonStart = moonStart;
     this.view = {

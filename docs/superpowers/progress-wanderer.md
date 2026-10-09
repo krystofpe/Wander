@@ -36,10 +36,22 @@ The brief is `~/wander-ambient-prompt.md`. Read this file first after a restart,
 ## Done
 
 - Branch cleanup as far as permitted (above).
+- M1: research (8 areas, 3.8k lines, 371 source lines), spec, plan: committed and pushed.
+- Pure core with tests: world (stretches, climate-picked biomes, blends, ground, landmarks), sky (warped clock,
+  sun/moon, weather), brain, local voice, options, palette (roles, Oklab grading by elevation, haze), noise
+  (SquirrelNoise5, lattice noise). Old terminal and Tamagotchi code deleted.
+- M2 eyes: server (stripped TS, journey/thought API), headless GPU session (playwright-core, `--use-angle=vulkan`),
+  `npm run shot`, `npm run sheet` (contact sheets at native 1:1), `npm run motion` (frames 1/60 s apart, slit-scans).
+- M3 slice: renderer (ring textures, chunk streaming, palette rows, native resolve per layer, full-res composite with
+  per-layer fractional offsets and d7samurai sampling, smooth HD sky with pixel sun, moon in phase and stars, final
+  pass with vignette, grain and dither); painters for land (per-biome landforms and crowns), tree layers, playfield,
+  foreground; plants (conifers, space-colonisation crowns, L-system dead trees, cacti, bushes, tufts, reeds, rocks);
+  the wanderer drawn by hand in parts (8-frame walk, stand, look, smoke), Aseprite pipeline (art:draw → art), indexed
+  atlas decoded in the browser.
 
 ## Next
 
-- Research (8 parallel agents) → docs/research/wanderer-research.md.
+- Commit the vertical slice; then clouds and fog sheets; the brain + walker in the page (stops, sit, smoke, camp).
 
 ## Open problems
 
@@ -48,4 +60,21 @@ The brief is `~/wander-ambient-prompt.md`. Read this file first after a restart,
 
 ## Visual flaws still to fix
 
-(none yet)
+Log of looks (before → after):
+
+- 2026-10-10 first frame: stacked horizontal stripes, noisy dithered sky, speckled ground, no value structure →
+  per-biome landforms, Ferrari-banded sky (later replaced), banded ground plane.
+- Hours sheet 1: far mountain brightest and flattest (haze σ≈0.2 → 98% fog), night land lighter than sky, banded glow
+  lobe drew a giant ellipse, forest unlit at golden hour → σ≈0.05, darker night fog, smooth full-res sky (research:
+  edgeless light at full res), sun-aware haze, stronger warm key light.
+- Pine sheet: even wall of same-sized pines → groves and clearings, varied sizes; dotted crown rims removed; land rim
+  softened.
+
+Still open:
+- Tree-layer banks still read as stripes in open biomes (meadow, desert, coast, stones, pass); land rim lines stack.
+- Meadow oaks look like lollipops (crowns too small and round).
+- Coast: the sea is a thin band. Swamp: no water yet.
+- Pass: the ridged zig-zags repeat like a pattern; rocks look like boxes.
+- Night may be too dark to read in the forest; check against the research (two stops under day).
+- He is small and dark; rim light not yet visible; pack still boxy.
+- No clouds yet; the noon sky is bland.

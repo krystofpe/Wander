@@ -34,6 +34,8 @@ export type Options = {
   readonly mute: boolean;
   /** The walk-cycle frame or animation time to show in a frozen shot, seconds. */
   readonly t: number | null;
+  /** No frame loop: a tool advances the world step by step (motion capture). */
+  readonly manual: boolean;
 };
 
 export const DEFAULTS: Options = {
@@ -53,6 +55,7 @@ export const DEFAULTS: Options = {
   bench: null,
   mute: false,
   t: null,
+  manual: false,
 };
 
 /** Option names and whether each takes a value; the command line and the URL share them. */
@@ -73,6 +76,7 @@ export const OPTION_NAMES: Readonly<Record<string, boolean>> = {
   bench: true,
   mute: false,
   t: true,
+  manual: false,
 };
 
 const num = (v: string | null, min: number, max: number): number | null => {
@@ -104,6 +108,7 @@ export function parseOptions(get: (name: string) => string | null): Options {
     bench: num(get('bench'), 1, 3600),
     mute: flag(get('mute')),
     t: num(get('t'), 0, 1e9),
+    manual: flag(get('manual')),
   };
 }
 

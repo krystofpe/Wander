@@ -333,6 +333,9 @@ export function daylight(biome: BiomeId): Float32Array {
       const mid: Lab = [(ramp[2][0] + ramp[3][0]) / 2, (ramp[2][1] + ramp[3][1]) / 2, (ramp[2][2] + ramp[3][2]) / 2];
       ramp[2] = mid;
       ramp[3] = [...mid];
+      // The rim is a gentle step above the faces: the low sun's boost makes it glow, noon leaves it quiet.
+      const rim = ramp[4];
+      ramp[4] = [mid[0] + (rim[0] - mid[0]) * 0.35, mid[1] + (rim[1] - mid[1]) * 0.35, mid[2] + (rim[2] - mid[2]) * 0.35];
     }
     const first = FIRST.get(f.name) ?? 0;
     ramp.forEach((lab, i) => out.set(lab, (first + i) * 3));
@@ -372,14 +375,14 @@ type Key = {
 
 // Sky keys after the research's muted teal-by-day / violet-by-night set (Light §10–11) and skygrad's glow lobe.
 const EVENING: readonly Key[] = [
-  { e: -90, lift: 0.035, gain: 0.42, boost: 0.02, light: '#6f7fb8', warm: 0.1, ambient: '#2a2d4f', cool: 0.55, sat: 0.45, zenith: '#0c0c16', horizon: '#26263a', glow: '#2a2f52', glowStrength: 0.05, glowWidth: 0.4, fog: '#1a1a29', haze: 0.9 },
-  { e: -18, lift: 0.035, gain: 0.44, boost: 0.03, light: '#6f7fb8', warm: 0.1, ambient: '#2c2f55', cool: 0.55, sat: 0.45, zenith: '#100f19', horizon: '#29293d', glow: '#2e3458', glowStrength: 0.08, glowWidth: 0.4, fog: '#232335', haze: 0.9 },
-  { e: -12, lift: 0.035, gain: 0.48, boost: 0.03, light: '#7a7fb8', warm: 0.12, ambient: '#33335c', cool: 0.5, sat: 0.5, zenith: '#10101c', horizon: '#36324b', glow: '#3a4a78', glowStrength: 0.12, glowWidth: 0.42, fog: '#33304a', haze: 0.95 },
+  { e: -90, lift: 0.035, gain: 0.42, boost: 0.02, light: '#6f7fb8', warm: 0.1, ambient: '#2a2d4f', cool: 0.55, sat: 0.45, zenith: '#0c0c16', horizon: '#26263a', glow: '#2a2f52', glowStrength: 0.05, glowWidth: 0.4, fog: '#141420', haze: 0.7 },
+  { e: -18, lift: 0.035, gain: 0.44, boost: 0.03, light: '#6f7fb8', warm: 0.1, ambient: '#2c2f55', cool: 0.55, sat: 0.45, zenith: '#100f19', horizon: '#29293d', glow: '#2e3458', glowStrength: 0.08, glowWidth: 0.4, fog: '#1a1a28', haze: 0.75 },
+  { e: -12, lift: 0.035, gain: 0.48, boost: 0.03, light: '#7a7fb8', warm: 0.12, ambient: '#33335c', cool: 0.5, sat: 0.5, zenith: '#10101c', horizon: '#36324b', glow: '#3a4a78', glowStrength: 0.12, glowWidth: 0.42, fog: '#2a283e', haze: 0.85 },
   { e: -6, lift: 0.03, gain: 0.56, boost: 0.05, light: '#b86a4e', warm: 0.25, ambient: '#3d3a66', cool: 0.45, sat: 0.6, zenith: '#131428', horizon: '#736171', glow: '#b86a4e', glowStrength: 0.45, glowWidth: 0.45, fog: '#5e5068', haze: 1 },
-  { e: -3, lift: 0.025, gain: 0.66, boost: 0.08, light: '#e88a3c', warm: 0.35, ambient: '#433f70', cool: 0.4, sat: 0.7, zenith: '#1c253f', horizon: '#b18b6c', glow: '#e88a3c', glowStrength: 0.7, glowWidth: 0.5, fog: '#8c7270', haze: 1 },
-  { e: 0, lift: 0.02, gain: 0.76, boost: 0.1, light: '#ffb24a', warm: 0.38, ambient: '#4a4a78', cool: 0.35, sat: 0.8, zenith: '#21364c', horizon: '#d4ad79', glow: '#ffb24a', glowStrength: 0.85, glowWidth: 0.55, fog: '#a88d78', haze: 1 },
-  { e: 5, lift: 0.01, gain: 0.85, boost: 0.1, light: '#ffd27a', warm: 0.3, ambient: '#53607e', cool: 0.25, sat: 0.9, zenith: '#2f5366', horizon: '#d1c19c', glow: '#ffd27a', glowStrength: 0.6, glowWidth: 0.55, fog: '#b6ab92', haze: 0.95 },
-  { e: 15, lift: 0, gain: 0.95, boost: 0.07, light: '#f4e3b2', warm: 0.12, ambient: '#5e7486', cool: 0.15, sat: 0.95, zenith: '#386c79', horizon: '#c6d4d5', glow: '#f4e3b2', glowStrength: 0.3, glowWidth: 0.6, fog: '#b9c6c6', haze: 0.9 },
+  { e: -3, lift: 0.025, gain: 0.66, boost: 0.1, light: '#e88a3c', warm: 0.5, ambient: '#433f70', cool: 0.4, sat: 0.7, zenith: '#1c253f', horizon: '#b18b6c', glow: '#e88a3c', glowStrength: 0.7, glowWidth: 0.5, fog: '#8c7270', haze: 1 },
+  { e: 0, lift: 0.02, gain: 0.76, boost: 0.16, light: '#ffb24a', warm: 0.6, ambient: '#4a4a78', cool: 0.35, sat: 0.8, zenith: '#21364c', horizon: '#d4ad79', glow: '#ffb24a', glowStrength: 0.85, glowWidth: 0.55, fog: '#a88d78', haze: 1 },
+  { e: 5, lift: 0.01, gain: 0.86, boost: 0.15, light: '#ffc66a', warm: 0.5, ambient: '#53607e', cool: 0.25, sat: 0.9, zenith: '#2f5366', horizon: '#d1c19c', glow: '#ffd27a', glowStrength: 0.6, glowWidth: 0.55, fog: '#b6ab92', haze: 0.95 },
+  { e: 15, lift: 0, gain: 0.95, boost: 0.09, light: '#f4e3b2', warm: 0.2, ambient: '#5e7486', cool: 0.15, sat: 0.95, zenith: '#386c79', horizon: '#c6d4d5', glow: '#f4e3b2', glowStrength: 0.3, glowWidth: 0.6, fog: '#b9c6c6', haze: 0.9 },
   { e: 40, lift: 0, gain: 1, boost: 0.05, light: '#f2f0e4', warm: 0.05, ambient: '#64798a', cool: 0.1, sat: 1, zenith: '#2f7582', horizon: '#c3d8db', glow: '#e8eef5', glowStrength: 0.14, glowWidth: 0.7, fog: '#bccfd2', haze: 0.85 },
   { e: 90, lift: 0, gain: 1, boost: 0.05, light: '#f2f0e4', warm: 0.05, ambient: '#64798a', cool: 0.1, sat: 1, zenith: '#2c7380', horizon: '#c3d8db', glow: '#e8eef5', glowStrength: 0.12, glowWidth: 0.7, fog: '#bccfd2', haze: 0.85 },
 ];
@@ -631,9 +634,18 @@ export function gradeRole(src: Float32Array, roleIndex: number, g: Grade, hazeK:
 /** Daylight Oklab colours for every biome, made once. */
 export const DAYLIGHT: Readonly<Record<BiomeId, Float32Array>> = Object.fromEntries(BIOME_IDS.map((id) => [id, daylight(id)])) as Record<BiomeId, Float32Array>;
 
+/** How much a role glows at this moment, 0..1: lights always, window panes once it is dark. */
+export function glowOf(roleIndex: number, g: Grade): number {
+  const info = ROLES[roleIndex];
+  if (info.glow) return 1;
+  if (info.window && info.step === 1) return Math.min(1, Math.max(0, (g.night - 0.15) / 0.35));
+  return 0;
+}
+
 /**
- * Builds one palette row: every role of a biome graded for the moment at haze fraction `hazeK`, as RGBA bytes
- * (alpha 255 except role 0), into `out` starting at `at`. 256 entries.
+ * Builds one palette row: every role of a biome graded for the moment at haze fraction `hazeK`, as RGBA bytes,
+ * into `out` starting at `at`; 256 entries. Alpha carries the glow inverted (255 = no glow), so lights feed the
+ * bloom without a second texture.
  */
 export function buildRow(biome: BiomeId, g: Grade, hazeK: number, time: number, out: Uint8Array, at: number): void {
   const src = DAYLIGHT[biome];
@@ -644,6 +656,6 @@ export function buildRow(biome: BiomeId, g: Grade, hazeK: number, time: number, 
   for (let r = 1; r < ROLE_COUNT; r++) {
     const o = at + r * 4;
     gradeRole(src, r, g, hazeK, time, out, o);
-    out[o + 3] = 255;
+    out[o + 3] = 255 - Math.round(255 * glowOf(r, g) * (1 - hazeK * 0.5));
   }
 }

@@ -1,0 +1,250 @@
+// What stands where: plants and props on each layer, placed by jittered grids with density thinning and grove
+// masks, species picked by the biome weights so transitions mix naturally (research: Procgen §26). Pure: the
+// painters draw from it and the brain finds its seats, views, shelters and camps in it.
+import type { BiomeId } from './biomes.ts';
+import { columnDistance } from './layers.ts';
+import { fbm1, unit } from './noise.ts';
+import { biomeAt, share } from './world.ts';
+import type { Blend } from './world.ts';
+
+export type Species =
+  | 'pine'
+  | 'spruce'
+  | 'birch'
+  | 'oak'
+  | 'dead'
+  | 'cactus'
+  | 'bush'
+  | 'shrub'
+  | 'fern'
+  | 'tuft'
+  | 'drytuft'
+  | 'flowers'
+  | 'reeds'
+  | 'marram'
+  | 'rock'
+  | 'boulder'
+  | 'stone'
+  | 'log'
+  | 'stump'
+  | 'drift'
+  | 'pole'
+  | 'wall'
+  | 'post';
+
+/** A class of things on one layer of one biome: how dense (per 100 layer px), how big (px), clumped in groves. */
+type Flora = {
+  readonly species: Species;
+  /** Layer names it grows on. */
+  readonly on: readonly string[];
+  readonly density: number;
+  readonly size: readonly [number, number];
+  /** 0 spread evenly … 1 only in groves. */
+  readonly grove: number;
+};
+
+const f = (species: Species, on: readonly string[], density: number, size: readonly [number, number], grove = 0.3): Flora => ({ species, on, density, size, grove });
+
+/** Sizes are on the playfield; far layers scale them by 1/z. */
+export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
+  pine: [
+    f('pine', ['mid'], 5.5, [50, 150], 0.85),
+    f('pine', ['near'], 3.2, [60, 160], 0.9),
+    f('spruce', ['mid', 'near'], 2, [50, 120], 0.8),
+    f('pine', ['ground'], 0.9, [90, 170], 0.8),
+    f('fern', ['ground', 'fore'], 3, [8, 14], 0.5),
+    f('tuft', ['ground'], 5, [3, 6], 0.2),
+    f('rock', ['ground'], 0.5, [8, 18], 0.3),
+    f('log', ['ground'], 0.2, [22, 34], 0.5),
+    f('stump', ['ground'], 0.25, [6, 9], 0.5),
+  ],
+  birch: [
+    f('birch', ['hills', 'mid', 'near'], 6, [60, 110], 0.5),
+    f('birch', ['ground'], 1.0, [80, 130], 0.6),
+    f('bush', ['near', 'ground'], 1.5, [10, 22], 0.4),
+    f('fern', ['ground', 'fore'], 2, [7, 12], 0.4),
+    f('tuft', ['ground'], 7, [3, 7], 0.2),
+    f('flowers', ['ground'], 1.5, [3, 5], 0.6),
+    f('log', ['ground'], 0.2, [20, 30], 0.5),
+  ],
+  meadow: [
+    f('oak', ['hills', 'mid'], 1.2, [50, 90], 0.7),
+    f('bush', ['mid', 'near'], 1.5, [12, 26], 0.6),
+    f('oak', ['ground'], 0.15, [70, 110], 0.9),
+    f('tuft', ['ground', 'fore'], 12, [4, 9], 0.15),
+    f('flowers', ['ground'], 4, [3, 6], 0.5),
+    f('rock', ['ground'], 0.25, [8, 16], 0.3),
+    f('post', ['ground'], 0.4, [12, 16], 0.9),
+  ],
+  autumn: [
+    f('oak', ['hills', 'mid', 'near'], 4.5, [55, 100], 0.6),
+    f('oak', ['ground'], 0.6, [80, 120], 0.7),
+    f('bush', ['near', 'ground'], 1.5, [10, 22], 0.5),
+    f('drytuft', ['ground', 'fore'], 7, [3, 7], 0.2),
+    f('wall', ['ground'], 0.25, [30, 70], 0.9),
+    f('rock', ['ground'], 0.3, [8, 14], 0.3),
+    f('stump', ['ground'], 0.2, [6, 9], 0.5),
+  ],
+  plateau: [
+    f('boulder', ['mid', 'near'], 0.8, [20, 40], 0.4),
+    f('drytuft', ['near', 'ground', 'fore'], 9, [3, 7], 0.3),
+    f('rock', ['ground'], 0.6, [8, 20], 0.4),
+    f('stone', ['ground'], 0.08, [14, 22], 0.9),
+  ],
+  pass: [
+    f('spruce', ['hills', 'mid', 'near'], 1.5, [40, 80], 0.7),
+    f('boulder', ['mid', 'near', 'ground'], 1.0, [16, 40], 0.4),
+    f('rock', ['ground'], 1.4, [8, 18], 0.3),
+    f('drytuft', ['ground'], 3, [3, 5], 0.3),
+    f('stone', ['ground'], 0.1, [10, 16], 0.9),
+  ],
+  coast: [
+    f('marram', ['mid', 'near', 'ground', 'fore'], 6, [10, 22], 0.5),
+    f('post', ['ground'], 0.5, [12, 18], 0.9),
+    f('drift', ['ground'], 0.3, [16, 30], 0.4),
+    f('rock', ['ground'], 0.2, [8, 16], 0.3),
+  ],
+  desert: [
+    f('cactus', ['mid', 'near', 'ground'], 0.6, [20, 46], 0.5),
+    f('shrub', ['near', 'ground'], 1.2, [6, 12], 0.3),
+    f('rock', ['mid', 'ground'], 0.6, [8, 22], 0.4),
+    f('boulder', ['near'], 0.3, [20, 36], 0.5),
+  ],
+  tundra: [
+    f('spruce', ['hills', 'mid', 'near'], 1.3, [30, 70], 0.7),
+    f('spruce', ['ground'], 0.25, [40, 80], 0.8),
+    f('rock', ['ground'], 0.5, [8, 16], 0.4),
+    f('drytuft', ['ground'], 2, [2, 4], 0.4),
+  ],
+  swamp: [
+    f('dead', ['hills', 'mid', 'near'], 2.5, [40, 90], 0.5),
+    f('dead', ['ground'], 0.5, [50, 100], 0.6),
+    f('reeds', ['mid', 'near', 'ground', 'fore'], 6, [12, 22], 0.5),
+    f('tuft', ['ground'], 4, [3, 6], 0.3),
+    f('stump', ['ground'], 0.4, [6, 10], 0.5),
+  ],
+  saltflat: [
+    f('pole', ['mid', 'near', 'ground'], 0.6, [60, 70], 0),
+    f('rock', ['ground'], 0.08, [6, 12], 0.5),
+  ],
+  stones: [
+    f('stone', ['mid', 'near', 'ground'], 0.9, [14, 30], 0.7),
+    f('drytuft', ['ground', 'fore'], 8, [3, 6], 0.2),
+    f('flowers', ['ground'], 2, [2, 4], 0.6),
+    f('rock', ['ground'], 0.4, [8, 14], 0.3),
+  ],
+  ruins: [
+    f('wall', ['mid', 'near', 'ground'], 1.2, [30, 80], 0.8),
+    f('oak', ['mid', 'near'], 1.5, [50, 90], 0.6),
+    f('bush', ['near', 'ground'], 2, [10, 22], 0.5),
+    f('tuft', ['ground'], 6, [3, 7], 0.3),
+    f('post', ['ground'], 0.2, [40, 50], 0.8),
+  ],
+  rail: [
+    f('pole', ['mid', 'ground'], 0.7, [50, 56], 0),
+    f('bush', ['mid', 'near'], 1.0, [12, 24], 0.6),
+    f('drytuft', ['ground', 'fore'], 8, [3, 7], 0.2),
+    f('birch', ['mid', 'near'], 1.0, [50, 90], 0.7),
+  ],
+};
+
+/** Minimum spacing in layer px for a species (the jittered grid's cell). */
+const SPACING: Readonly<Record<Species, number>> = {
+  pine: 14,
+  spruce: 12,
+  birch: 12,
+  oak: 26,
+  dead: 18,
+  cactus: 22,
+  bush: 12,
+  shrub: 8,
+  fern: 8,
+  tuft: 4,
+  drytuft: 4,
+  flowers: 6,
+  reeds: 6,
+  marram: 8,
+  rock: 20,
+  boulder: 30,
+  stone: 22,
+  log: 40,
+  stump: 24,
+  drift: 30,
+  pole: 110,
+  wall: 60,
+  post: 22,
+};
+
+export type Placed = {
+  readonly species: Species;
+  /** Layer column of its root. */
+  readonly u: number;
+  /** Its size in layer px (height for upright things, width for low ones). */
+  readonly size: number;
+  /** A seed for its shape. */
+  readonly seed: number;
+  readonly flip: boolean;
+  /** The biome it belongs to. */
+  readonly biome: BiomeId;
+};
+
+const SPECIES: readonly Species[] = Object.keys(SPACING) as Species[];
+
+/** Groves: a slow mask that clumps trees and leaves clearings. */
+function grove(seed: number, layerIndex: number, u: number): number {
+  const v = fbm1(u / 420, seed ^ (0x96e + layerIndex * 131), 2, 0.5) * 2.4;
+  return Math.min(1, Math.max(0, (v + 0.35) / 0.9));
+}
+
+/**
+ * Everything of every species standing on a layer between columns u0 and u1, in order of position. Each
+ * species has its own jittered grid; a cell holds one candidate, kept with a probability from the biome weights,
+ * the density and the grove mask.
+ */
+export function placeBetween(seed: number, layerName: string, layerIndex: number, z: number, u0: number, u1: number, out: Placed[] = []): Placed[] {
+  out.length = 0;
+  const scale = 1 / z;
+  for (let si = 0; si < SPECIES.length; si++) {
+    const sp = SPECIES[si];
+    const cell = Math.max(3, Math.round(SPACING[sp] * scale));
+    const salt = (0x51ed + si * 7331 + layerIndex * 104729) | 0;
+    for (let k = Math.floor(u0 / cell) - 1; k * cell < u1 + cell; k++) {
+      const u = k * cell + Math.floor(unit(k, seed ^ salt) * cell * 0.85);
+      if (u < u0 || u >= u1) continue;
+      const d = columnDistance(u, z);
+      const blend = biomeAt(seed, d, 45);
+      const pick = chance(blend, sp, layerName, unit(k, seed ^ salt ^ 0x77));
+      if (pick === null) continue;
+      const g = grove(seed, layerIndex, u);
+      const groveK = pick.flora.grove;
+      const keep = ((pick.density * cell) / 100) * (1 - groveK + groveK * g * 1.6);
+      if (unit(k, seed ^ salt ^ 0x1234) >= keep) continue;
+      const [lo, hi] = pick.flora.size;
+      const size = Math.max(2, Math.round((lo + (hi - lo) * unit(k, seed ^ salt ^ 0x4321)) * scale));
+      out.push({ species: sp, u, size, seed: (seed ^ salt ^ Math.imul(k, 0x9e3779b1)) >>> 0, flip: unit(k, seed ^ salt ^ 0x99) < 0.5, biome: pick.biome });
+    }
+  }
+  out.sort((a, b) => a.u - b.u);
+  return out;
+}
+
+/**
+ * Which biome's flora a candidate belongs to and the blended density there: the candidate goes to one biome or
+ * the other in proportion to share × density, and is kept by the summed density, so a transition zone holds
+ * exactly the blend of both biomes' plants.
+ */
+function chance(blend: Blend, sp: Species, layerName: string, r: number): { flora: Flora; density: number; biome: BiomeId } | null {
+  const first = blend.k < 1 ? findFlora(blend.a, sp, layerName) : null;
+  const second = blend.k > 0 && blend.b !== blend.a ? findFlora(blend.b, sp, layerName) : null;
+  const da = first === null ? 0 : share(blend, blend.a) * first.density;
+  const db = second === null ? 0 : share(blend, blend.b) * second.density;
+  if (da + db <= 0) return null;
+  if (first !== null && r * (da + db) < da) return { flora: first, density: da + db, biome: blend.a };
+  if (second !== null) return { flora: second, density: da + db, biome: blend.b };
+  return first === null ? null : { flora: first, density: da + db, biome: blend.a };
+}
+
+function findFlora(id: BiomeId, sp: Species, layerName: string): Flora | null {
+  for (const fl of FLORA[id]) if (fl.species === sp && fl.on.includes(layerName)) return fl;
+  return null;
+}

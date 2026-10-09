@@ -47,7 +47,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.3, snow: 0.15, fog: 0.35, storm: 0.15, cloud: 0.6, wind: 0.3 },
     ground: { amp: 5, wave: 140, step: 'leaves' },
     far: { height: 70, rough: 0.5, mesa: 0, ridged: 0.3 },
-    air: { haze: 0.2, mist: 0.6 },
+    air: { haze: 0.052, mist: 0.6 },
     cold: false,
   },
   birch: {
@@ -57,7 +57,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.25, snow: 0.1, fog: 0.3, storm: 0.15, cloud: 0.5, wind: 0.35 },
     ground: { amp: 3, wave: 120, step: 'grass' },
     far: { height: 45, rough: 0.35, mesa: 0, ridged: 0 },
-    air: { haze: 0.16, mist: 0.5 },
+    air: { haze: 0.042, mist: 0.5 },
     cold: false,
   },
   meadow: {
@@ -67,7 +67,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.2, snow: 0.05, fog: 0.25, storm: 0.25, cloud: 0.45, wind: 0.55 },
     ground: { amp: 4, wave: 160, step: 'grass' },
     far: { height: 40, rough: 0.3, mesa: 0, ridged: 0 },
-    air: { haze: 0.12, mist: 0.45 },
+    air: { haze: 0.031, mist: 0.45 },
     cold: false,
   },
   autumn: {
@@ -77,7 +77,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.28, snow: 0.05, fog: 0.4, storm: 0.15, cloud: 0.6, wind: 0.5 },
     ground: { amp: 9, wave: 170, step: 'leaves' },
     far: { height: 60, rough: 0.35, mesa: 0, ridged: 0 },
-    air: { haze: 0.16, mist: 0.6 },
+    air: { haze: 0.042, mist: 0.6 },
     cold: false,
   },
   plateau: {
@@ -87,7 +87,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.12, snow: 0.3, fog: 0.15, storm: 0.2, cloud: 0.35, wind: 0.85 },
     ground: { amp: 2, wave: 200, step: 'gravel' },
     far: { height: 55, rough: 0.25, mesa: 0.4, ridged: 0.2 },
-    air: { haze: 0.08, mist: 0.2 },
+    air: { haze: 0.021, mist: 0.2 },
     cold: false,
   },
   pass: {
@@ -97,7 +97,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.3, snow: 0.6, fog: 0.35, storm: 0.1, cloud: 0.65, wind: 0.8 },
     ground: { amp: 14, wave: 150, step: 'gravel' },
     far: { height: 120, rough: 0.75, mesa: 0, ridged: 0.8 },
-    air: { haze: 0.1, mist: 0.5 },
+    air: { haze: 0.026, mist: 0.5 },
     cold: true,
   },
   coast: {
@@ -107,7 +107,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.25, snow: 0.05, fog: 0.4, storm: 0.25, cloud: 0.5, wind: 0.75 },
     ground: { amp: 4, wave: 110, step: 'sand' },
     far: { height: 25, rough: 0.3, mesa: 0, ridged: 0 },
-    air: { haze: 0.18, mist: 0.5 },
+    air: { haze: 0.047, mist: 0.5 },
     cold: false,
   },
   desert: {
@@ -117,7 +117,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.04, snow: 0, fog: 0.04, storm: 0.6, cloud: 0.15, wind: 0.6 },
     ground: { amp: 5, wave: 190, step: 'sand' },
     far: { height: 70, rough: 0.2, mesa: 1, ridged: 0 },
-    air: { haze: 0.07, mist: 0 },
+    air: { haze: 0.018, mist: 0 },
     cold: false,
   },
   tundra: {
@@ -127,7 +127,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.32, snow: 1, fog: 0.25, storm: 0, cloud: 0.6, wind: 0.7 },
     ground: { amp: 3, wave: 200, step: 'snow' },
     far: { height: 45, rough: 0.4, mesa: 0, ridged: 0.4 },
-    air: { haze: 0.1, mist: 0.3 },
+    air: { haze: 0.026, mist: 0.3 },
     cold: true,
   },
   swamp: {
@@ -137,7 +137,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.38, snow: 0.05, fog: 0.6, storm: 0.15, cloud: 0.7, wind: 0.2 },
     ground: { amp: 1, wave: 120, step: 'mud' },
     far: { height: 25, rough: 0.3, mesa: 0, ridged: 0 },
-    air: { haze: 0.28, mist: 0.9 },
+    air: { haze: 0.073, mist: 0.9 },
     cold: false,
   },
   saltflat: {
@@ -147,7 +147,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.06, snow: 0, fog: 0.1, storm: 0.3, cloud: 0.2, wind: 0.5 },
     ground: { amp: 0.5, wave: 300, step: 'salt' },
     far: { height: 35, rough: 0.2, mesa: 0.5, ridged: 0 },
-    air: { haze: 0.06, mist: 0.1 },
+    air: { haze: 0.016, mist: 0.1 },
     cold: false,
   },
   stones: {
@@ -157,7 +157,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.35, snow: 0.2, fog: 0.5, storm: 0.1, cloud: 0.7, wind: 0.65 },
     ground: { amp: 6, wave: 170, step: 'grass' },
     far: { height: 50, rough: 0.35, mesa: 0, ridged: 0.1 },
-    air: { haze: 0.18, mist: 0.7 },
+    air: { haze: 0.047, mist: 0.7 },
     cold: false,
   },
   ruins: {
@@ -167,7 +167,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.28, snow: 0.1, fog: 0.35, storm: 0.15, cloud: 0.6, wind: 0.3 },
     ground: { amp: 2, wave: 150, step: 'gravel' },
     far: { height: 40, rough: 0.3, mesa: 0, ridged: 0 },
-    air: { haze: 0.18, mist: 0.45 },
+    air: { haze: 0.047, mist: 0.45 },
     cold: false,
   },
   rail: {
@@ -177,7 +177,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     weather: { wet: 0.22, snow: 0.15, fog: 0.3, storm: 0.2, cloud: 0.5, wind: 0.5 },
     ground: { amp: 1.5, wave: 260, step: 'gravel' },
     far: { height: 45, rough: 0.3, mesa: 0, ridged: 0 },
-    air: { haze: 0.14, mist: 0.4 },
+    air: { haze: 0.036, mist: 0.4 },
     cold: false,
   },
 };

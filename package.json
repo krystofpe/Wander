@@ -8,9 +8,17 @@
     "node": ">=25"
   },
   "scripts": {
-    "test": "node --disable-warning=ExperimentalWarning --test"
+    "test": "node --disable-warning=ExperimentalWarning --test",
+    "shot": "node --disable-warning=ExperimentalWarning tools/shot.ts",
+    "sheet": "node --disable-warning=ExperimentalWarning tools/sheet.ts",
+    "art": "node --disable-warning=ExperimentalWarning tools/art/export.ts",
+    "art:draw": "node --disable-warning=ExperimentalWarning tools/art/draw.ts",
+    "motion": "node --disable-warning=ExperimentalWarning tools/motion.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.132.1"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.0"
   }
 }

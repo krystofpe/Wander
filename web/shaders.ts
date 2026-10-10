@@ -42,6 +42,9 @@ uniform float u_time;
 uniform float u_gustX;
 uniform vec2 u_frac;
 uniform float u_cover;
+uniform vec3 u_shine;
+uniform float u_shineX;
+uniform float u_horizonY;
 layout(location = 0) out vec4 o_color;
 layout(location = 1) out vec4 o_glow;
 ${LIGHT_GLSL}
@@ -94,6 +97,16 @@ void main() {
       vec3 alb = mix(texelFetch(u_palette, ivec2(role, u_albedoRow + a), 0).rgb, texelFetch(u_palette, ivec2(role, u_albedoRow + b), 0).rgb, c.b);
       col = mix(col, max(col, alb * u_lightColor * 1.35), q);
     }
+  }
+  // Water takes the low sun or the moon: a path of broken glints below it, widening toward the eye, flickering.
+  if ((flags & 8) != 0 && dot(u_shine, u_shine) > 0.0) {
+    vec2 sp = vec2(float(x), float(row)) - 1.0 - u_frac;
+    float below = max(0.0, sp.y - u_horizonY);
+    float width = 2.5 + below * 0.5;
+    float d = (sp.x - u_shineX) / width;
+    float k = exp(-d * d);
+    float h = fract(sin(dot(vec2(floor(float(gx) / 2.0), float(gy)) + floor(u_time * 2.5) * 7.13, vec2(12.9898, 78.233))) * 43758.5453);
+    if (h < 0.25 + 0.55 * k) col = mix(col, u_shine, k * 0.85);
   }
   o_color = vec4(col, 1.0);
   o_glow = vec4(p.rgb * glow, glow);

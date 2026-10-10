@@ -69,6 +69,8 @@ export class Stage {
       rim: new Float32Array(3),
       milky: 0,
       aurora: 0,
+      shine: new Float32Array(3),
+      shineX: 0,
       sunUp: 0,
       moonX: 0,
       moonY: 0,
@@ -171,6 +173,21 @@ export class Stage {
     const cold = blended(here, (id) => (id === 'tundra' ? 1 : id === 'pass' ? 0.7 : id === 'coast' || id === 'saltflat' ? 0.35 : 0));
     const which = Math.floor(l.clock / 24 + 0.5);
     v.aurora = cold * dark * (unit(which, l.seed ^ 0xa0a0) < 0.6 ? 1 : 0);
+
+    // What the water reflects: the sun while it is low, the moon by night, both dimmed by cloud.
+    const clear = 1 - Math.min(1, w.cloud * 1.2);
+    const lowSun = v.sunUp * clear * Math.max(0, 1 - m.elevation / 30);
+    if (lowSun > 0.02) {
+      labToBytes(this.grade.glow[0] + 0.12, this.grade.glow[1], this.grade.glow[2], this.bytes, 0);
+      for (let i = 0; i < 3; i++) v.shine[i] = this.bytes[i] / 255;
+      v.shineX = v.sunX;
+    } else {
+      const moon = v.moonUp * clear * this.grade.night * (0.4 + 0.6 * m.moonlight);
+      v.shine[0] = 0.75 * moon;
+      v.shine[1] = 0.78 * moon;
+      v.shine[2] = 0.85 * moon;
+      v.shineX = v.moonX;
+    }
 
     // The air: clouds, fog veils and valley mist, rain or snow.
     v.cover = w.cloud;

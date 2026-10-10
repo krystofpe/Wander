@@ -63,6 +63,9 @@ export type View = {
   /** Rim light on sprites: which side the light is on (−1 left, +1 right, 0 none) and how strong (0..1). */
   rimSide: number;
   rimStrength: number;
+  /** The light water reflects (rgb, already scaled; zero for none) and where it stands across the view. */
+  shine: Float32Array;
+  shineX: number;
   /** The Milky Way's strength and the aurora's, 0..1. */
   milky: number;
   aurora: number;
@@ -432,6 +435,9 @@ export class Renderer {
     gl.uniform1i(this.resolve.u('u_lightCount'), v.light.count);
     gl.uniform3fv(this.resolve.u('u_lightColor'), v.light.color);
     gl.uniform1i(this.resolve.u('u_albedoRow'), ALBEDO_ROW);
+    gl.uniform3fv(this.resolve.u('u_shine'), v.shine);
+    gl.uniform1f(this.resolve.u('u_shineX'), v.shineX);
+    gl.uniform1f(this.resolve.u('u_horizonY'), this.nativeH - VIEW_H + v.horizon);
     for (const l of this.layers) {
       gl.uniform2f(this.resolve.u('u_frac'), l.fx, l.fy);
       gl.uniform1f(this.resolve.u('u_lightGain'), lightGain(l.def.kind, l.def.z));

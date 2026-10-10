@@ -50,7 +50,7 @@ const BANK: Readonly<Record<BiomeId, number>> = {
   autumn: 1,
   plateau: 0,
   pass: 1,
-  coast: 0.8,
+  coast: 0,
   desert: 0,
   tundra: 0,
   swamp: 0.6,

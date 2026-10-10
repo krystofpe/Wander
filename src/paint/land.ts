@@ -58,7 +58,7 @@ const FORMS: Readonly<Record<BiomeId, readonly [Form, Form, Form, Form, Form]>> 
   birch: [[55, 260, 'round', 'none'], [40, 190, 'round', 'broad'], [32, 150, 'round', 'birch'], [27, 110, 'round', 'birch'], [24, 90, 'round', 'birch']],
   meadow: [[42, 300, 'round', 'none'], [30, 240, 'round', 'none'], [26, 190, 'round', 'broad'], [20, 150, 'round', 'none'], [16, 130, 'round', 'broad']],
   autumn: [[52, 260, 'round', 'none'], [44, 200, 'round', 'broad'], [38, 150, 'round', 'broad'], [32, 115, 'round', 'broad'], [28, 95, 'round', 'broad']],
-  plateau: [[72, 300, 'mesa', 'none'], [46, 260, 'mesa', 'none'], [16, 220, 'round', 'none'], [10, 170, 'round', 'none'], [8, 130, 'round', 'none']],
+  plateau: [[84, 230, 'ridged', 'none'], [46, 260, 'mesa', 'none'], [16, 220, 'round', 'none'], [10, 170, 'round', 'stones'], [8, 130, 'round', 'none']],
   pass: [[140, 170, 'ridged', 'none'], [108, 140, 'ridged', 'none'], [70, 115, 'ridged', 'none'], [36, 95, 'round', 'conifer'], [20, 80, 'round', 'stones']],
   coast: [[38, 300, 'round', 'none'], [0, 200, 'sea', 'none'], [0, 160, 'sea', 'none'], [0, 120, 'sea', 'none'], [4, 90, 'dune', 'reeds']],
   desert: [[48, 260, 'mesa', 'none'], [82, 220, 'mesa', 'none'], [56, 180, 'mesa', 'none'], [18, 150, 'dune', 'none'], [14, 110, 'dune', 'none']],
@@ -242,12 +242,14 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
     const landTop = Math.round(base - ground[i]);
     // Faces: smoothed slope of the bare land (not the crown) says which way it looks.
     const slope = (ground[i + 2] - ground[i - 2]) / 4;
-    const cold = blended(blend, (id) => (id === 'pass' || id === 'tundra' ? 1 : 0));
+    const k0 = landIndex(layer.z);
+    // The plateau's farthest range is cold enough for snow on its peaks; its nearer mesas are not.
+    const cold = blended(blend, (id) => (id === 'pass' || id === 'tundra' ? 1 : id === 'plateau' && k0 === 0 ? 1 : 0));
     const k = landIndex(layer.z);
     const amp = blended(blend, (id) => FORMS[id][k][0]);
     // Snow caps above a snow line on the cold far ranges: deeper the higher the peak, their foot ragged where gullies
     // carry the snow down, lit or shaded by which way the slope faces.
-    const snowLine = amp * (k <= 1 ? 0.5 : 0.68);
+    const snowLine = amp * blended(blend, (id) => (id === 'plateau' ? 0.8 : k <= 1 ? 0.5 : 0.68));
     const snowy = cold > 0.5 && ground[i] > snowLine && layer.z >= 5;
     const gully = fbm1(u / 6, seed ^ (0x5a0 + li), 2, 0.5) * 5 + fbm1(u / 23, seed ^ (0x5a1 + li), 2, 0.5) * 4;
     const snowFoot = snowy ? landTop + Math.max(1, Math.round((ground[i] - snowLine) * 0.85 + gully)) : -1;

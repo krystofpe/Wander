@@ -92,10 +92,12 @@ export function scores(s: Situation): Partial<Record<Act, { score: number; spot:
     out.look = { score: 0.2 + 0.8 * clamp01(s.since.look / 900) + 0.7 * view.quality + golden - 0.4 * s.precip, spot: view };
   }
 
-  const seat = nearest(s, 'seat');
-  if (seat !== null && s.since.sit >= BRAIN.cooldown.sit && s.precip < 0.45) {
-    // At the creature's hollow he nearly always sits a while by its door: company.
-    const company = seat.what === 'hollow' ? 1.6 : 0;
+  // At the creature's hollow he usually sits a while by its door, however lately he sat (not in heavy rain, nor
+  // when the live road has him late for camp): company. Its door beats any rock on the way.
+  const door = s.spots.find((p) => p.kind === 'seat' && p.what === 'hollow' && p.at >= s.at && p.at - s.at <= BRAIN.reach.seat);
+  const seat = door ?? nearest(s, 'seat');
+  const company = door !== undefined ? 1.6 : 0;
+  if (seat !== null && (s.since.sit >= BRAIN.cooldown.sit || company > 0) && s.precip < 0.45) {
     out.sit = { score: 0.4 * seat.quality + 1.7 * tired + 0.5 * clamp01(s.since.sit / 1200) + 0.3 * golden - 0.3 * s.precip + company, spot: seat };
   }
 

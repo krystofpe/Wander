@@ -1,11 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hourOfDay } from '../src/sky.ts';
+import { HOLLOW } from '../src/biomes.ts';
+import { seedOf } from '../src/options.ts';
+import { hourOfDay, namedWeather } from '../src/sky.ts';
 import { newLife, stepLife, thoughtContext } from '../src/life.ts';
 import type { Env, LifeEvent } from '../src/life.ts';
 import { localThought } from '../src/thoughts.ts';
 import { rng } from '../src/noise.ts';
-import { stretchAt } from '../src/world.ts';
+import { landmarksBetween, stretchAt } from '../src/world.ts';
 
 const env: Env = { hourAt: (c) => hourOfDay(c), natural: false, weather: null };
 const DAY = 3600;
@@ -70,4 +72,26 @@ test('a thought fits where he is', () => {
   const { l } = run(4, 600, 17);
   const line = localThought(thoughtContext(l, env), rng(1));
   assert.ok(line.length > 10 && !/[{}]/.test(line), line);
+});
+
+test('he usually stops at the creature\'s hollow, even just after a sit', () => {
+  const clear = namedWeather('clear');
+  const sunny: Env = { hourAt: (c) => hourOfDay(c), natural: false, weather: clear };
+  const seed = seedOf('moss');
+  const hollows = landmarksBetween(seed, 0, 300000).filter((m) => m.kind === 'hollow').slice(0, 8);
+  let sat = 0;
+  for (const m of hollows) {
+    const l = newLife(seed, m.at - 300, 10);
+    l.since.sit = 0;
+    l.rng = Math.imul(m.cell, 2654435761) >>> 0;
+    const events: LifeEvent[] = [];
+    for (let t = 0; t < 900 && l.at < m.at + 20; t += 0.5) {
+      stepLife(l, 0.5, DAY, sunny, events);
+      if (l.stage === 'sit' && l.what === 'hollow' && Math.abs(l.at - m.at - HOLLOW.seat) < 1) {
+        sat++;
+        break;
+      }
+    }
+  }
+  assert.ok(sat >= hollows.length - 2, `${sat} of ${hollows.length}`);
 });

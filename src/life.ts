@@ -117,6 +117,9 @@ export const LIFE = {
   dusk: -2,
 } as const;
 
+/** How far ahead (metres) the creature's hollow is when he sees it and thinks again: within the reach of a seat. */
+const HOLLOW_SEEN = 40;
+
 // ── Randomness kept in the save ────────────────────────────────────────────
 
 function next(l: Life): number {
@@ -394,7 +397,9 @@ function tick(l: Life, dt: number, dayLength: number, env: Env, events: LifeEven
     notePlaces(l, env, events);
     if (l.act === 'walk') {
       l.nextLook -= dt;
-      if (l.nextLook <= 0 || (p !== undefined && l.at >= p.camp - 0.01)) decide(l, env, w, dayLength, events);
+      // The creature's hollow coming into sight ahead: he thinks again (he usually stops there).
+      const hollow = landmarksBetween(l.seed, l.at - step + HOLLOW_SEEN, l.at + HOLLOW_SEEN).some((m) => m.kind === 'hollow');
+      if (l.nextLook <= 0 || hollow || (p !== undefined && l.at >= p.camp - 0.01)) decide(l, env, w, dayLength, events);
       return;
     }
     if (l.target === null || l.at >= l.target - 0.01) {

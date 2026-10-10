@@ -114,7 +114,10 @@ async function road(): Promise<{ journey: Journey; mind: string }> {
   return { journey: j, mind };
 }
 
-const { journey, mind } = await road();
+const started = await road();
+const journey = started.journey;
+/** Who speaks for him: `claude` while the server can ask Claude, `local` otherwise (it may change as replies come). */
+let mind = started.mind;
 const life = journey.life;
 status.life = life;
 (status as unknown as { mind: string }).mind = mind;
@@ -222,8 +225,14 @@ function think(now: number): void {
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), 12_000);
   fetch('/api/thought', { method: 'POST', body: JSON.stringify({ ...ctx, place: BIOMES[ctx.biome as BiomeId]?.title ?? ctx.biome, recent: life.thoughts }), signal: abort.signal })
-    .then((r) => r.json() as Promise<{ thought: string | null }>)
-    .then((r) => show(r.thought ?? local))
+    .then((r) => r.json() as Promise<{ thought: string | null; mind?: string }>)
+    .then((r) => {
+      if (r.mind === 'claude' || r.mind === 'local') {
+        mind = r.mind;
+        (status as unknown as { mind: string }).mind = mind;
+      }
+      show(r.thought ?? local);
+    })
     .catch(() => show(local))
     .finally(() => {
       clearTimeout(timer);

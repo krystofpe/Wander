@@ -33,7 +33,9 @@ Atmosphere and visuals come first; where there is a trade, it goes toward beauty
 | His thoughts | Every 3–5 minutes, a short line fades in beside him and out again. From Claude through the server when it has credentials (at most one call per 3–5 minutes), otherwise from a local generator with hundreds of lines tied to place, hour, weather and the people he left. | *brief* |
 | Sound | Synthesised with Web Audio (Farnell's recipes), layered by biome, weather and hour; soft generative music after Eno; no recordings unless CC0. | R: Sound |
 | Saving | `~/.local/share/wander/journey.json`, written by the server: seed, distance, clock, his state, a log of places passed. Time away becomes distance (capped). | *brief* |
-| UI | Only the scene. H: a small dim bar; L: the log of places; M: sound; F: full screen. | *brief* |
+| UI | Only the scene. H: a small dim bar; L: the log of places; M: sound; F: full screen. (+ and − set the volume in 2 dB steps, as the sound research asked.) | *brief*; R: Sound §23 |
+| Font | **Alegreya Italic** (SIL OFL 1.1) for his thoughts, drawn at full resolution and sized with the art (one art pixel in CSS pixels sets its size, so it is the same share of the screen at 1080p and 4K). *Chosen over the research's first pick, m5x7:* the brief asks for "a quiet, beautiful font" for lonely, literary lines and names Kentucky Route Zero; at 640×360 m5x7's 7-pixel capitals read as game UI, while a literary italic reads as a voice. The research kept Alegreya as the high-resolution alternative for exactly this. The text is not part of the pixel art, so the one-pixel-size rule is not broken. | R: Art §22–23 |
+| Tour images | The committed tour (`docs/tour/`) is JPEG at quality 90 with full chroma (4:4:4); `npm run tour` writes the lossless PNGs beside it in `tour-png/` (ignored by git). Film grain and dither make a 1080p PNG about 2.3 MB and a 4K one about 9 MB, so ~150 PNGs would add over 400 MB to the repository; the JPEGs are ~0.4 MB at 1080p and keep the 3×3 pixel blocks clean. | — |
 
 **Done means** (the brief's definition of done):
 

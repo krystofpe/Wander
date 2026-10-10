@@ -19,7 +19,8 @@
     "watch": "node --disable-warning=ExperimentalWarning tools/watch.ts",
     "tour": "node --disable-warning=ExperimentalWarning tools/tour.ts",
     "bench": "node --disable-warning=ExperimentalWarning tools/bench.ts",
-    "soak": "node --disable-warning=ExperimentalWarning tools/soak.ts"
+    "soak": "node --disable-warning=ExperimentalWarning tools/soak.ts",
+    "check": "node --disable-warning=ExperimentalWarning tools/check.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.132.1"

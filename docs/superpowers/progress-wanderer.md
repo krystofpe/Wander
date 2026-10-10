@@ -61,16 +61,22 @@ The brief is `~/wander-ambient-prompt.md`. Read this file first after a restart,
   Measured (15 s clips, EBU R128): birch dawn −33 LUFS, night meadow −32, coast −30, camp with fire −27,
   pine rain −23, pass in wind −24, coast storm −20 (peak −4.6 dBFS).
 
+- M11 (59182b2): landmarks (11 kinds, each on the layer that suits its size; lit window, chimney smoke, mast lamp,
+  lighthouse flash, a distant train with its sound), life (flock, bats, fireflies, deer, fox, fish, leaves), Milky
+  Way, aurora, shooting stars; snow caps in planes; storm deck over the whole sky; night rim on him; finer fog dither.
+- M12 (eabae55): `npm run tour` (147 frames: 14 biomes × 6 times, 12 blends, 16 weathers, 10 poses, 11 landmarks,
+  7 life, 7 at 4K; JPEG q90 4:4:4 in docs/tour, PNG in tour-png/), `npm run bench`, `npm run soak`, `npm run watch`;
+  swamp pools, stones/plateau flora, sparser crowns on hills, fox/deer readable, lighter fog.
+- Bench (10 s per scene, first run): 1080p and 4K, 4 scenes, all 60 fps, interval p50 16.7 / p99 16.8 ms, 0 late.
+
 ## Next
 
-1. Landmarks drawn (all 11 kinds; lit window, chimney smoke, blinking mast lamp, lighthouse, bridge with wood steps,
-   a passing train at night), per-layer sprite batches.
-2. Life: bird flocks, bats, fireflies, a deer, a fox, a fish jumping, falling leaves.
-3. Sky: Milky Way, shooting stars, aurora in the north.
-4. `npm run tour` (every biome, blend, hour, weather, pose, landmark; 1080p and some 4K; contact sheet), look at
-   everything and fix.
-5. In-page bench (`npm run bench`, p50/p99), soaks (`npm run soak`), the 30-minute watch (`npm run watch`).
-6. README, docs/CREDITS.md, spec font decision; final review; draft PR.
+1. Fast soak (48 world h at speed 16) → docs/soak/fast-48h.json; then the bench at 30 s (docs/soak/bench.json).
+2. 2-hour soak at normal speed in the background, first 20 min hidden (docs/soak/normal-2h.json).
+3. Tour again on the final code; look at every image; README gallery.
+4. `npm run check` (reopen, time away, mind local/claude, slow/failing/refused API); `npm run motion` slit-scans;
+   the 30-minute watch at speed 3 with sound clips (DoD 3).
+5. Final review of the diff against main; fixes; draft PR with tour images.
 
 ## Open problems
 

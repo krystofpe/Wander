@@ -51,6 +51,8 @@ const NAMES: Readonly<Record<string, boolean>> = {
   user: true,
   /** The traveller put at its door for a look: sit, or metres past its door (walking). */
   passer: true,
+  /** His evening fire lit on the road above, for a look: it goes up to sit by it. */
+  fireside: false,
 };
 
 const num = (v: string | null, min: number, max: number): number | null => {

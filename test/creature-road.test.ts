@@ -4,7 +4,7 @@ import { HOLLOW } from '../src/biomes.ts';
 import { Game } from '../src/creature/game.ts';
 import { newLife } from '../src/creature/life.ts';
 import { eyesAt, eyesFade, owlTonight } from '../src/creature/night.ts';
-import { REACH, hollowBy, homeHollow, roadFrom, satBetween } from '../src/creature/road.ts';
+import { REACH, firesideAt, hollowBy, homeHollow, roadFrom, satBetween } from '../src/creature/road.ts';
 import { Geometry } from '../src/creature/scene.ts';
 import { cameWhileAway, travellerCame } from '../src/creature/traveller.ts';
 import { AWAY, awayAt, catchUp, newJourney } from '../src/journal.ts';
@@ -126,4 +126,46 @@ test('the owl comes on most nights, the same for everyone; eyes now and then, ni
   assert.equal(eyesAt(seed, 50000 * 7 + 9500), null);
   assert.equal(eyesFade(0), 0);
   assert.equal(eyesFade(4.5), 1);
+});
+
+test('in his evening by the fire the creature comes to sit with him, and goes home before the deep of the night', async () => {
+  const { comesToFire } = await import('../web/hollowmark.ts');
+  const { newLife: newRoadLife } = await import('../src/life.ts');
+  const l = newRoadLife(seed, 1000, 20.5);
+  l.act = 'camp';
+  l.stage = 'campsit';
+  l.fire = { at: 1000.9, heat: 1 };
+  l.clock = 20.5;
+  assert.ok(comesToFire(l, null), 'by his fire in the evening');
+  assert.ok(!comesToFire(l, { name: 'Ori', cloak: 0, away: true, nightOwl: 0.3 }), 'not while it is off wandering');
+  l.clock = 23;
+  assert.ok(!comesToFire(l, null), 'home before the deep of the night');
+  l.clock = 20.5;
+  l.stage = 'walk';
+  assert.ok(!comesToFire(l, null), 'only at his camp');
+  // From the hollow: his journey's clock moved on (a day an hour) says when his fire is lit.
+  const journey = { seed, at: 0, savedAt: 0, clock: 19 };
+  assert.equal(firesideAt(journey, 0), false);
+  assert.equal(firesideAt(journey, (1.5 * 3600 * 1000) / 24), true);
+  assert.equal(firesideAt(journey, (4 * 3600 * 1000) / 24), false);
+  assert.equal(firesideAt({ seed, at: 0, savedAt: 0 }, 0), false, 'no clock, no fire');
+});
+
+test('from the deep it goes up through its door to his fire, keeps the visit, and comes home', () => {
+  const day = new Date(2026, 9, 10, 15).getTime();
+  const life = newLife(21, day - 86400000, { biome: 'forest' });
+  life.userName = 'Krystof';
+  const game = new Game(life, { geo: new Geometry(640), now: day, random: rng(7), mind: null, login: 'k', firstMeeting: false, away: null, place: 'deep' });
+  game.hisFire = true;
+  game.brain.run('fireside');
+  let went = false;
+  for (let i = 0; i < 600 && !went; i++) {
+    game.update(0.1);
+    went = game.awayAtFire;
+  }
+  assert.ok(went && game.body.inside, 'it has gone in through its door');
+  assert.ok(life.diary.at(-1)?.text.includes('fire'), 'and keeps the visit');
+  game.hisFire = false;
+  for (let i = 0; i < 300; i++) game.update(0.1);
+  assert.ok(!game.awayAtFire && !game.body.inside, 'home again, outside');
 });

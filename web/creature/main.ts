@@ -85,7 +85,7 @@ function todayAt(hour: number, now: number = Date.now()): number {
 }
 
 /** Runs that bend time or take pictures are not saved. */
-const ephemeral = opts.speed !== 1 || opts.hour !== null || opts.now !== null || opts.manual || opts.weather !== null || opts.bench !== null || params.has('passer');
+const ephemeral = opts.speed !== 1 || opts.hour !== null || opts.now !== null || opts.manual || opts.weather !== null || opts.bench !== null || params.has('passer') || params.has('fireside');
 const start = opts.hour !== null ? todayAt(opts.hour, opts.now ?? Date.now()) : (opts.now ?? Date.now());
 
 /** The saved life (lived through the time away), or a new one; and whether the server can ask Claude. */

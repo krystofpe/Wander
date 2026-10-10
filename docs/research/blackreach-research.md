@@ -61,6 +61,16 @@ It now looks like the wanderer made small: a hooded cloak, a dark face, two eyes
 - **A cave moth.** A soft round body with feathery antennae and dusty wings folded like a cloak, which open when it is startled or glad. It trails pale dust when it moves.
 - **A blend of the first two.** A mushroom child whose cap is also its mask, and whose threads leave motes as it floats.
 
+## Later: the Underdark (Baldur's Gate 3)
+
+Asked for later ("make it a little more rich in elements, lose the light on top, draw inspiration from the Underdark of Baldur's Gate"), two screenshots from the BG3 wiki were measured the same way (`Underdark.jpg`, `Phalar_Aluve_Location.jpg`):
+
+- **Darker than Blackreach:** mean luminance 0.13–0.17, against 0.21–0.32 for Blackreach and 0.18 for the forest reference. The base is navy-black, not teal: #040E18, #091928, #0F2536, #10314A.
+- **Many glows, not one hue:** blue and cyan (#276897, #4BA5E0, tube fungi #28D7F5), amber caps (#C98356), red bulbs (#92443F), violet crystal, pale blue caps on stems that glow white.
+- **Its things:** giant mushrooms of several kinds (Torchstalks, Timmasks, Bibberbang, Nightlight, Barrelstalk), red shelf fungi stacked up their stalks, tube fungi, purple coral-like growth, crystal, huge dark stalactites, a dark lake (the Ebonlake), ruins and urns, petrified statues, bones, webs, spore clouds (bg3.wiki).
+
+**The deep took:** the navy base and darkness, the many kinds of growth (tall pale-stemmed caps, torch-caps kept dull so they do not read as lamps, coral shelves, red bulbs, tube fungi, violet crystal, purple coral), the broken pillars and urns, the dark lake, and huge stalactites. **It dropped:** the old lamp, and the threads of light from the roof.
+
 ## Sources
 
 - UESP, *Skyrim:Blackreach*: https://en.uesp.net/wiki/Skyrim:Blackreach
@@ -73,6 +83,7 @@ It now looks like the wanderer made small: a hooded cloak, a dark face, two eyes
 - UESP, *Skyrim:Music*: https://en.uesp.net/wiki/Skyrim:Music
 - Sparky Clarkson, "Skyrim: A Dirge for the Falmer", GameCritics: https://gamecritics.com/sparky-clarkson/skyrim-a-dirge-for-the-falmer/
 - Bethesda, "Greymoor: Western Skyrim and Blackreach preview": https://bethesda.net/en-US/news/greymoor-western-skyrim-blackreach-preview
+- BG3 wiki, *Underdark*: https://bg3.wiki/wiki/Underdark, and its images `Underdark.jpg`, `Phalar_Aluve_Location.jpg` (measured, not in the repository).
 - The four screenshots measured: UESP images `SR-place-Blackreach.jpg`, `_02`, `_03`, `_04` (https://images.uesp.net/0/00/SR-place-Blackreach.jpg and siblings).
 
 ## What could not be found

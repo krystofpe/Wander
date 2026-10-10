@@ -1,135 +1,130 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Game } from '../src/game.ts';
-import { newLife } from '../src/creature.ts';
-import type { Life } from '../src/creature.ts';
+import { ACTS, choose, freshMemory } from '../src/brain.ts';
+import type { Situation, Spot } from '../src/brain.ts';
 import { rng } from '../src/noise.ts';
-import { weatherAt } from '../src/sky.ts';
 
-/** A dry hour on 8 October 2026 at or after `hour`, for a meadow creature with this seed. */
-function dryAt(hour: number, seed: number): number {
-  let t = new Date(2026, 9, 8, hour).getTime();
-  while (weatherAt(t, seed, 'meadow').precip > 0 || weatherAt(t + 3600000, seed, 'meadow').precip > 0) t += 86400000;
-  return t;
-}
+const seat: Spot = { kind: 'seat', at: 120, what: 'rock', quality: 0.7 };
+const view: Spot = { kind: 'view', at: 110, what: 'hilltop', quality: 0.8 };
+const shelter: Spot = { kind: 'shelter', at: 130, what: 'pine', quality: 0.7 };
+const camp: Spot = { kind: 'camp', at: 140, what: 'clearing', quality: 0.7 };
 
-function game(hour: number, tweak: (life: Life) => void = () => {}, seed = 3): Game {
-  const now = dryAt(hour, seed);
-  const life = newLife(seed, now - 86400000, { biome: 'meadow' });
-  life.userName = 'Tester';
-  life.needs = { food: 0.8, rest: 0.8, fun: 0.7, love: 0.8 };
-  tweak(life);
-  return new Game(life, { cols: 120, rows: 40, now, random: rng(seed), away: { ms: 0, wandered: false, events: 0 } });
-}
+const day: Situation = {
+  hour: 11,
+  sunElevation: 45,
+  precip: 0,
+  storm: false,
+  snow: false,
+  at: 100,
+  walking: 60,
+  since: freshMemory(600),
+  spots: [],
+  slept: false,
+  nightOwl: 0.2,
+};
 
-function run(g: Game, seconds: number, each: (g: Game) => void = () => {}): void {
-  for (let i = 0; i < seconds * 30; i++) {
-    g.update(1 / 30);
-    each(g);
+const tally = (s: Situation, n = 600, seed = 1): Record<string, number> => {
+  const random = rng(seed);
+  const out: Record<string, number> = {};
+  for (let i = 0; i < n; i++) {
+    const c = choose(s, random);
+    out[c.act] = (out[c.act] ?? 0) + 1;
   }
-}
+  return out;
+};
 
-test('left alone, it keeps busy with many different things', () => {
-  const g = game(14);
+test('with nowhere to stop and fresh legs he walks on', () => {
+  const t = tally(day);
+  assert.ok((t.walk ?? 0) > 500, JSON.stringify(t));
+});
+
+test('the same situation and random numbers give the same choice', () => {
+  const s = { ...day, spots: [seat, view], walking: 800 };
+  assert.deepEqual(choose(s, rng(4)), choose(s, rng(4)));
+});
+
+test('after a long walk, a seat ahead is hard to pass by', () => {
+  const t = tally({ ...day, walking: 900, spots: [seat] });
+  assert.ok((t.sit ?? 0) > 330, JSON.stringify(t));
+});
+
+test('he only sits where there is something to sit on', () => {
+  const t = tally({ ...day, walking: 1500, since: freshMemory(5000), spots: [view, camp] });
+  assert.equal(t.sit ?? 0, 0, JSON.stringify(t));
+});
+
+test('a choice to stop names the spot it stops at, one that is ahead of him', () => {
+  const random = rng(8);
+  for (let i = 0; i < 300; i++) {
+    const c = choose({ ...day, walking: 1200, since: freshMemory(4000), spots: [seat, view, shelter] }, random);
+    if (c.act === 'sit' || c.act === 'look') {
+      assert.ok(c.spot !== null && c.spot.at >= 100, JSON.stringify(c));
+      assert.equal(c.spot.kind, c.act === 'sit' ? 'seat' : 'view');
+    }
+  }
+});
+
+test('he does not sit again straight after sitting', () => {
+  const since = { ...freshMemory(4000), sit: 30 };
+  const t = tally({ ...day, walking: 1500, since, spots: [seat] });
+  assert.equal(t.sit ?? 0, 0, JSON.stringify(t));
+});
+
+test('a view at golden hour draws him more than at noon', () => {
+  const noon = tally({ ...day, spots: [view] });
+  const golden = tally({ ...day, hour: 17.5, sunElevation: 4, spots: [view] });
+  assert.ok((golden.look ?? 0) > (noon.look ?? 0) + 40, `${JSON.stringify(noon)} ${JSON.stringify(golden)}`);
+});
+
+test('in heavy rain he waits it out under shelter when there is one', () => {
+  const t = tally({ ...day, precip: 0.85, spots: [shelter, seat] });
+  assert.ok((t.shelter ?? 0) > 450, JSON.stringify(t));
+  const c = choose({ ...day, precip: 0.85, spots: [shelter] }, rng(2));
+  if (c.act === 'shelter') assert.equal(c.until, 'rain eases');
+});
+
+test('at dusk he makes camp where he can, and stays until dawn', () => {
+  const dusk = { ...day, hour: 19.4, sunElevation: -7, nightOwl: 0.1, spots: [camp, seat] };
+  const t = tally(dusk);
+  assert.ok((t.camp ?? 0) > 420, JSON.stringify(t));
+  const c = choose({ ...dusk, nightOwl: 0 }, rng(5));
+  assert.equal(c.act, 'camp');
+  assert.equal(c.until, 'dawn');
+  assert.equal(c.spot?.kind, 'camp');
+});
+
+test('a night owl walks on into the dark before he camps', () => {
+  const early = tally({ ...day, hour: 19.4, sunElevation: -7, nightOwl: 0.9, spots: [camp] });
+  assert.equal(early.camp ?? 0, 0, JSON.stringify(early));
+  const late = tally({ ...day, hour: 21.8, sunElevation: -31, nightOwl: 0.9, spots: [camp] });
+  assert.ok((late.camp ?? 0) > 500, JSON.stringify(late));
+});
+
+test('with no place to camp he keeps walking into the night', () => {
+  const t = tally({ ...day, hour: 21, sunElevation: -25, spots: [seat] });
+  assert.equal(t.camp ?? 0, 0);
+  assert.ok((t.walk ?? 0) + (t.sit ?? 0) + (t.smoke ?? 0) === 600);
+});
+
+test('once he has slept, the night does not make him camp again', () => {
+  const t = tally({ ...day, hour: 5, sunElevation: -10, slept: true, spots: [camp] });
+  assert.equal(t.camp ?? 0, 0, JSON.stringify(t));
+});
+
+test('every act is reachable and every choice has a sensible length', () => {
   const seen = new Set<string>();
-  run(g, 900, (x) => seen.add(x.brain.current ?? ''));
-  assert.ok(seen.size >= 6, [...seen].join(', '));
-});
-
-test('a hungry creature feeds itself', () => {
-  const g = game(14, (life) => (life.needs.food = 0.1));
-  run(g, 120);
-  assert.ok(g.life.needs.food > 0.3, String(g.life.needs.food));
-});
-
-test('dropped food is eaten when it is hungry, and left when it is full', () => {
-  const hungry = game(14, (life) => (life.needs.food = 0.3));
-  hungry.feed();
-  run(hungry, 40);
-  assert.equal(hungry.life.stats.fed, 1);
-  assert.equal(hungry.scene.foods.length, 0);
-  const full = game(14, (life) => (life.needs.food = 1));
-  full.feed();
-  run(full, 40);
-  assert.equal(full.life.stats.fed, 0);
-  assert.equal(full.scene.foods.length, 1);
-});
-
-test('at bedtime it goes home to sleep', () => {
-  const g = game(22, (life) => (life.traits.nightOwl = 0));
-  run(g, 120);
-  assert.equal(g.life.asleep, true);
-  assert.equal(g.body.inside, true);
-  assert.equal(g.eyes(), '- -');
-});
-
-test('a thrown toy gets chased', () => {
-  const g = game(14, (life) => {
-    life.traits.playful = 1;
-    life.needs.fun = 0.2;
-    life.needs.rest = 1;
-  });
-  g.play();
-  run(g, 25);
-  assert.ok(g.life.stats.played >= 1);
-  assert.ok(g.life.needs.fun > 0.2);
-});
-
-test('a request runs once the current activity ends', () => {
-  const g = game(14);
-  g.brain.run('jump');
-  g.brain.later('hum');
-  let hummed = false;
-  run(g, 20, (x) => (hummed ||= x.brain.current === 'hum'));
-  assert.ok(hummed);
-});
-
-test('what cannot happen scores zero', () => {
-  const g = game(14);
-  const score = new Map(g.brain.scores());
-  assert.equal(score.get('chase'), 0, 'no toy');
-  assert.equal(score.get('stargaze'), 0, 'daytime');
-  assert.equal(score.get('gift'), 0, 'nothing found');
-  assert.equal(score.get('eat'), 0, 'no food');
-  assert.equal(score.get('sleep'), 0, 'not bedtime, not tired');
-});
-
-test('petting too often annoys it', () => {
-  const g = game(14);
-  for (let i = 0; i < 7; i++) {
-    g.pet();
-    run(g, 0.2);
-  }
-  assert.ok(g.feelings.annoyance > 0.5);
-  assert.equal(g.mood, 'grumpy');
-});
-
-test('different seeds live different days', () => {
-  const day = (seed: number): string => {
-    const g = game(14, () => {}, seed);
-    const log: string[] = [];
-    run(g, 300, (x) => {
-      if (log.at(-1) !== x.brain.current) log.push(x.brain.current ?? '');
-    });
-    return log.join(' ');
-  };
-  assert.equal(day(5), day(5));
-  assert.notEqual(day(5), day(6));
-});
-
-test('it steps through its doorway into the dark, and out again a few steps from the door', () => {
-  const g = game(14, (life) => (life.needs.rest = 0.05));
-  g.brain.run('sleep');
-  const fades: number[] = [];
-  run(g, 60, (x) => x.body.doorway > 0 && fades.push(x.body.doorway));
-  assert.equal(g.body.inside, true);
-  assert.equal(g.body.doorway, 0, 'once inside, only its eyes show');
-  assert.ok(fades.length > 5 && fades.every((k, i) => i === 0 || k >= fades[i - 1]), 'it fades in steps, deeper each frame');
-  const home = g.scene.layout.home;
-  g.life.needs.rest = 1;
-  const out: number[] = [];
-  run(g, 30, (x) => !x.body.inside && x.body.doorway > 0 && out.push(x.body.doorway));
-  assert.equal(g.body.inside, false);
-  assert.ok(out.length > 5 && out[out.length - 1] < out[0], 'it comes out of the dark');
-  assert.ok(g.body.z > home.z + 0.05, 'and walks a few steps from the door');
+  const random = rng(17);
+  const situations: Situation[] = [
+    { ...day, walking: 1200, since: freshMemory(4000), spots: [seat, view] },
+    { ...day, precip: 0.9, spots: [shelter] },
+    { ...day, hour: 19.5, sunElevation: -8, spots: [camp] },
+    { ...day, walking: 2000, since: freshMemory(4000), spots: [] },
+  ];
+  for (const s of situations)
+    for (let i = 0; i < 400; i++) {
+      const c = choose(s, random);
+      seen.add(c.act);
+      assert.ok(c.seconds > 0 && c.seconds < 900, JSON.stringify(c));
+    }
+  for (const a of ACTS) assert.ok(seen.has(a), `never chose ${a}`);
 });

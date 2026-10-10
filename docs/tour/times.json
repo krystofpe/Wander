@@ -1,0 +1,1239 @@
+{
+ "seed": "wander",
+ "times": {
+  "dawn": 6.68,
+  "noon": 11,
+  "golden": 14.84,
+  "dusk": 16.52,
+  "blue": 18,
+  "night": 0
+ },
+ "shots": [
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pine-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pine-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pine-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pine-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pine-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pine-night"
+  },
+  {
+   "seed": "wander",
+   "at": "6847",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "birch-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "6847",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "birch-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "6847",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "birch-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "6847",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "birch-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "6847",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "birch-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "6847",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "birch-night"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "meadow-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "meadow-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "meadow-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "meadow-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "meadow-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "meadow-night"
+  },
+  {
+   "seed": "wander",
+   "at": "1820",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "autumn-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "1820",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "autumn-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "1820",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "autumn-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "1820",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "autumn-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "1820",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "autumn-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "1820",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "autumn-night"
+  },
+  {
+   "seed": "wander",
+   "at": "3698",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "plateau-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "3698",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "plateau-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "3698",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "plateau-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "3698",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "plateau-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "3698",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "plateau-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "3698",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "plateau-night"
+  },
+  {
+   "seed": "wander",
+   "at": "2767",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pass-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "2767",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pass-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "2767",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pass-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "2767",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pass-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "2767",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pass-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "2767",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "pass-night"
+  },
+  {
+   "seed": "wander",
+   "at": "5873",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "coast-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "5873",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "coast-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "5873",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "coast-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "5873",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "coast-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "5873",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "coast-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "5873",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "coast-night"
+  },
+  {
+   "seed": "wander",
+   "at": "7641",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "desert-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "7641",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "desert-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "7641",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "desert-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "7641",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "desert-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "7641",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "desert-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "7641",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "desert-night"
+  },
+  {
+   "seed": "wander",
+   "at": "13251",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "tundra-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "13251",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "tundra-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "13251",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "tundra-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "13251",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "tundra-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "13251",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "tundra-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "13251",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "tundra-night"
+  },
+  {
+   "seed": "wander",
+   "at": "10022",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "swamp-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "10022",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "swamp-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "10022",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "swamp-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "10022",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "swamp-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "10022",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "swamp-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "10022",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "swamp-night"
+  },
+  {
+   "seed": "wander",
+   "at": "15796",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "saltflat-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "15796",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "saltflat-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "15796",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "saltflat-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "15796",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "saltflat-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "15796",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "saltflat-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "15796",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "saltflat-night"
+  },
+  {
+   "seed": "wander",
+   "at": "568",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "stones-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "568",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "stones-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "568",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "stones-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "568",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "stones-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "568",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "stones-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "568",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "stones-night"
+  },
+  {
+   "seed": "wander",
+   "at": "9346",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "ruins-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "9346",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "ruins-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "9346",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "ruins-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "9346",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "ruins-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "9346",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "ruins-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "9346",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "ruins-night"
+  },
+  {
+   "seed": "wander",
+   "at": "4370",
+   "hour": "6.68",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "rail-dawn"
+  },
+  {
+   "seed": "wander",
+   "at": "4370",
+   "hour": "11",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "rail-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "4370",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "rail-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "4370",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "rail-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "4370",
+   "hour": "18",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "rail-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "4370",
+   "hour": "0",
+   "weather": "clear",
+   "group": "biomes",
+   "name": "rail-night"
+  },
+  {
+   "seed": "wander",
+   "at": "184",
+   "hour": "11",
+   "weather": "clear",
+   "group": "blends",
+   "name": "01-ruins-stones"
+  },
+  {
+   "seed": "wander",
+   "at": "953",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "blends",
+   "name": "02-stones-meadow"
+  },
+  {
+   "seed": "wander",
+   "at": "1439",
+   "hour": "11",
+   "weather": "clear",
+   "group": "blends",
+   "name": "03-meadow-autumn"
+  },
+  {
+   "seed": "wander",
+   "at": "2200",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "blends",
+   "name": "04-autumn-pass"
+  },
+  {
+   "seed": "wander",
+   "at": "3333",
+   "hour": "11",
+   "weather": "clear",
+   "group": "blends",
+   "name": "05-pass-plateau"
+  },
+  {
+   "seed": "wander",
+   "at": "4062",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "blends",
+   "name": "06-plateau-rail"
+  },
+  {
+   "seed": "wander",
+   "at": "4677",
+   "hour": "11",
+   "weather": "clear",
+   "group": "blends",
+   "name": "07-rail-meadow"
+  },
+  {
+   "seed": "wander",
+   "at": "5401",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "blends",
+   "name": "08-meadow-coast"
+  },
+  {
+   "seed": "wander",
+   "at": "6344",
+   "hour": "11",
+   "weather": "clear",
+   "group": "blends",
+   "name": "09-coast-birch"
+  },
+  {
+   "seed": "wander",
+   "at": "7349",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "blends",
+   "name": "10-birch-desert"
+  },
+  {
+   "seed": "wander",
+   "at": "7933",
+   "hour": "11",
+   "weather": "clear",
+   "group": "blends",
+   "name": "11-desert-autumn"
+  },
+  {
+   "seed": "wander",
+   "at": "8952",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "blends",
+   "name": "12-autumn-ruins"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "11",
+   "weather": "clear",
+   "group": "weather",
+   "name": "pine-clear"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "weather",
+   "name": "meadow-clear"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "11",
+   "weather": "cloudy",
+   "group": "weather",
+   "name": "pine-cloudy"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "14.84",
+   "weather": "cloudy",
+   "group": "weather",
+   "name": "meadow-cloudy"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "11",
+   "weather": "overcast",
+   "group": "weather",
+   "name": "pine-overcast"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "14.84",
+   "weather": "overcast",
+   "group": "weather",
+   "name": "meadow-overcast"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "6.68",
+   "weather": "fog",
+   "group": "weather",
+   "name": "pine-fog"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "14.84",
+   "weather": "fog",
+   "group": "weather",
+   "name": "meadow-fog"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "11",
+   "weather": "rain",
+   "group": "weather",
+   "name": "pine-rain"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "16.52",
+   "weather": "rain",
+   "group": "weather",
+   "name": "meadow-rain"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "11",
+   "weather": "snow",
+   "group": "weather",
+   "name": "pine-snow"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "14.84",
+   "weather": "snow",
+   "group": "weather",
+   "name": "meadow-snow"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "11",
+   "weather": "storm",
+   "group": "weather",
+   "name": "pine-storm"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "16.52",
+   "weather": "storm",
+   "group": "weather",
+   "name": "meadow-storm"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "11",
+   "weather": "wind",
+   "group": "weather",
+   "name": "pine-wind"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "14.84",
+   "weather": "wind",
+   "group": "weather",
+   "name": "meadow-wind"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "14.84",
+   "weather": "clear",
+   "pose": "walk",
+   "t": "3.1",
+   "group": "poses",
+   "name": "walk"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "14.84",
+   "weather": "clear",
+   "pose": "look",
+   "t": "3.1",
+   "group": "poses",
+   "name": "look"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "16.52",
+   "weather": "clear",
+   "pose": "back",
+   "t": "3.1",
+   "group": "poses",
+   "name": "back"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "14.84",
+   "weather": "clear",
+   "pose": "sit",
+   "t": "3.1",
+   "group": "poses",
+   "name": "sit"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "18",
+   "weather": "clear",
+   "pose": "smoke",
+   "t": "3.1",
+   "group": "poses",
+   "name": "smoke"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "16.52",
+   "weather": "clear",
+   "pose": "sitsmoke",
+   "t": "3.1",
+   "group": "poses",
+   "name": "sitsmoke"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "18",
+   "weather": "clear",
+   "pose": "kneel",
+   "t": "3.1",
+   "group": "poses",
+   "name": "kneel"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "0",
+   "weather": "clear",
+   "pose": "camp",
+   "t": "3.1",
+   "group": "poses",
+   "name": "camp"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "0",
+   "weather": "clear",
+   "pose": "lie",
+   "t": "3.1",
+   "group": "poses",
+   "name": "lie"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "0",
+   "weather": "clear",
+   "pose": "sleep",
+   "t": "3.1",
+   "group": "poses",
+   "name": "sleep"
+  },
+  {
+   "seed": "wander",
+   "at": "1184",
+   "hour": "18",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "",
+   "group": "landmarks",
+   "name": "house"
+  },
+  {
+   "seed": "wander",
+   "at": "14",
+   "hour": "14.84",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "",
+   "group": "landmarks",
+   "name": "chapel"
+  },
+  {
+   "seed": "wander",
+   "at": "66658",
+   "hour": "16.52",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "",
+   "group": "landmarks",
+   "name": "lighthouse"
+  },
+  {
+   "seed": "wander",
+   "at": "5133",
+   "hour": "18",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "",
+   "group": "landmarks",
+   "name": "mast"
+  },
+  {
+   "seed": "wander",
+   "at": "9150",
+   "hour": "14.84",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "",
+   "group": "landmarks",
+   "name": "car"
+  },
+  {
+   "seed": "wander",
+   "at": "2683",
+   "hour": "14.84",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "fish",
+   "group": "landmarks",
+   "name": "bridge"
+  },
+  {
+   "seed": "wander",
+   "at": "4370",
+   "hour": "0",
+   "weather": "clear",
+   "t": "40",
+   "show": "",
+   "group": "landmarks",
+   "name": "train"
+  },
+  {
+   "seed": "wander",
+   "at": "20046",
+   "hour": "6.68",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "",
+   "group": "landmarks",
+   "name": "circle"
+  },
+  {
+   "seed": "wander",
+   "at": "22587",
+   "hour": "18",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "",
+   "group": "landmarks",
+   "name": "shrine"
+  },
+  {
+   "seed": "wander",
+   "at": "37061",
+   "hour": "14.84",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "",
+   "group": "landmarks",
+   "name": "skeleton"
+  },
+  {
+   "seed": "wander",
+   "at": "7418",
+   "hour": "16.52",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "",
+   "group": "landmarks",
+   "name": "camp"
+  },
+  {
+   "seed": "wander",
+   "at": "6847",
+   "hour": "6.68",
+   "weather": "clear",
+   "show": "deer",
+   "group": "life",
+   "name": "deer"
+  },
+  {
+   "seed": "wander",
+   "at": "1820",
+   "hour": "14.84",
+   "weather": "clear",
+   "show": "deer,alert",
+   "group": "life",
+   "name": "deer-alert"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "16.52",
+   "weather": "clear",
+   "show": "fox",
+   "group": "life",
+   "name": "fox"
+  },
+  {
+   "seed": "wander",
+   "at": "3698",
+   "hour": "14.84",
+   "weather": "clear",
+   "show": "flock",
+   "group": "life",
+   "name": "flock"
+  },
+  {
+   "seed": "wander",
+   "at": "10022",
+   "hour": "16.52",
+   "weather": "clear",
+   "show": "bats",
+   "group": "life",
+   "name": "bats"
+  },
+  {
+   "seed": "wander",
+   "at": "1396",
+   "hour": "0",
+   "weather": "clear",
+   "group": "life",
+   "name": "fireflies"
+  },
+  {
+   "seed": "wander",
+   "at": "1820",
+   "hour": "11",
+   "weather": "wind",
+   "group": "life",
+   "name": "leaves"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "14.84",
+   "weather": "clear",
+   "group": "4k",
+   "name": "pine-golden"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "0",
+   "weather": "clear",
+   "pose": "camp",
+   "t": "3.1",
+   "group": "4k",
+   "name": "pine-camp"
+  },
+  {
+   "seed": "wander",
+   "at": "2767",
+   "hour": "11",
+   "weather": "clear",
+   "group": "4k",
+   "name": "pass-noon"
+  },
+  {
+   "seed": "wander",
+   "at": "5873",
+   "hour": "16.52",
+   "weather": "clear",
+   "group": "4k",
+   "name": "coast-dusk"
+  },
+  {
+   "seed": "wander",
+   "at": "1184",
+   "hour": "18",
+   "weather": "clear",
+   "group": "4k",
+   "name": "house-blue"
+  },
+  {
+   "seed": "wander",
+   "at": "13251",
+   "hour": "0",
+   "weather": "clear",
+   "group": "4k",
+   "name": "tundra-night"
+  },
+  {
+   "seed": "wander",
+   "at": "1196",
+   "hour": "16.52",
+   "weather": "storm",
+   "t": "7.9",
+   "group": "4k",
+   "name": "meadow-storm"
+  }
+ ]
+}

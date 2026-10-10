@@ -1,0 +1,242 @@
+[
+ {
+  "scene": "pine golden",
+  "size": "1920×1080",
+  "report": {
+   "seconds": 30,
+   "frames": 1801,
+   "fps": 60,
+   "width": 1920,
+   "height": 1080,
+   "interval": {
+    "p50": 16.7,
+    "p99": 16.8,
+    "max": 16.8,
+    "mean": 16.67
+   },
+   "cpu": {
+    "p50": 0.2,
+    "p99": 0.4,
+    "max": 3.4,
+    "mean": 0.19
+   },
+   "gpu": {
+    "p50": 4.4,
+    "p99": 13.7,
+    "max": 31.27,
+    "mean": 4.7
+   },
+   "late": 0
+  }
+ },
+ {
+  "scene": "meadow storm dusk",
+  "size": "1920×1080",
+  "report": {
+   "seconds": 30,
+   "frames": 1801,
+   "fps": 60,
+   "width": 1920,
+   "height": 1080,
+   "interval": {
+    "p50": 16.7,
+    "p99": 16.8,
+    "max": 16.8,
+    "mean": 16.67
+   },
+   "cpu": {
+    "p50": 0.2,
+    "p99": 0.4,
+    "max": 4.1,
+    "mean": 0.22
+   },
+   "gpu": {
+    "p50": 5.37,
+    "p99": 15.38,
+    "max": 33.05,
+    "mean": 5.38
+   },
+   "late": 0
+  }
+ },
+ {
+  "scene": "pine night camp",
+  "size": "1920×1080",
+  "report": {
+   "seconds": 30,
+   "frames": 1801,
+   "fps": 60,
+   "width": 1920,
+   "height": 1080,
+   "interval": {
+    "p50": 16.7,
+    "p99": 16.8,
+    "max": 16.8,
+    "mean": 16.67
+   },
+   "cpu": {
+    "p50": 0.2,
+    "p99": 0.4,
+    "max": 2.4,
+    "mean": 0.19
+   },
+   "gpu": {
+    "p50": 3.79,
+    "p99": 13.2,
+    "max": 32.26,
+    "mean": 4.39
+   },
+   "late": 0
+  }
+ },
+ {
+  "scene": "fast walk (speed 12)",
+  "size": "1920×1080",
+  "report": {
+   "seconds": 30,
+   "frames": 1801,
+   "fps": 60,
+   "width": 1920,
+   "height": 1080,
+   "interval": {
+    "p50": 16.7,
+    "p99": 16.8,
+    "max": 16.8,
+    "mean": 16.67
+   },
+   "cpu": {
+    "p50": 0.2,
+    "p99": 2.9,
+    "max": 3.9,
+    "mean": 0.25
+   },
+   "gpu": {
+    "p50": 3.12,
+    "p99": 9.24,
+    "max": 27.81,
+    "mean": 3.27
+   },
+   "late": 0
+  }
+ },
+ {
+  "scene": "pine golden",
+  "size": "3840×2160",
+  "report": {
+   "seconds": 30,
+   "frames": 1800,
+   "fps": 60,
+   "width": 3840,
+   "height": 2160,
+   "interval": {
+    "p50": 16.7,
+    "p99": 16.8,
+    "max": 33.3,
+    "mean": 16.68
+   },
+   "cpu": {
+    "p50": 0.2,
+    "p99": 0.4,
+    "max": 3.6,
+    "mean": 0.22
+   },
+   "gpu": {
+    "p50": 4.03,
+    "p99": 15.68,
+    "max": 23.26,
+    "mean": 6.36
+   },
+   "late": 1
+  }
+ },
+ {
+  "scene": "meadow storm dusk",
+  "size": "3840×2160",
+  "report": {
+   "seconds": 30,
+   "frames": 1801,
+   "fps": 60,
+   "width": 3840,
+   "height": 2160,
+   "interval": {
+    "p50": 16.7,
+    "p99": 16.8,
+    "max": 16.8,
+    "mean": 16.67
+   },
+   "cpu": {
+    "p50": 0.2,
+    "p99": 0.4,
+    "max": 6.6,
+    "mean": 0.26
+   },
+   "gpu": {
+    "p50": 11.77,
+    "p99": 17.99,
+    "max": 23.05,
+    "mean": 11.47
+   },
+   "late": 0
+  }
+ },
+ {
+  "scene": "pine night camp",
+  "size": "3840×2160",
+  "report": {
+   "seconds": 30,
+   "frames": 1801,
+   "fps": 60,
+   "width": 3840,
+   "height": 2160,
+   "interval": {
+    "p50": 16.7,
+    "p99": 16.8,
+    "max": 16.8,
+    "mean": 16.67
+   },
+   "cpu": {
+    "p50": 0.2,
+    "p99": 0.4,
+    "max": 2.6,
+    "mean": 0.22
+   },
+   "gpu": {
+    "p50": 3.7,
+    "p99": 7.16,
+    "max": 21.68,
+    "mean": 3.55
+   },
+   "late": 0
+  }
+ },
+ {
+  "scene": "fast walk (speed 12)",
+  "size": "3840×2160",
+  "report": {
+   "seconds": 30,
+   "frames": 1801,
+   "fps": 60,
+   "width": 3840,
+   "height": 2160,
+   "interval": {
+    "p50": 16.7,
+    "p99": 16.8,
+    "max": 16.8,
+    "mean": 16.67
+   },
+   "cpu": {
+    "p50": 0.2,
+    "p99": 2.9,
+    "max": 6.4,
+    "mean": 0.28
+   },
+   "gpu": {
+    "p50": 3.63,
+    "p99": 12.21,
+    "max": 21.38,
+    "mean": 3.72
+   },
+   "late": 0
+  }
+ }
+]

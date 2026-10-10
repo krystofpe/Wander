@@ -55,6 +55,8 @@ for (const [pose, time] of [
   ['sleep', 'night'],
 ] as const)
   add('poses', `${pose}`, { at: pine, hour: String(TIMES[time]), weather: 'clear', pose, t: '3.1' });
+// A thought, as it shows beside him.
+add('poses', 'thought', { at: pine, hour: String(TIMES.golden), weather: 'clear', pose: 'sitsmoke', t: '3.1', thought: 'The pines have been talking all afternoon. Not to me.' });
 // Every landmark, at the hour it is best seen.
 const marks = firstLandmarks(seed);
 const MARK_TIME: Record<string, string> = { house: 'blue', chapel: 'golden', lighthouse: 'dusk', mast: 'blue', car: 'golden', bridge: 'golden', train: 'night', circle: 'dawn', shrine: 'blue', skeleton: 'golden', camp: 'dusk' };
@@ -110,7 +112,7 @@ try {
     execFileSync('montage', [...args, '-tile', group === 'biomes' ? '6x' : '4x', '-geometry', '480x270+3+3', '-pointsize', '13', '-background', '#0d0d10', '-fill', '#bbb', sheet]);
     execFileSync('magick', [sheet, '-quality', '88', join(out, `${group}-sheet.jpg`)]);
   }
-  writeFileSync(join(out, 'times.json'), `${JSON.stringify({ seed: word, times: TIMES, shots: shots.map((x) => ({ ...x.q, group: x.group, name: x.name })) }, null, 1)}\n`);
+  if (only === null) writeFileSync(join(out, 'times.json'), `${JSON.stringify({ seed: word, times: TIMES, shots: shots.map((x) => ({ ...x.q, group: x.group, name: x.name })) }, null, 1)}\n`);
 } finally {
   await s.close();
 }

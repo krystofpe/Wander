@@ -37,7 +37,7 @@ html, body {
   font-family: var(--thought-font);
   font-style: italic;
   font-weight: 400;
-  font-size: calc(var(--px, 3px) * 7.2);
+  font-size: calc(var(--px, 3px) * 8.4);
   line-height: 1.32;
   letter-spacing: 0.01em;
   color: var(--ink);

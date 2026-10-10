@@ -6,6 +6,8 @@ Nobody plays it. It is something to look at, or to leave running for hours full 
 
 ![Golden hour in the pine forest, at 4K](docs/tour/4k/pine-golden.jpg)
 
+![He sits and smokes; a thought fades in beside him](docs/tour/poses/thought.jpg)
+
 ## Run
 
 Needs Node 25 or newer and Chromium (or Chrome) installed.

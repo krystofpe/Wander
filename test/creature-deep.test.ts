@@ -66,7 +66,7 @@ test('its giant mushrooms glow underneath and trail threads; stalagmites point; 
 test('set in the deep: no rain, its own small lives, its home', () => {
   assert.equal(BIOMES.deep.rain, 0);
   for (let t = Date.UTC(2026, 9, 10); t < Date.UTC(2026, 10, 10); t += 3 * 3600000) assert.equal(skyAt(t, 11, 'deep').weather.precip, 0);
-  for (const k of [...BIOMES.deep.dayCritters, ...BIOMES.deep.nightCritters]) assert.ok(['moth', 'bat', 'frog', 'firefly'].includes(k), k);
+  for (const k of [...BIOMES.deep.dayCritters, ...BIOMES.deep.nightCritters]) assert.ok(['moth', 'bat', 'frog', 'firefly', 'butterfly'].includes(k), k);
   const now = new Date(2026, 9, 10, 14).getTime();
   const life = newLife(12, now - 86400000, { biome: 'meadow' });
   const g = new Game(life, { geo: new Geometry(640), now, random: rng(4), mind: null, login: 'k', firstMeeting: false, away: null, place: 'deep' });

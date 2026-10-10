@@ -366,3 +366,60 @@ export function urn(seed: number, size: number): Stamp {
     return s;
   });
 }
+
+const MOSS = [role('grass', 1), role('grass', 2), role('grass', 3), role('grass', 4)];
+const BLOOMS: readonly (readonly number[])[] = [
+  [role('heart', 0), role('amethyst', 2)],
+  [role('amethyst', 1), role('amethyst', 2)],
+  [role('toy', 0), role('toy', 1)],
+];
+
+/** A fern of the deep, `size` px across: soft green fronds curling out, their tips glowing faintly, swaying. */
+export function glowFern(seed: number, size: number): Stamp {
+  return cached(`glowfern:${seed}:${size}`, () => {
+    const random = rng(seed);
+    const h = Math.max(4, Math.round(size * 0.75));
+    const w = Math.max(6, Math.round(size * 1.3));
+    const s = newStamp(w, h, w >> 1);
+    const fronds = 4 + Math.floor(random() * 3);
+    for (let i = 0; i < fronds; i++) {
+      const dir = (i / (fronds - 1)) * 2 - 1;
+      let last: [number, number] = [s.ax, h - 1];
+      for (let t = 0; t < 1; t += 0.07) {
+        const x = Math.round(s.ax + dir * t * (w / 2));
+        const y = Math.round(h - 1 - Math.sin(t * Math.PI * 0.85) * h * (0.65 + 0.35 * (1 - Math.abs(dir))));
+        put(s, x, y, MOSS[Math.min(3, Math.floor(t * 4))], Math.min(7, Math.round(t * 6)));
+        if (t > 0.25 && random() < 0.45) put(s, x, y + 1, MOSS[0], 3);
+        last = [x, y];
+      }
+      if (random() < 0.6) put(s, last[0], last[1], GLOW[1], 6);
+    }
+    return s;
+  });
+}
+
+/** Glowing flowers, a clump `height` px tall: thin stems, blossoms of pink, violet or blue light, nodding. */
+export function blooms(seed: number, height: number): Stamp {
+  return cached(`bloom:${seed}:${height}`, () => {
+    const random = rng(seed);
+    const h = Math.max(4, Math.round(height));
+    const n = 2 + Math.floor(random() * 4);
+    const w = n * 3 + 3;
+    const s = newStamp(w, h + 1, w >> 1);
+    const colour = BLOOMS[seed % BLOOMS.length];
+    for (let i = 0; i < n; i++) {
+      const x = 2 + i * 3 + Math.floor(random() * 2) - 1;
+      const sh = Math.max(3, Math.round(h * (0.45 + 0.55 * random())));
+      const lean = random() < 0.5 ? -1 : 1;
+      for (let y = h; y > h - sh; y--) put(s, x + (y < h - sh * 0.6 ? lean : 0), y, MOSS[1], Math.min(7, Math.round(((h - y) / sh) * 5)));
+      const bx = x + lean;
+      const by = h - sh;
+      // A small star of light.
+      put(s, bx, by, colour[1], 6);
+      put(s, bx - 1, by, colour[0], 6);
+      put(s, bx + 1, by, colour[0], 6);
+      put(s, bx, by - 1, colour[0], 6);
+    }
+    return s;
+  });
+}

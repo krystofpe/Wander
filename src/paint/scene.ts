@@ -17,7 +17,7 @@ import { HORIZON } from './land.ts';
 import { BRIDGE, levelling, marksOn } from './landmarks.ts';
 import type { Placed as Mark } from './landmarks.ts';
 import { birch, broadleaf, bush, cactus, cached, conifer, deadTree, reeds, rock, tuft } from './plants.ts';
-import { bigCap, bulbs, coralFrond, crystals, glowCaps, paleCap, pillar, shelves, stalagmite, torchCap, tubes, urn } from './deep.ts';
+import { bigCap, blooms, bulbs, coralFrond, crystals, glowCaps, glowFern, paleCap, pillar, shelves, stalagmite, torchCap, tubes, urn } from './deep.ts';
 import { baseline } from '../layers.ts';
 
 /** What the ground is made of in a biome: its surface family, and whether that surface is snowy. */
@@ -133,6 +133,10 @@ export function stampFor(p: Placed, z: number): Stamp {
       return pillar(p.seed % 24, p.size);
     case 'urn':
       return urn(p.seed % 16, p.size);
+    case 'glowfern':
+      return glowFern(p.seed % 32, p.size);
+    case 'bloom':
+      return blooms(p.seed % 30, p.size);
     case 'stalag':
       return stalagmite(p.seed % 32, p.size);
     case 'crystal':

@@ -72,7 +72,7 @@ type Growth = { readonly x: number; readonly z: number; readonly sheet: string; 
 function undergrowth(game: Game): Growth[] {
   const def = BIOMES[game.place];
   const kinds: readonly (readonly [string, string])[] =
-    game.place === 'deep' ? [['shrooms', 'a'], ['shrooms', 'b']]
+    game.place === 'deep' ? [['shrooms', 'a'], ['shrooms', 'b'], ['bloom', 'pink'], ['bloom', 'violet'], ['bloom', 'blue'], ['bloom', 'violet'], ['reeds', 'a']]
     : game.place === 'forest' ? [['fern', 'a'], ['fern', 'b'], ['fern', 'a'], ['shrooms', 'a']]
     : game.place === 'swamp' ? [['reeds', 'a'], ['mushrooms', 'a'], ['fern', 'b']]
     : game.place === 'meadow' ? [['fern', 'a'], ['fern', 'b']]
@@ -81,7 +81,7 @@ function undergrowth(game: Game): Growth[] {
   const layout = game.scene.layout;
   const random = rng(game.life.seed ^ 0x9f0e);
   const out: Growth[] = [];
-  const count = def.canopy ? 46 : 18;
+  const count = game.place === 'deep' ? 70 : def.canopy ? 46 : 18;
   for (let tries = 0; out.length < count && tries < count * 8; tries++) {
     const x = 0.02 + random() * 0.96;
     const z = Math.pow(random(), 1.6);

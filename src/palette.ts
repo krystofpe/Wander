@@ -367,7 +367,7 @@ const BIOME_COLOURS: Readonly<Record<BiomeId, Colours>> = {
     land: ['#020812', '#04101c', '#08182a', '#0e2538', '#18384e'],
     rock: ['#030b16', '#071626', '#0d2236', '#16324a', '#264a66'],
     soil: ['#02070e', '#050f1a', '#0a1826', '#102234'],
-    grass: ['#030c14', '#061724', '#0a2232', '#113044', '#1a4258'],
+    grass: ['#031410', '#06241e', '#0c362c', '#144a3c', '#22634e'],
     leaf: ['#030a16', '#071428', '#0d2140', '#16335a', '#244a78'],
     needle: ['#030a14', '#071426', '#0d2036', '#163048'],
     bark: ['#02080e', '#06121c', '#0b1c2a', '#142a3c'],
@@ -375,6 +375,7 @@ const BIOME_COLOURS: Readonly<Record<BiomeId, Colours>> = {
     stone: ['#0a121e', '#16202e', '#263244', '#3c4a5e'],
     water: ['#020c18', '#071c32', '#0e3050', '#5aa0d8'],
     shroom: ['#1a5a8a', '#3fa8e0', '#b8ecff'],
+    wing: ['#3a2a6a', '#8a6ad0', '#d8c8ff'],
     flower: ['#2a2a5a', '#4a4a8a', '#8a82c4'],
     bone: ['#76847f', '#aebcb3', '#dfe8d6'],
     smoke: ['#3f6a70', '#7ea6a6', '#bfe0da'],
@@ -469,8 +470,8 @@ const DEEP: readonly Key[] = [
   { e: -90, lift: 0.015, gain: 0.5, boost: 0, light: '#5a6ac0', warm: 0.05, ambient: '#1a1846', cool: 0.5, sat: 0.85, zenith: '#020208', horizon: '#0e0e30', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#16143e', haze: 0.9 },
   { e: -12, lift: 0.015, gain: 0.52, boost: 0, light: '#5a6ac0', warm: 0.05, ambient: '#1a1a48', cool: 0.5, sat: 0.85, zenith: '#020309', horizon: '#0f1236', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#171a42', haze: 0.9 },
   { e: -4, lift: 0.012, gain: 0.58, boost: 0.01, light: '#6f9cc8', warm: 0.08, ambient: '#122444', cool: 0.48, sat: 0.9, zenith: '#02050c', horizon: '#0b1c34', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#102a42', haze: 0.95 },
-  { e: 6, lift: 0.01, gain: 0.64, boost: 0.02, light: '#7fc4e0', warm: 0.1, ambient: '#0c2c42', cool: 0.46, sat: 0.95, zenith: '#01060c', horizon: '#081e2e', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#0b2e42', haze: 1 },
-  { e: 90, lift: 0.01, gain: 0.68, boost: 0.03, light: '#86d0ea', warm: 0.12, ambient: '#0a2e44', cool: 0.45, sat: 1, zenith: '#01070d', horizon: '#082232', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#0c3246', haze: 1 },
+  { e: 6, lift: 0.01, gain: 0.64, boost: 0.02, light: '#7fc4e0', warm: 0.1, ambient: '#0c2c42', cool: 0.46, sat: 0.95, zenith: '#01060c', horizon: '#081e2e', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#0e3448', haze: 1 },
+  { e: 90, lift: 0.01, gain: 0.68, boost: 0.03, light: '#86d0ea', warm: 0.12, ambient: '#0a2e44', cool: 0.45, sat: 1, zenith: '#01070d', horizon: '#082232', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#10394e', haze: 1 },
 ];
 
 type KeyLab = {

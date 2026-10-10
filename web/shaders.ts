@@ -243,6 +243,17 @@ vec3 cave(vec2 f, vec2 n) {
     c = u_zenith * 0.55;
     if (n.y >= nearHang - 1.0) c = mix(c, u_horizon, 0.45);
   }
+  // Vines hanging from it, dark and lush, swaying a little, a dim bead of light on the odd one.
+  float vx = n.x + floor(1.2 * sin(u_time * 0.4 + n.y * 0.06 + hash(vec2(floor(n.x / 2.0), 3.0)) * 6.0));
+  float vh = hash(vec2(vx, 23.0));
+  if (vh < 0.22) {
+    float vlen = 12.0 + 70.0 * hash(vec2(vx, 29.0));
+    float below = n.y - hang(vx, 1.0, 10.0);
+    if (below >= 0.0 && below < vlen) {
+      c = mix(u_zenith * 0.6, vec3(0.03, 0.12, 0.1), 0.6);
+      if (mod(below + vx * 7.0, 17.0) < 1.0 && hash(vec2(vx, below)) < 0.5) c = vec3(0.25, 0.5, 0.55);
+    }
+  }
   return c;
 }
 

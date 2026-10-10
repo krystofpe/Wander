@@ -69,9 +69,9 @@ const FORMS: Readonly<Record<BiomeId, readonly [Form, Form, Form, Form, Form]>> 
   stones: [[46, 260, 'round', 'none'], [36, 200, 'round', 'none'], [28, 150, 'round', 'stones'], [22, 120, 'round', 'none'], [18, 100, 'round', 'stones']],
   ruins: [[40, 260, 'round', 'none'], [30, 200, 'round', 'ruins'], [26, 150, 'round', 'ruins'], [22, 110, 'round', 'broad'], [18, 90, 'round', 'ruins']],
   rail: [[46, 260, 'round', 'none'], [32, 200, 'round', 'none'], [26, 150, 'round', 'broad'], [20, 120, 'round', 'poles'], [16, 100, 'round', 'none']],
-  // Far rock and columns into the mist, a dark lake across the middle distance (as the Underdark's Ebonlake), low
-  // banks of rock before it.
-  deep: [[150, 120, 'ridged', 'none'], [170, 95, 'spires', 'none'], [0, 160, 'sea', 'none'], [0, 90, 'sea', 'none'], [12, 90, 'round', 'none']],
+  // Far rock into the mist, a far forest of giant mushrooms before it (their crowns as domes), a dark lake across the
+  // middle distance (as the Underdark's Ebonlake), low banks before it.
+  deep: [[150, 120, 'ridged', 'none'], [90, 120, 'round', 'broad'], [0, 160, 'sea', 'none'], [0, 90, 'sea', 'none'], [12, 90, 'round', 'none']],
 };
 
 /** Which of the five land layers a layer is (by depth), or −1. */

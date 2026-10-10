@@ -42,6 +42,8 @@ uniform float u_time;
 uniform float u_gustX;
 uniform vec2 u_frac;
 uniform float u_cover;
+// The place he is in (biome slots a, b and the blend), for a layer coloured by it rather than by its own columns.
+uniform vec3 u_here;
 uniform vec3 u_shine;
 uniform float u_shineX;
 uniform float u_horizonY;
@@ -82,7 +84,9 @@ void main() {
   if (role == 0) { o_color = vec4(0.0); o_glow = vec4(0.0); return; }
   // The cloud layer: each pixel shows only once the sky is covered enough (its flags hold the cover it needs).
   if (u_cover >= 0.0 && float(flags & 127) > u_cover * 127.0) { o_color = vec4(0.0); o_glow = vec4(0.0); return; }
-  vec4 c = texelFetch(u_cols, ivec2(((gx % u_ringW) + u_ringW) % u_ringW, 0), 0);
+  // The clouds take the colours of the sky over him, as the sky does: coloured by their own columns (places 40 times
+  // further down the road) a deck would change colour in hard bands across the sky.
+  vec4 c = u_here.x >= 0.0 ? vec4(u_here.x / 255.0, u_here.y / 255.0, u_here.z, 0.0) : texelFetch(u_cols, ivec2(((gx % u_ringW) + u_ringW) % u_ringW, 0), 0);
   int a = int(c.r * 255.0 + 0.5);
   int b = int(c.g * 255.0 + 0.5);
   vec4 pa = texelFetch(u_palette, ivec2(role, u_rowBase + a), 0);
@@ -98,15 +102,20 @@ void main() {
       col = mix(col, max(col, alb * u_lightColor * 1.35), q);
     }
   }
-  // Water takes the low sun or the moon: a path of broken glints below it, widening toward the eye, flickering.
+  // Water takes the low sun or the moon: a path of broken glints below it, widening toward the eye. Each glint (two
+  // pixels wide) comes and goes on its own slow beat, so the path sparkles without the whole of it changing at once.
   if ((flags & 8) != 0 && dot(u_shine, u_shine) > 0.0) {
     vec2 sp = vec2(float(x), float(row)) - 1.0 - u_frac;
     float below = max(0.0, sp.y - u_horizonY);
     float width = 2.5 + below * 0.5;
     float d = (sp.x - u_shineX) / width;
     float k = exp(-d * d);
-    float h = fract(sin(dot(vec2(floor(float(gx) / 2.0), float(gy)) + floor(u_time * 2.5) * 7.13, vec2(12.9898, 78.233))) * 43758.5453);
-    if (h < 0.25 + 0.55 * k) col = mix(col, u_shine, k * 0.85);
+    vec2 cell = vec2(floor(float(gx) / 2.0), float(gy));
+    float phase = fract(sin(dot(cell, vec2(39.3468, 11.1353))) * 24634.6345);
+    float beat = floor(u_time * 1.2 + phase);
+    float h = fract(sin(dot(cell + beat * 7.13, vec2(12.9898, 78.233))) * 43758.5453);
+    // A glint only ever brightens: a faint sun or moon (through cloud) adds a little, never a dark fleck.
+    if (h < 0.25 + 0.55 * k) col = mix(col, max(col, u_shine), k * 0.85);
   }
   o_color = vec4(col, 1.0);
   o_glow = vec4(p.rgb * glow, glow);
@@ -320,10 +329,9 @@ void main() {
   float up = max(0.0, u_base - n.y);
   float band = exp(-up / u_height) * (n.y > u_base + u_height * 2.0 ? 0.6 : 1.0);
   float f = vnoise(p / vec2(110.0, 16.0) + vec2(u_time * 0.011, 0.0)) * 0.65 + vnoise(p / vec2(41.0, 7.0) - vec2(u_time * 0.019, 0.0)) * 0.35;
-  float a = u_density * band * smoothstep(0.22, 0.78, f);
-  // Quantised in eighths by an ordered dither fixed to the screen's pixels: pixel-art steps, no crawling pattern,
-  // and no visible dot grid in thin fog.
-  a = clamp(floor(a * 8.0 + bayer(n)) / 8.0, 0.0, 0.85);
+  // One value per art pixel, smooth between them: no dither, whose dots crawl as the fog drifts and speckle the
+  // whole scene in a thick one.
+  float a = clamp(u_density * band * smoothstep(0.22, 0.78, f), 0.0, 0.85);
   o_color = vec4(u_color * a, a);
 }`;
 

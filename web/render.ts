@@ -77,6 +77,8 @@ export type View = {
   bloom: number;
   /** How much of the sky is under cloud (0..1), and how far the clouds have drifted (layer px). */
   cover: number;
+  /** The place he is in: biome slots and the blend between them (the clouds are coloured by it). */
+  here: Float32Array;
   cloudDrift: number;
   /** Fog veils drawn after layers FOG_AFTER[i]: their floor row on screen, thickness, density, drift; colour. */
   fogBase: Float32Array;
@@ -447,6 +449,8 @@ export class Renderer {
       gl.uniform2f(this.resolve.u('u_frac'), l.fx, l.fy);
       gl.uniform1f(this.resolve.u('u_lightGain'), lightGain(l.def.kind, l.def.z));
       gl.uniform1f(this.resolve.u('u_cover'), l.def.kind === 'clouds' ? v.cover : -1);
+      if (l.def.kind === 'clouds') gl.uniform3fv(this.resolve.u('u_here'), v.here);
+      else gl.uniform3f(this.resolve.u('u_here'), -1, -1, 0);
       gl.bindFramebuffer(gl.FRAMEBUFFER, l.fb);
       gl.viewport(0, 0, this.nativeW + 2, this.nativeH + 2);
       gl.activeTexture(gl.TEXTURE0);
@@ -606,7 +610,7 @@ export class Renderer {
     gl.uniform4f(this.final.u('u_viewport'), vx, vy, vw, vh);
     gl.uniform2f(this.final.u('u_size'), this.canvasW, this.canvasH);
     gl.uniform1f(this.final.u('u_time'), v.time % 1000);
-    gl.uniform1f(this.final.u('u_grain'), 0.035);
+    gl.uniform1f(this.final.u('u_grain'), 0.012);
     gl.uniform1f(this.final.u('u_vignette'), 0.32);
     gl.uniform3f(this.final.u('u_lift'), v.flash * 0.18, v.flash * 0.2, v.flash * 0.26);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

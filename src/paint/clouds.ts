@@ -12,6 +12,13 @@ import { Chunk } from './chunk.ts';
 
 const C = [role('cloud', 0), role('cloud', 1), role('cloud', 2), role('cloud', 3)];
 
+/**
+ * The cover (of 127, as the resolve shader compares it) at which the deck's top row shows, and its foot: it starts
+ * coming down from above the screen at about 75% and closes the sky at about 92%, an overcast sky. How much its edge
+ * waves, in cover.
+ */
+const DECK = { from: 92, to: 117, ragged: 1.2 } as const;
+
 /** One cloud cell every CELL layer px; a cloud is up to MAX px wide. */
 const CELL = 150;
 const MAX = 150;
@@ -57,16 +64,18 @@ export function paintClouds(c: Chunk, seed: number, layer: LayerDef, u0: number)
     const u = u0 + x;
     const blend = biomeAt(seed, columnDistance(u, layer.z));
     c.setColumnBiome(u, BIOME_IDS.indexOf(blend.a), BIOME_IDS.indexOf(blend.b), blend.k);
-    // The deck under heavy skies, shown only near full cover: it closes the whole sky from above the top of the
-    // screen down to a ragged foot, darker overhead (dithered into the lighter body), with the light of the horizon
-    // showing under it.
+    // The deck under heavy skies: as the sky closes it comes down from above the top of the screen, its edge ragged
+    // and level across the sky (each row needs a little more cover than the one above it, never a column more than
+    // its neighbour), until at full cover it reaches a ragged foot over the light of the horizon. Darker overhead,
+    // dithered into the lighter body.
     const deckTop = -44;
     const deckFoot = 128 + Math.round(fbm1(u / 25, seed ^ 0xdee, 2, 0.5) * 10);
-    const deckNeed = 98 + Math.round(fbm1(u / 200, seed ^ 0xdef, 2, 0.5) * 10);
+    const ragged = fbm1(u / 34, seed ^ 0xdef, 2, 0.5) * DECK.ragged;
     for (let row = deckTop; row < deckFoot; row++) {
       const dark = row < 14 || (row < 34 && ((u + row) & 1) === 0 && row < 14 + ((u * 7 + row * 3) % 20));
       const r = row >= deckFoot - 10 ? C[0] : dark ? C[0] : C[1];
-      c.set(u, layer.top + row, r, deckNeed);
+      const need = DECK.from + ((DECK.to - DECK.from) * (row - deckTop)) / (deckFoot - deckTop) + ragged;
+      c.set(u, layer.top + row, r, Math.max(0, Math.min(127, Math.round(need))));
     }
     for (const cl of clouds) {
       for (let row = cl.base - 40; row <= cl.base; row++) {

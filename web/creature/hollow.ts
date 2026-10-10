@@ -6,7 +6,7 @@
 import { BIOME_IDS } from '../../src/biomes.ts';
 import { BIOMES } from '../../src/creature/config.ts';
 import type { Game } from '../../src/creature/game.ts';
-import { CREATURE, EYES_FRONT, EYES_SIDE, HAND, HEAD, LANTERN, MOOD_EYES } from '../../src/creature/look.ts';
+import { CREATURE, EYES_FRONT, EYES_SIDE, HAND, HEAD, LANTERN, MOOD_EYES, TREE } from '../../src/creature/look.ts';
 import type { EyeShape, PoseTag } from '../../src/creature/look.ts';
 import type { Prop } from '../../src/creature/scene.ts';
 import { forestFocus } from '../../src/creature/scene.ts';
@@ -152,7 +152,7 @@ export class Hollow {
         const tx = flip ? left + base[2] - tile[2] : left;
         for (let y = foot - base[3] - tile[3]; y > -tile[3] - 60; y -= tile[3]) put(ground, tx, y, tile, flip, 1, undefined, false);
         // By day its lantern hangs dark on its peg; at night it carries it, or, at home, it is lit by the door.
-        const peg = [72, 79];
+        const peg = TREE.peg;
         const px = flip ? left + base[2] - 1 - peg[0] - 2 : left + peg[0];
         if (!dark) put(ground, px - 1, foot - base[3] + peg[1], sheets.carry.dark[0], flip);
         if (lit) addLight(px + 1, foot - base[3] + peg[1] + 4, 34, 0.75 * (0.85 + 0.15 * flicker(time, 3)));

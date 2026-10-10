@@ -33,3 +33,14 @@ The owner asked (2026-10-10) to rework `feat/creature`, the terminal diorama of 
 4. The server: the creature's store, mind and routes; `npm run creature`.
 5. The page: the hollow stage, input, the bubble and the bars, the journal, talking, sound.
 6. Tools and proof: a tour of the hollow, an end-to-end check (save, reopen, time away, Claude through a stand-in API), the bench; README; a PR.
+
+## Progress (2026-10-10)
+
+All six steps done on `feat/creature-hd`:
+
+- The engine: the stage's sky and air split from his drawing (the wanderer draws exactly as before: his frames match pixel for pixel within run-to-run noise); a role swap and a no-rim flag per sprite; the playfield can go without his road and keep a deeper floor; the cloud and water fixes of the live page underneath.
+- The art: the creature (9 poses, eyes apart in 6 shapes and 12 mood colours, 6 cloaks), the great tree (generated: a 92 px trunk with moss, a knot, bracket fungus, roots, the hollow, a lantern on a peg) and the turf shelters, props, the cairn, food, the toy, the lantern, signs, butterflies, moths, a frog, a hare, an owl, the visitor and the glow it walks through.
+- The logic ported with its 74 tests (166 in all). One fix the pictures found: a creature cut short while out of sight (arriving, wandering) never came back; the terminal one had the same flaw.
+- The server: `npm run creature`, the terminal creature's own save (Ori moves in from the shore), Claude through `POST /api/creature/say`.
+- The page: the hollow with its camera looking a little lower than his, its words, the bar, the hints, the journal, the talk box, the mouse at the glass, sound.
+- Proof: `npm run creature:tour` (38 pictures in `docs/creature/`), `npm run creature:check` (20 of 20), the bench (60 fps at 1080p and 4K).

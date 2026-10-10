@@ -65,6 +65,34 @@ The road is saved to `~/.local/share/wander/journey.json` (or under `$XDG_DATA_H
 
 `npm run site` builds it into `dist/` (the TypeScript with its types stripped, the page marked as the site), and the [Live page workflow](.github/workflows/pages.yml) publishes it on every push to `main`. `npm start -- --live` opens the same road locally.
 
+## The creature
+
+`npm run creature` opens the other one: a small hooded creature that lives in a hollow at the foot of a great tree, in a still corner of the same world, drawn in the same art. Its face is darkness; only its eyes glow, in the colour of its mood. Unlike the wanderer, it notices you. It forages berries, digs for small things, stacks stones into a cairn, chases butterflies and the toy you throw, hums, watches the stars, hides from the rain or dances in it, goes inside its tree to sleep at night with its lantern lit by the door, and now and then comes up to the glass: to say hello, to bring you something it found, to ask you a question, or to tap when you have been away too long. Its behaviour is never scripted: a small brain with needs (food, rest, fun, love), a personality fixed at birth and a bond with you picks what it does next. Its clock is yours: night falls when it is night where you are, under today's moon.
+
+![The creature by its great tree, at night, its lantern lit](docs/creature/nights/stars.jpg)
+
+| Key or mouse | Does |
+|---|---|
+| F | Drop food near it; it decides whether it wants it |
+| P | Throw the glowing toy; it may chase it |
+| E or Space, or a click on it | Pet it, take a gift it holds out, or wake it (it may grumble) |
+| T or Enter | Talk to it: type, Enter sends, Esc cancels |
+| Y / N | Answer when it asks you something |
+| J | Its journal: diary, finds, gifts, what it knows about you |
+| H | The bar with its needs, or not |
+| M, + / − | Sound on or off, louder or softer |
+| A click on the ground | It goes to have a look |
+
+Its eyes follow the pointer. When you come back to the window after a while, it notices.
+
+The first time, a wisp drifts in, becomes the creature, and asks what to call you. After that it is saved (`~/.local/share/wander/creature.json`, the same file the terminal creature used, so one from those days moves in with its memories), and its life goes on while the window is closed: open it the next day and it will have slept, foraged, maybe found something, and it knows how long you were gone. Left alone for days it gets lonely and goes wandering, and comes back when you do. It never dies.
+
+With `ANTHROPIC_API_KEY` set, its words come from Claude (`mind: claude` in the bar): when it greets you, visits, offers a gift, thinks aloud, and whenever you talk to it; Claude can also choose what it does next (ask it to dance) and remembers what you tell it. Without a key, or with `--offline`, its own small voice speaks (`mind: local`). Nothing on screen waits for the API.
+
+Options (`npm run creature -- --biome tundra`): `--biome forest|meadow|tundra|swamp` (an existing creature moves), `--name NAME` and `--seed WORD` (a new one), `--new` (start over; the old one is kept as `creature.json.bak`), `--offline`, `--mute`, `--speed X` and `--hour H` (a look, not saved), `--no-browser`, `--port N`, `--save PATH`.
+
+More: [biomes](docs/creature/biomes-sheet.jpg) · [moments](docs/creature/moments-sheet.jpg) · [nights](docs/creature/nights-sheet.jpg) · [weather](docs/creature/weather-sheet.jpg) · [you](docs/creature/you-sheet.jpg)
+
 ## What there is
 
 - **The land.** Ten parallax layers at fixed depths, from distant mountains to the grass passing close to the eye, each lighter, bluer and softer the further off it stands. Everything is a pure function of the seed and the distance along the road: no two stretches are alike, and none is ever stored. Biomes blend over minutes of walking: colours, ground, plants, weather, sound.
@@ -96,6 +124,7 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 
 - **Fast soak** (`npm run soak -- --speed 16 --hours 48`): 48 in-world hours, no errors; JS heap 24.4 → 24.7 MB, GPU textures (48, 52 MB), buffers and framebuffers constant, frame time p50 16.7 / p99 16.8 ms throughout.
 - **Normal soak** (`npm run soak -- --minutes 122 --hidden 20`): two real hours at speed 1, the first 20 minutes hidden (he walked on 370 m and his steps kept sounding with 9 frames drawn), no errors; frame time p50 16.7 / p99 16.8 ms every minute once shown; GPU resources constant; the heap 21 → 27 MB in the first hour while bounded caches fill, then 26–28 MB.
+- **The creature** (`docs/creature/bench.json`, its in-page bench, 20 s each): 60 fps at 1920×1080 and 3840×2160, frame interval p50 16.7 / p99 16.8 ms, CPU 0.4 ms and GPU 1.2–3.6 ms a frame, on a clear day and on a rainy night with its lantern lit. End to end (`npm run creature:check`): 20 of 20 (`docs/creature/check.txt`).
 - **End to end** (`npm run check`, through the real server): closing and reopening, three hours away, offline, Claude, and a slow, failing or refused API: `docs/soak/check.txt`.
 
 ## Tools
@@ -114,6 +143,8 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 | `npm run live -- --hours 1000` | Lives the live road's hours one after another and checks that each ends where the next begins. |
 | `npm run site` | Builds the published page into `dist/`. |
 | `npm run site:check` | Serves `dist/` as GitHub Pages would and checks it: the same wanderer as `src/live.ts`, the hour turning without a jump, no requests for anything that is not there. |
+| `npm run creature:tour` | Pictures of the creature: every biome through the day, its moments, its nights, the weather, you (`docs/creature/`). |
+| `npm run creature:check` | The creature end to end through the real server: its first meeting, saving and reopening, days away, a terminal-era save moving in, Claude and when it fails (`docs/creature/check.txt`). |
 | `npm run art:draw`, `npm run art` | Builds the hand-drawn sprites into Aseprite files, then exports the atlas. |
 
 ## How it is made

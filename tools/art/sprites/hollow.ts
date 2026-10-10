@@ -3,6 +3,7 @@
 // cylinder lit from the open side, furrowed bark, roots spreading over the ground, moss on the roots, and an arched
 // opening whose inside is all darkness. `base` stands on the ground (its last row); `trunk` repeats upward off the
 // top of the screen. A lantern hangs on a peg by the door. And for the open lands a turf shelter with a low door.
+import { TREE } from '../../../src/creature/look.ts';
 import { unit } from '../../../src/noise.ts';
 import type { Sheet } from '../legend.ts';
 
@@ -10,11 +11,11 @@ const BARK = ['(', ')', '[', ']'];
 const MOSS = ['V', 'M', 'Y', '7'];
 const SEED = 0x7ee;
 
-/** Trunk width (px) and how far its lit face reaches round it. */
-const TRUNK = 74;
-const BASE_W = 128;
-const BASE_H = 100;
-const TILE_H = 64;
+/** Its sizes, shared with the scene and the page (src/creature/look.ts). */
+const TRUNK = TREE.trunk;
+const BASE_W = TREE.w;
+const BASE_H = TREE.h;
+const TILE_H = TREE.tile;
 
 /** A furrow's darkness at a column: long vertical streaks that wander a little with height (in step with the tile). */
 function furrow(x: number, y: number): number {
@@ -43,10 +44,49 @@ function grid(w: number, h: number): string[][] {
   return Array.from({ length: h }, () => new Array<string>(w).fill('.'));
 }
 
-/** A segment of the trunk, seamless top to bottom. */
+/** Moss climbing the shaded side in streaks, in step with the tile. */
+function moss(g: string[][], w: number, y0: number, y1: number, phase: number): void {
+  for (let y = y0; y < y1; y++)
+    for (let x = 1; x < w * 0.42; x++) {
+      if (!BARK.includes(g[y][x])) continue;
+      const streak = unit(Math.floor(x / 2), SEED ^ 0x3051);
+      const band = unit(Math.floor(x / 2) * 31 + (Math.floor((y + phase) / 8) % (TILE_H / 8)), SEED ^ 0x3052);
+      const t = x / (w * 0.42);
+      if (streak > 0.55 && band > 0.35 + t * 0.5) g[y][x] = band > 0.85 ? 'M' : 'V';
+    }
+}
+
+/** A knot in the bark: a dark hollow ring, its rim catching the light on the open side. */
+function knot(g: string[][], cx: number, cy: number, rx: number, ry: number): void {
+  for (let y = -ry - 1; y <= ry + 1; y++)
+    for (let x = -rx - 1; x <= rx + 1; x++) {
+      const d = (x * x) / (rx * rx) + (y * y) / (ry * ry);
+      const gy = cy + y;
+      const gx = cx + x;
+      if (gy < 0 || gy >= g.length || gx < 0 || gx >= g[0].length || !BARK.includes(g[gy][gx])) continue;
+      if (d < 0.45) g[gy][gx] = '(';
+      else if (d < 1) g[gy][gx] = x > 0 ? ']' : ')';
+      else if (d < 1.5 && x > 0) g[gy][gx] = '[';
+    }
+}
+
+/** A bracket fungus on the bark: a pale shelf with a shadow under it. */
+function bracket(g: string[][], x0: number, y0: number, w: number): void {
+  for (let i = 0; i < w; i++) {
+    const h = Math.round(Math.sin(((i + 0.5) / w) * Math.PI) * 2);
+    for (let j = 0; j <= h; j++) g[y0 - j][x0 + i] = j === h ? 'U' : 'n';
+    g[y0 + 1][x0 + i] = '(';
+  }
+}
+
+/** A segment of the trunk, seamless top to bottom: furrowed bark, moss on the shaded side, a knot, a fungus. */
 function trunkTile(): string[] {
   const g = grid(TRUNK, TILE_H);
   for (let y = 0; y < TILE_H; y++) for (let x = 0; x < TRUNK; x++) g[y][x] = bark(x, y, 0, TRUNK);
+  moss(g, TRUNK, 0, TILE_H, 0);
+  knot(g, 52, 38, 3, 5);
+  bracket(g, 14, 96, 9);
+  bracket(g, 21, 101, 6);
   return g.map((r) => r.join(''));
 }
 
@@ -57,15 +97,15 @@ function base(lantern: boolean): string[] {
     // The trunk flares toward the ground: at the top it is TRUNK wide; over the last 30 rows its right side spreads
     // out into the roots.
     const flare = Math.max(0, (y - (BASE_H - 34)) / 34);
-    const w = Math.round(TRUNK + flare * flare * 46);
+    const w = Math.round(TRUNK + flare * flare * (BASE_W - TRUNK - 12));
     // Its top row follows on from the bottom row of the trunk's segment above it.
     for (let x = 0; x < w; x++) g[y][x] = bark(x, y % TILE_H, 0, w);
   }
   // Roots: humps running out to the right over the ground, each with its own lit top.
   const roots = [
-    { x: 74, len: 40, h: 7 },
-    { x: 62, len: 30, h: 5 },
-    { x: 92, len: 24, h: 4 },
+    { x: TRUNK, len: 42, h: 8 },
+    { x: TRUNK - 14, len: 32, h: 5 },
+    { x: TRUNK + 20, len: 26, h: 4 },
   ];
   for (const r of roots) {
     for (let i = 0; i < r.len; i++) {
@@ -80,8 +120,10 @@ function base(lantern: boolean): string[] {
       g[BASE_H - 1 - top][x] = '(';
     }
   }
+  // Moss up the shaded side, as on the trunk above.
+  moss(g, TRUNK, 0, BASE_H - 30, 0);
   // The hollow: an arch in the trunk's face near its open side, all darkness inside, a pale worn lip round it.
-  const cx = 56;
+  const cx = TREE.door.x;
   const hw = 10;
   const top = BASE_H - 30;
   for (let y = top; y < BASE_H; y++) {
@@ -110,8 +152,7 @@ function base(lantern: boolean): string[] {
       if (unit(x * 131 + y * 7, SEED ^ 0x3055) < chance) g[y][x] = MOSS[Math.min(3, Math.floor(unit(x + y * 53, SEED ^ 0x3056) * 3) + (above ? 1 : 0))];
     }
   // A peg by the door, and the lantern hanging from it (lit at night: the fire roles glow).
-  const px = cx + hw + 6;
-  const py = top + 8;
+  const [px, py] = [TREE.peg[0], TREE.peg[1] - 1];
   g[py][px] = 'k';
   g[py][px + 1] = 'K';
   if (lantern) {

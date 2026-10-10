@@ -5,6 +5,7 @@
 import { BIOMES, DEPTH_PX, FOODS, PLAN_W } from './config.ts';
 import type { BiomeName, CritterKind, FoodKind, PropKind } from './config.ts';
 import { rng } from '../noise.ts';
+import { TREE } from './look.ts';
 import type { Sky } from './sky.ts';
 
 /** A prop's sprite: its size in native pixels, and for a home where its door is (its centre from the left, width). */
@@ -12,7 +13,7 @@ export type Footprint = { readonly w: number; readonly h: number; readonly door?
 
 /** The sizes of what stands in the scene (tools/art/sprites/things.ts and hollow.ts). */
 export const FOOTPRINTS: Readonly<Record<PropKind | 'tree' | 'shelter', Footprint>> = {
-  tree: { w: 128, h: 100, door: { x: 56, w: 21, h: 30 } },
+  tree: { w: TREE.w, h: TREE.h, door: TREE.door },
   shelter: { w: 44, h: 26, door: { x: 28, w: 9, h: 13 } },
   home: { w: 44, h: 26 },
   bush: { w: 24, h: 16 },
@@ -27,9 +28,9 @@ export const FOOTPRINTS: Readonly<Record<PropKind | 'tree' | 'shelter', Footprin
 };
 
 /** How far past the view's edge the great tree stands: its door this far in from the edge. */
-export const TREE_IN = 52;
+export const TREE_IN = 60;
 /** The share of the width the great tree, its door and its roots take: nothing else stands there. */
-export const TREE_CLEAR = (TREE_IN + 72) / PLAN_W;
+export const TREE_CLEAR = (TREE_IN + TREE.w - TREE.door.x - 6) / PLAN_W;
 
 export type Prop = {
   readonly kind: PropKind;

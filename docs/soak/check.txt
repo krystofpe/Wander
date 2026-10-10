@@ -1,13 +1,13 @@
 PASS  the server starts offline without a key: "mind: local"
-PASS  the bar says mind: local — "day 1 on the road · 0.0 km · autumn hills · 17:16 · cloudy · mind: local"
-PASS  closing saved the road "reed-1687" at 5.2 m (the page was at 5.2 m)
-PASS  reopening continues the same road from 5.2 m
-PASS  after three hours away he has walked on 6697 m (0.62 m/s average, capped at 20 km), the clock 72.0 world hours on, 14 places logged on the way
-PASS  the log of places names the same road (“reed-1687”)
+PASS  the bar says mind: local — "day 1 on the road · 0.0 km · open meadow · 17:16 · clear · mind: local"
+PASS  closing saved the road "thorn-1512" at 39.1 m (the page was at 39.1 m)
+PASS  reopening continues the same road from 39.4 m
+PASS  after three hours away he has walked on 6697 m (0.62 m/s average, capped at 20 km), the clock 72.0 world hours on, 16 places logged on the way
+PASS  the log of places names the same road (“thorn-1512”)
 PASS  with a key the server says "mind: claude (claude-opus-5-5)"
-PASS  the bar says mind: claude — "day 1 on the road · 0.0 km · rail embankment · 17:27 · cloudy · mind: claude"
+PASS  the bar says mind: claude — "day 1 on the road · 0.0 km · rail embankment · 17:26 · cloudy · mind: claude"
 PASS  his thought came from the API: "The road keeps its own counsel tonight." (request: /v1/messages?beta=true model claude-opus-5-5, output_config {"effort":"low","format":{"type":"json_schema","schema":{"ty…, anthropic-beta: server-side-fallback-2026-07-01)
-PASS  a slow API (60 s): his own voice answered after 10.4 s — "I keep meaning to forget the harbour town. It keeps not happening."; frames kept coming at 60 fps meanwhile
-PASS  a failing API (500): his own voice answered after 0.4 s — "Long shadows. Mine is taller than I ever was."; frames kept coming at 61 fps meanwhile
-PASS  a refused key (401): his own voice answered after 0.4 s — "I could still find my way around the flat on the ninth floor in the dark. It does not help out here."; frames kept coming at 61 fps meanwhile
-PASS  once the key is refused the bar says mind: local — "day 1 on the road · 0.1 km · birch woods · 17:44 · rain · mind: local"
+PASS  a slow API (60 s): his own voice answered after 10.4 s — "Rain finds its way through everything. Even this coat, eventually."; frames kept coming at 60 fps meanwhile
+PASS  a failing API (500): his own voice answered after 0.4 s — "In the farm past the quarry, Karel would save string in a kitchen drawer. Odd what comes back out here."; frames kept coming at 61 fps meanwhile
+PASS  a refused key (401): his own voice answered after 0.4 s — "The rain makes the world smaller. Just me and the next few trees."; frames kept coming at 61 fps meanwhile
+PASS  once the key is refused the bar says mind: local — "day 1 on the road · 0.1 km · birch woods · 17:43 · rain · mind: local"

@@ -65,6 +65,13 @@ export const HAND: Readonly<Record<PoseTag, readonly [number, number]>> = {
 };
 export const LANTERN: readonly [number, number] = [19, 22];
 
+/**
+ * The great tree (tools/art/sprites/hollow.ts): its foot `w` × `h` with the trunk `trunk` wide at its top, the
+ * hollow's door (its centre from the left, its width and height), the peg its lantern hangs on, and the height of the
+ * trunk's repeating segment. Drawn for the left edge.
+ */
+export const TREE = { w: 150, h: 100, trunk: 92, door: { x: 68, w: 21, h: 30 }, peg: [86, 79] as const, tile: 128 } as const;
+
 /** Moods in the order of the palette's `mood` family (src/palette.ts). */
 export const MOOD_EYES = ['content', 'joyful', 'calm', 'curious', 'sleepy', 'hungry', 'bored', 'lonely', 'grumpy', 'scared', 'love', 'sad'] as const;
 export type EyeColour = (typeof MOOD_EYES)[number];

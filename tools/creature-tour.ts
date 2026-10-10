@@ -79,7 +79,7 @@ add('you', 'talk', { hour: '15', weather: 'clear' }, 4, async (p) => {
   await p.keyboard.press('t');
   await p.keyboard.type('do you remember the sea?');
 }, 3);
-add('you', 'journal', { hour: '15', weather: 'clear' }, 1, async (p) => p.keyboard.press('j'), 1);
+add('you', 'journal', { hour: '15', weather: 'clear' }, 1.5, async (p) => p.keyboard.press('j'), 1);
 add('you', 'asks', { hour: '15', weather: 'clear', act: 'ask' }, 9);
 
 mkdirSync(out, { recursive: true });

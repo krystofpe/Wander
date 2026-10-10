@@ -60,7 +60,9 @@ export class Sound {
     this.on = !muted && this.saved.on;
     if (this.on) this.start();
     // Browsers start a context suspended until the page is touched (unless launched to allow it).
-    const wake = (): void => void this.engine?.ctx.resume().catch(() => {});
+    const wake = (): void => {
+      if (this.on) void this.engine?.ctx.resume().catch(() => {});
+    };
     addEventListener('pointerdown', wake);
     addEventListener('keydown', wake);
   }
@@ -137,12 +139,12 @@ export class Sound {
 
   /** A train seen crossing, starting at `x` across the screen (0..1). */
   train(x: number): void {
-    if (this.on) this.ambience?.seenTrain(x);
+    if (this.on && this.engine?.ctx.state === 'running') this.ambience?.seenTrain(x);
   }
 
   /** His life's events that make a sound. */
   event(ev: LifeEvent): void {
-    if (this.body === null || !this.on) return;
+    if (this.body === null || !this.on || this.engine?.ctx.state !== 'running') return;
     if (ev.type === 'lighter') this.body.lighter(this.mix);
     else if (ev.type === 'drag') this.body.drag(this.mix);
     else if (ev.type === 'exhale') this.body.exhale(this.mix);

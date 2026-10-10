@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { request } from 'node:http';
 import { startServer } from '../server/server.ts';
 import type { Api } from '../server/server.ts';
 
@@ -88,5 +89,26 @@ test('a broken request body is refused, and the server keeps going', async () =>
     assert.equal((await fetch(`${s.url}api/mind`)).status, 200);
   } finally {
     await s.close();
+  }
+});
+
+test('only this machine: another Host or a foreign Origin is refused', async () => {
+  const r = await startServer(root, fakeApi());
+  try {
+    const port = new URL(r.url).port;
+    const host = await new Promise<number>((resolve) => {
+      const req = request({ host: '127.0.0.1', port, path: '/api/journey', headers: { host: `evil.example:${port}` } }, (res) => {
+        res.resume();
+        resolve(res.statusCode ?? 0);
+      });
+      req.end();
+    });
+    assert.equal(host, 403);
+    const foreign = await fetch(`${r.url}api/journey`, { method: 'PUT', headers: { origin: 'https://evil.example' }, body: '{}' });
+    assert.equal(foreign.status, 403);
+    const own = await fetch(`${r.url}api/mind`, { headers: { origin: r.url.replace(/\/$/, '') } });
+    assert.equal(own.status, 200);
+  } finally {
+    await r.close();
   }
 });

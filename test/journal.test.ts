@@ -76,3 +76,26 @@ test('the save lives under the XDG data directory, and road words read as words'
   assert.equal(defaultJourneyPath({ XDG_DATA_HOME: '/data' }), '/data/wander/journey.json');
   assert.match(roadWord(0.37), /^[a-z]+-\d{4}$/);
 });
+
+test('a save with words he does not know starts him walking again instead of wedging him', () => {
+  const j = JSON.parse(JSON.stringify(newJourney('slate-3000', 0, 0.5, 12)));
+  j.life.act = 'dance';
+  j.life.stage = 'float';
+  j.life.until = 'never';
+  j.life.since = { walk: 'soon', sit: 12 };
+  const back = reviveJourney(j);
+  assert.equal(back.life.act, 'walk');
+  assert.equal(back.life.stage, 'walk');
+  assert.equal(back.life.until, 'time');
+  assert.equal(back.life.since.sit, 12);
+  assert.ok(Number.isFinite(back.life.since.walk));
+  // He is not wedged: he keeps reconsidering what to do, and walks on. (The events list is reused each step.)
+  const events: LifeEvent[] = [];
+  let decided = 0;
+  for (let t = 0; t < 3600; t += 0.5) {
+    stepLife(back.life, 0.5, DAY, env, events);
+    decided += events.filter((e) => e.type === 'act').length;
+  }
+  assert.ok(decided > 3, `he keeps deciding what to do (${decided} times)`);
+  assert.ok(back.life.at > 500, `he walked on to ${back.life.at.toFixed(0)} m`);
+});

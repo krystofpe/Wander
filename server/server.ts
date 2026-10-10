@@ -46,6 +46,9 @@ export type Running = {
 
 const LIMIT = 1 << 20;
 
+const LOCAL = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/;
+const LOCAL_ORIGIN = /^http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/;
+
 function body(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     let size = 0;
@@ -102,6 +105,10 @@ export function startServer(root: string, api: Api, port = 0): Promise<Running> 
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     const route = `${req.method} ${url.pathname}`;
+    // Only this machine's own pages: the Host must be the loopback address (no DNS rebinding), and a request that
+    // says where it comes from must come from here (no other web page writing the road or spending thoughts).
+    const origin = req.headers.origin;
+    if (!LOCAL.test(req.headers.host ?? '') || (origin !== undefined && origin !== 'null' && !LOCAL_ORIGIN.test(origin))) return send(res, 403, MIME['.txt'], 'forbidden');
     const handle = async (): Promise<void> => {
       if (route === 'GET /' || route === 'GET /index.html') return serveFile(root, 'web/index.html', res);
       if (route === 'GET /api/events') {

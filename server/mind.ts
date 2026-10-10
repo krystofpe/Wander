@@ -11,7 +11,7 @@ export const MIND = {
   model: 'claude-opus-5-5',
   effort: 'low',
   maxTokens: 16000,
-  timeoutMs: 20000,
+  timeoutMs: 10000,
   /** Fewest and most milliseconds between two calls: the next allowed call is drawn between them. */
   everyMs: [180_000, 300_000] as const,
   /** After this many failures in a row, stay quiet for quietMs. */
@@ -142,20 +142,20 @@ export class Thinker {
     if (this.disabled || this.busy || now < this.nextAt) return null;
     this.busy = true;
     this.nextAt = now + MIND.everyMs[0] + Math.random() * (MIND.everyMs[1] - MIND.everyMs[0]);
-    const seed = num(r.seed, 1) >>> 0;
-    const body: Record<string, unknown> = {
-      model: this.model,
-      max_tokens: MIND.maxTokens,
-      output_config: { effort: MIND.effort, format: { type: 'json_schema', schema: THOUGHT_SCHEMA } },
-      system: [{ type: 'text', text: systemPrompt(seed), cache_control: { type: 'ephemeral' } }],
-      messages: [{ role: 'user', content: situationText(r) }],
-    };
-    if (FALLBACK_MODELS.test(this.model)) {
-      body.betas = ['server-side-fallback-2026-07-01'];
-      body.fallbacks = 'default';
-    }
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
+      const seed = num(r?.seed, 1) >>> 0;
+      const body: Record<string, unknown> = {
+        model: this.model,
+        max_tokens: MIND.maxTokens,
+        output_config: { effort: MIND.effort, format: { type: 'json_schema', schema: THOUGHT_SCHEMA } },
+        system: [{ type: 'text', text: systemPrompt(seed), cache_control: { type: 'ephemeral' } }],
+        messages: [{ role: 'user', content: situationText(r ?? {}) }],
+      };
+      if (FALLBACK_MODELS.test(this.model)) {
+        body.betas = ['server-side-fallback-2026-07-01'];
+        body.fallbacks = 'default';
+      }
       const timeout = new Promise<null>((resolve) => {
         timer = setTimeout(() => resolve(null), this.timeoutMs);
       });
@@ -197,7 +197,7 @@ export async function connectThinker(offline: boolean, env: Readonly<Record<stri
   const Anthropic = sdk.default;
   let client: InstanceType<typeof Anthropic>;
   try {
-    client = new Anthropic({ maxRetries: 1, timeout: MIND.timeoutMs });
+    client = new Anthropic({ maxRetries: 0, timeout: MIND.timeoutMs });
   } catch {
     return null;
   }

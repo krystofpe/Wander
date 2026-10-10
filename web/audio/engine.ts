@@ -209,7 +209,8 @@ function makeNoise(ctx: BaseAudioContext, kind: NoiseKind, rate: number): AudioB
 
 /** Smooth random values in −1..1 at `hz` changes a second, over `sec` seconds, at a low sample rate. */
 function smoothNoise(ctx: BaseAudioContext, sec: number, hz: number, seed: number): AudioBuffer {
-  const rate = 3000;
+  // 8 kHz: the lowest rate every browser must accept for a buffer.
+  const rate = 8000;
   const len = sec * rate;
   const buf = ctx.createBuffer(1, len, rate);
   const d = buf.getChannelData(0);

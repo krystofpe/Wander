@@ -49,12 +49,14 @@ const running = await startServer(
     },
     mind: () => thinker?.status() ?? 'local',
     beat: () => {
-      lastBeat = Date.now();
+      lastBeat = performance.now();
     },
   },
   Number(own.get('port') ?? 0),
 );
 
+// --new is done once, here (the old road kept as .bak); the page must not start yet another road on each reload.
+query.delete('new');
 const url = `${running.url}${query.toString() === '' ? '' : `?${query.toString()}`}`;
 process.stdout.write(`Wander is walking at ${url}\n  mind: ${thinker === null ? 'local' : `claude (${thinker.model})`}\n  road: ${store.path}\n`);
 
@@ -98,7 +100,7 @@ function launch(): void {
     process.stdout.write('Chromium was not found (set WANDER_CHROMIUM); open the address above in a browser.\n');
     return;
   }
-  lastBeat = Date.now();
+  lastBeat = performance.now();
   const proc = openApp(url, exe);
   browser = proc;
   proc.on('exit', () => {
@@ -109,14 +111,27 @@ function launch(): void {
 
 if (!own.has('no-browser')) {
   launch();
-  // The watchdog: a page that has stopped beating for two minutes is opened again.
+  // The watchdog: a page that has stopped beating for two minutes is opened again. Its clock is monotonic, so a
+  // suspended machine does not count as a silent page; the old browser is gone before the new one starts, or the
+  // new one could hand itself over to the dying one and quit.
+  let relaunching = false;
   setInterval(() => {
-    if (closing || browser === null || Date.now() - lastBeat < 120_000) return;
+    if (closing || relaunching || browser === null || performance.now() - lastBeat < 120_000) return;
     process.stdout.write('The page stopped answering; opening it again.\n');
     const old = browser;
     browser = null;
+    if (old.exitCode !== null || old.signalCode !== null) {
+      launch();
+      return;
+    }
+    relaunching = true;
+    const timer = setTimeout(() => old.kill('SIGKILL'), 5000);
+    old.once('exit', () => {
+      clearTimeout(timer);
+      relaunching = false;
+      if (!closing) launch();
+    });
     old.kill();
-    launch();
   }, 30_000).unref();
 }
 

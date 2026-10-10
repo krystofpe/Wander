@@ -209,7 +209,7 @@ export class Stage {
       v.fogBase[i] = i === 3 ? extra + WALK_Y + 14 : extra + baseline(z, yh) + this.camY / z + 4;
       v.fogHeight[i] = i === 3 ? 26 : 6 + 16 / z;
       v.fogDensity[i] = Math.min(0.9, mist * mistTime * 0.75 + w.fog * 0.8) * [0.95, 0.85, 0.6, 0.35][i];
-      v.fogDrift[i] = (v.camX / z + this.drift * (1.5 - i * 0.3)) % 100000;
+      v.fogDrift[i] = (v.camX / z + this.drift * (1.5 - i * 0.3)) % 1e6;
     }
     v.rain = w.precip;
     v.snow = w.kind === 'snow';

@@ -79,15 +79,21 @@ const dayLength = opts.day * 60;
 const ephemeral = opts.frozen || opts.manual || opts.speed !== 1 || opts.hour !== null || opts.bench !== null || opts.at !== null;
 const tool = opts.frozen || opts.manual || opts.bench !== null;
 
-/** The road: the saved one (caught up on the time away), or a new one. */
-async function road(): Promise<{ journey: Journey; mind: string }> {
+/**
+ * The road: the saved one (caught up on the time away), or a new one. `keep` says whether this run may write over
+ * the saved road: not when it only looks at another seed's road, nor when the save could not be read.
+ */
+async function road(): Promise<{ journey: Journey; mind: string; keep: boolean }> {
   let saved: unknown = null;
   let mind = 'local';
+  let keep = true;
   if (!tool) {
     try {
-      const res = (await (await fetch('/api/journey')).json()) as { journey: unknown; mind: string };
-      saved = res.journey;
-      mind = res.mind;
+      const res = await fetch('/api/journey');
+      const body = (await res.json()) as { journey?: unknown; mind?: unknown };
+      if (!res.ok) keep = false;
+      saved = body.journey ?? null;
+      mind = body.mind === 'claude' ? 'claude' : 'local';
     } catch {
       // No server (opened as a plain file): a road of its own, unsaved.
     }
@@ -97,8 +103,10 @@ async function road(): Promise<{ journey: Journey; mind: string }> {
       const j = reviveJourney(saved);
       if (opts.seed === null || opts.seed === j.word) {
         catchUp(j, Date.now(), dayLength);
-        return { journey: j, mind };
+        return { journey: j, mind, keep };
       }
+      // Another seed's road, for a look: the saved one stays as it is (add --new to make this one the road).
+      keep = false;
     } catch {
       // Not a journey: start a new road.
     }
@@ -111,7 +119,7 @@ async function road(): Promise<{ journey: Journey; mind: string }> {
     const s = firstStretchOf(j.life.seed, opts.biome);
     if (s !== null) j.life.at = s.start + (s.end - s.start) * 0.4;
   }
-  return { journey: j, mind };
+  return { journey: j, mind, keep };
 }
 
 const started = await road();
@@ -126,8 +134,15 @@ const stage = new Stage(life.seed, journey.moonStart);
 if (opts.frozen && params.get('show') !== null) stage.around.show = new Set((params.get('show') ?? '').split(','));
 renderer.atlas = await loadAtlas(renderer.gpu);
 const ui = new Ui();
-/** Pictures and stepped captures are silent; everything else has its sound (M turns it off and on). */
-const sound = opts.frozen || opts.manual ? null : new Sound(life.seed, opts.mute);
+/** Pictures and stepped captures are silent; so is a browser that cannot make sound. */
+const sound = ((): Sound | null => {
+  if (opts.frozen || opts.manual) return null;
+  try {
+    return new Sound(life.seed, opts.mute);
+  } catch {
+    return null;
+  }
+})();
 Object.assign(status, {
   /** What is happening now, for the watch tool's log. */
   moment: () => {
@@ -183,7 +198,7 @@ if (opts.frozen && opts.pose !== null) {
 // ── Saving and the heartbeat ───────────────────────────────────────────────
 
 function save(beacon: boolean): void {
-  if (ephemeral) return;
+  if (ephemeral || !started.keep) return;
   journey.savedAt = Date.now();
   const body = JSON.stringify(journey);
   if (beacon) navigator.sendBeacon('/api/journey', new Blob([body], { type: 'application/json' }));
@@ -206,6 +221,26 @@ if (!tool) {
   document.addEventListener('visibilitychange', wake);
   wake();
 }
+
+// A lost GPU context (a driver reset, a suspend) would leave the screen black: the road is saved and the page
+// starts again, from where he was, once the context comes back or after a few seconds.
+let reloading = false;
+const restart = (): void => {
+  if (reloading) return;
+  reloading = true;
+  try {
+    save(false);
+  } catch {
+    // Nothing to save yet.
+  }
+  setTimeout(() => location.reload(), 400);
+};
+canvas.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  status.error = 'the WebGL context was lost';
+  setTimeout(restart, 5000);
+});
+canvas.addEventListener('webglcontextrestored', restart);
 
 // ── His thoughts ───────────────────────────────────────────────────────────
 
@@ -293,7 +328,7 @@ let uiAt = 0;
 function live(now: number, hidden: boolean): void {
   // Real seconds since the last call, clamped so a stall does not jump the world (more is allowed while hidden,
   // where the worker's ticks may come late).
-  const dt = opts.frozen ? 0 : Math.min(hidden ? 1 : 0.1, Math.max(0, (now - last) / 1000));
+  const dt = opts.frozen ? 0 : Math.min(hidden ? 1 : 0.25, Math.max(0, (now - last) / 1000));
   last = now;
   anim += dt;
   if (opts.frozen) return;
@@ -355,10 +390,16 @@ function hearing(): Hear {
 // keeps his life going, so the road and its sounds go on in the background.
 if (!opts.frozen && !opts.manual) {
   ticker(50, () => {
-    if (document.hidden) live(performance.now(), true);
-    if (sound !== null) {
-      const w = weatherOf(life, env);
-      sound.tick(hearing(), w.kind === 'rain' && w.precip > 0.3);
+    try {
+      // No frame for a quarter of a second (a hidden window, a stalled one): his life goes on from here.
+      if (document.hidden || performance.now() - lastFrame > 250) live(performance.now(), true);
+      if (sound !== null) {
+        const w = weatherOf(life, env);
+        sound.tick(hearing(), w.kind === 'rain' && w.precip > 0.3);
+      }
+    } catch (err) {
+      status.error = err instanceof Error ? `${err.message}\n${err.stack ?? ''}` : String(err);
+      console.error(err);
     }
   });
 }
@@ -432,10 +473,12 @@ function frame(now: number): void {
     status.frames++;
     if (status.frames >= 3) status.ready = true;
   } catch (err) {
+    // Recorded for the tools, and logged, but the walk goes on: the next frame is asked for all the same.
     status.error = err instanceof Error ? `${err.message}\n${err.stack ?? ''}` : String(err);
-    throw err;
+    console.error(err);
+  } finally {
+    if (!opts.manual) requestAnimationFrame(frame);
   }
-  if (!opts.manual) requestAnimationFrame(frame);
 }
 
 if (opts.manual) {

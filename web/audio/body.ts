@@ -206,13 +206,17 @@ function step(e: Engine, at: number, ground: string, wet: boolean, pan: number, 
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(peak, t + Math.min(0.012, dur * 0.2));
     g.gain.setTargetAtTime(0, t + dur * 0.3, dur * 0.25);
-    if (sweepTo > 0) f.frequency.exponentialRampToValueAtTime(sweepTo * pitch, t + dur);
+    if (sweepTo > 0) {
+      f.frequency.setValueAtTime(hz * pitch, t);
+      f.frequency.exponentialRampToValueAtTime(sweepTo * pitch, t + dur);
+    }
     nodes.push(s, f, g);
   };
   const thud = (t: number, hz: number, peak: number): void => {
     const o = new OscillatorNode(ctx, { frequency: hz * pitch });
     const g = new GainNode(ctx, { gain: 0 });
     o.connect(g).connect(out.gain);
+    o.frequency.setValueAtTime(hz * pitch, t);
     o.frequency.exponentialRampToValueAtTime(hz * 0.6, t + 0.08);
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(peak, t + 0.006);
@@ -273,6 +277,7 @@ function step(e: Engine, at: number, ground: string, wet: boolean, pan: number, 
     grain('white', at + 0.01, 0.07, 'bandpass', 1800, 1, 0.5);
     const o = new OscillatorNode(ctx, { frequency: 500 });
     const g = new GainNode(ctx, { gain: 0 });
+    o.frequency.setValueAtTime(500, at);
     o.frequency.exponentialRampToValueAtTime(1400, at + 0.06);
     o.connect(g).connect(out.gain);
     g.gain.setValueAtTime(0.12, at + 0.01);

@@ -344,6 +344,7 @@ uniform vec2 u_cell;
 uniform float u_speed;
 uniform float u_length;
 uniform float u_offset;
+uniform float u_fall;
 uniform vec3 u_color;
 uniform float u_alpha;
 out vec4 o_color;
@@ -354,12 +355,14 @@ void main() {
   float slant = u_wind * (u_snow > 0.5 ? 0.25 : 0.45);
   float t = u_time;
   // Shear the field by the slant so drops fall along it, then let the field fall.
-  vec2 q = vec2(f.x + u_offset - slant * f.y, f.y - u_speed * t);
+  vec2 q = vec2(f.x + u_offset - slant * f.y, f.y - u_fall);
   vec2 cell = floor(q / u_cell);
   vec2 local = q - cell * u_cell;
-  float h = hash12(cell);
+  // The pattern repeats every 4096 × 1024 cells, so the offsets can wrap there without a jump.
+  vec2 id = mod(cell, vec2(4096.0, 1024.0));
+  float h = hash12(id);
   if (h > u_amount) { discard; }
-  vec2 at = vec2(hash12(cell + 7.1), hash12(cell + 3.7)) * u_cell;
+  vec2 at = vec2(hash12(id + 7.1), hash12(id + 3.7)) * u_cell;
   float a = 0.0;
   if (u_snow > 0.5) {
     float sway = sin(t * (1.0 + h * 2.0) + h * 40.0) * 1.5;

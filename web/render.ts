@@ -229,7 +229,9 @@ export class Renderer {
     this.canvasW = w;
     this.canvasH = h;
     this.scale = Math.max(1, Math.floor(Math.min(w / 640, h / 360)));
-    this.nativeW = Math.ceil(w / this.scale);
+    // The view grows to fill the width, up to what each layer's ring of chunks can hold with room to look ahead
+    // (11 chunks of 16); beyond that, as on a very wide and short window, the sides stay dark.
+    this.nativeW = Math.min(MAX_NATIVE_W, Math.ceil(w / this.scale));
     this.nativeH = Math.min(400, Math.ceil(h / this.scale));
     this.viewX = Math.floor((w - this.nativeW * this.scale) / 2);
     this.viewY = Math.floor((h - this.nativeH * this.scale) / 2);
@@ -376,7 +378,7 @@ export class Renderer {
       gl.uniform1f(this.fog.u('u_base'), v.fogBase[fi]);
       gl.uniform1f(this.fog.u('u_height'), v.fogHeight[fi]);
       gl.uniform1f(this.fog.u('u_drift'), v.fogDrift[fi]);
-      gl.uniform1f(this.fog.u('u_time'), v.time % 3600);
+      gl.uniform1f(this.fog.u('u_time'), v.time % 1e6);
       gl.uniform1f(this.fog.u('u_scale'), this.scale);
       gl.uniform4f(this.fog.u('u_viewport'), vp[0], vp[1], vp[2], vp[3]);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -390,13 +392,16 @@ export class Renderer {
       gl.uniform1f(this.rain.u('u_amount'), Math.min(0.95, v.rain * (v.snow ? 0.6 : 0.85)));
       gl.uniform1f(this.rain.u('u_snow'), v.snow ? 1 : 0);
       gl.uniform1f(this.rain.u('u_wind'), v.wind);
-      gl.uniform1f(this.rain.u('u_time'), v.time % 600);
+      gl.uniform1f(this.rain.u('u_time'), v.time % 100000);
       gl.uniform1f(this.rain.u('u_scale'), this.scale);
       gl.uniform4f(this.rain.u('u_viewport'), vp[0], vp[1], vp[2], vp[3]);
       gl.uniform2f(this.rain.u('u_cell'), v.snow ? p.snowCell[0] : p.cell[0], v.snow ? p.snowCell[1] : p.cell[1]);
       gl.uniform1f(this.rain.u('u_speed'), v.snow ? p.snowSpeed : p.speed);
       gl.uniform1f(this.rain.u('u_length'), v.snow ? p.snowSize : p.length);
-      gl.uniform1f(this.rain.u('u_offset'), (v.camX / p.z) % 10000);
+      // Offsets wrapped in double precision at the pattern's own period (see RAIN_FS), so they never jump.
+      const cell = v.snow ? p.snowCell : p.cell;
+      gl.uniform1f(this.rain.u('u_offset'), (v.camX / p.z) % (4096 * cell[0]));
+      gl.uniform1f(this.rain.u('u_fall'), ((v.snow ? p.snowSpeed : p.speed) * v.time) % (1024 * cell[1]));
       gl.uniform3fv(this.rain.u('u_color'), v.rainColor);
       gl.uniform1f(this.rain.u('u_alpha'), p.alpha * (v.snow ? 1.6 : 1));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -544,7 +549,7 @@ export class Renderer {
     gl.uniform1f(this.sky.u('u_moonPhase'), v.moonPhase);
     gl.uniform1f(this.sky.u('u_moonUp'), v.moonUp);
     gl.uniform1f(this.sky.u('u_clear'), v.clear);
-    gl.uniform1f(this.sky.u('u_time'), v.time % 3400);
+    gl.uniform1f(this.sky.u('u_time'), v.time % 100000);
     gl.uniform1f(this.sky.u('u_milky'), v.milky);
     gl.uniform1f(this.sky.u('u_aurora'), v.aurora);
     gl.uniform1f(this.sky.u('u_seed'), (v.seed % 997) / 97);
@@ -608,6 +613,9 @@ export class Renderer {
     gl.bindVertexArray(null);
   }
 }
+
+/** The widest native view the chunk rings can hold (see `stream`): visible chunks, a margin and two ahead. */
+const MAX_NATIVE_W = CHUNK_W * (RING_W / CHUNK_W - 5);
 
 const SCRATCH = new Uint8Array(3);
 const RECT = [0, 0, 0, 0];

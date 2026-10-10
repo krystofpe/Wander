@@ -15,20 +15,8 @@ import { paceFor } from './walker.ts';
 import { biomeAt, groundHeight, landmarkNear, landmarksBetween, stretchAt, tendencyAt } from './world.ts';
 
 /** What his body is doing: each stage has its own pose. */
-export type Stage =
-  | 'walk'
-  | 'stand'
-  | 'look'
-  | 'back'
-  | 'sitdown'
-  | 'sit'
-  | 'standup'
-  | 'kneel'
-  | 'campsit'
-  | 'lie'
-  | 'sleep'
-  | 'wake'
-  | 'pack';
+export const STAGES = ['walk', 'stand', 'look', 'back', 'sitdown', 'sit', 'standup', 'kneel', 'campsit', 'lie', 'sleep', 'wake', 'pack'] as const;
+export type Stage = (typeof STAGES)[number];
 
 export type LogEntry = { readonly at: number; readonly day: number; readonly hour: number; readonly kind: 'biome' | 'landmark' | 'camp'; readonly name: string };
 
@@ -352,7 +340,7 @@ function tick(l: Life, dt: number, dayLength: number, env: Env, events: LifeEven
       if (l.nextLook <= 0) decide(l, env, w, events);
       return;
     }
-    if (l.target === null || l.at >= l.target - 0.01) arrive(l, events);
+    if (l.target === null || l.at >= l.target - 0.01) arrive(l, events, env);
     return;
   }
   l.actTime += dt;
@@ -360,7 +348,7 @@ function tick(l: Life, dt: number, dayLength: number, env: Env, events: LifeEven
 }
 
 /** He has reached the spot: begin the act there. */
-function arrive(l: Life, events: LifeEvent[]): void {
+function arrive(l: Life, events: LifeEvent[], env: Env): void {
   l.actTime = 0;
   l.walking = 0;
   l.since[l.act] = 0;
@@ -378,7 +366,7 @@ function arrive(l: Life, events: LifeEvent[]): void {
       break;
     case 'camp':
       setStage(l, 'kneel', events);
-      l.log.push({ at: l.at, day: dayOf(l.clock), hour: hourOfDay(l.clock), kind: 'camp', name: l.what });
+      l.log.push({ at: l.at, day: dayOf(l.clock), hour: shownHour(env.hourAt(l.clock), env.natural), kind: 'camp', name: l.what });
       break;
     default:
       setStage(l, 'walk', events);

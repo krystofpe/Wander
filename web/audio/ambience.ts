@@ -201,14 +201,15 @@ export class Ambience {
     const now = e.now;
     // Leaves ticking in the gusts, thicker as the wind rises.
     const leafRate = m.leaves * 14 * Math.max(0, m.windLeaves - 0.18) + m.trees * 1.5 * Math.max(0, m.windLeaves - 0.3);
-    if (this.nextLeaf < now) this.nextLeaf = now + gap(Math.max(leafRate, 0.01));
+    // A wait drawn while the rate was near nothing is drawn again when it rises (rain starting, a gust).
+    if (this.nextLeaf < now || (leafRate > 0.2 && this.nextLeaf > now + 10 / leafRate)) this.nextLeaf = now + gap(Math.max(leafRate, 0.01));
     while (this.nextLeaf < until) {
       if (leafRate > 0.02) this.play(this.ticks, this.nextLeaf, LEVEL.leaf * (0.4 + Math.random() * 0.6), Math.random() * 1.6 - 0.8, 'tick', 0.8 + Math.random() * 0.5) && this.count.leaf++;
       this.nextLeaf += gap(Math.max(leafRate, 0.01));
     }
     // Drops: their sound depends on what they land on (research: Sound §8).
     const dropRate = m.rain > 0.02 ? Math.min(30, 3 + 30 * m.rain) : 0;
-    if (this.nextDrop < now) this.nextDrop = now + gap(Math.max(dropRate, 0.01));
+    if (this.nextDrop < now || (dropRate > 0 && this.nextDrop > now + 10 / dropRate)) this.nextDrop = now + gap(Math.max(dropRate, 0.01));
     while (this.nextDrop < until) {
       if (dropRate > 0) {
         const x = Math.random();
@@ -675,7 +676,7 @@ function resonate(d: Float32Array, rate: number, hz: number, q: number, ring: nu
 
 /** One cricket chirp's envelope: a parabola over the first 17% of the period, pulsed by cos² at 58 Hz. */
 function chirpEnvelope(ctx: BaseAudioContext): AudioBuffer {
-  const rate = 3000;
+  const rate = 8000;
   const len = Math.floor(rate * 0.7);
   const buf = ctx.createBuffer(1, len, rate);
   const d = buf.getChannelData(0);

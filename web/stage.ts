@@ -79,6 +79,7 @@ export class Stage {
       light: { lights: new Float32Array(24), count: 0, color: new Float32Array([1, 0.62, 0.32]), albedoRow: ALBEDO_ROW },
       bloom: 0.5,
       cover: 0,
+      here: new Float32Array([0, 0, 0]),
       cloudDrift: 0,
       fogBase: new Float32Array(4),
       fogHeight: new Float32Array(4),
@@ -169,17 +170,22 @@ export class Stage {
     // over the cold lands on some clear nights.
     const dark = Math.max(0, (this.grade.night - 0.5) * 2) * (1 - Math.min(1, w.cloud * 1.6)) * (1 - w.fog);
     const here = biomeAt(l.seed, l.at);
+    v.here[0] = BIOME_IDS.indexOf(here.a);
+    v.here[1] = BIOME_IDS.indexOf(here.b);
+    v.here[2] = here.k;
     v.milky = dark * (1 - 0.6 * m.moonlight * v.moonUp) * (1 - 0.5 * blended(here, (id) => (id === 'ruins' || id === 'rail' ? 1 : 0)));
     const cold = blended(here, (id) => (id === 'tundra' ? 1 : id === 'pass' ? 0.7 : id === 'coast' || id === 'saltflat' ? 0.35 : 0));
     const which = Math.floor(l.clock / 24 + 0.5);
     v.aurora = cold * dark * (unit(which, l.seed ^ 0xa0a0) < 0.6 ? 1 : 0);
 
-    // What the water reflects: the sun while it is low, the moon by night, both dimmed by cloud.
-    const clear = 1 - Math.min(1, w.cloud * 1.2);
+    // What the water reflects: the sun while it is low, the moon by night, as bright as they can be seen through the
+    // cloud and the fog (none at all in a thick one).
+    const clear = (1 - Math.min(1, w.cloud * 1.2)) * (1 - w.fog);
     const lowSun = v.sunUp * clear * Math.max(0, 1 - m.elevation / 30);
     if (lowSun > 0.02) {
       labToBytes(this.grade.glow[0] + 0.12, this.grade.glow[1], this.grade.glow[2], this.bytes, 0);
-      for (let i = 0; i < 3; i++) v.shine[i] = this.bytes[i] / 255;
+      const seen = Math.min(1, lowSun * 2.5);
+      for (let i = 0; i < 3; i++) v.shine[i] = (this.bytes[i] / 255) * seen;
       v.shineX = v.sunX;
     } else {
       const moon = v.moonUp * clear * this.grade.night * (0.4 + 0.6 * m.moonlight);

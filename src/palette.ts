@@ -36,7 +36,9 @@ const FAMILIES: readonly Family[] = [
   { name: 'sand', steps: 4 },
   { name: 'snow', steps: 4 },
   { name: 'salt', steps: 3 },
-  { name: 'water', steps: 4, cycle: true },
+  // Not colour-cycled: four tones this far apart, rotating, make every pixel of a pool blink from dark to light. The
+  // water lives by its glints under a sun or moon that can be seen.
+  { name: 'water', steps: 4 },
   { name: 'stone', steps: 4 },
   { name: 'brick', steps: 3 },
   { name: 'wood', steps: 4 },

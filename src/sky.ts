@@ -254,7 +254,15 @@ export function weatherAt(worldHours: number, seed: number, t: Tendency): Weathe
 }
 
 /** Weather fixed by name, for the frozen mode and the tour. `wind` is also accepted: clear and blowing. */
-export function namedWeather(name: string, windSign = 1): Weather | null {
+export function namedWeather(spec: string, windSign = 1): Weather | null {
+  // "overcast@0.8": a named weather with another cloud cover (for pictures of the sky between the named ones).
+  const [name, cover] = spec.split('@');
+  const named = namedWeatherOf(name, windSign);
+  const c = Number(cover);
+  return named === null || cover === undefined || !Number.isFinite(c) ? named : { ...named, cloud: clamp01(c) };
+}
+
+function namedWeatherOf(name: string, windSign: number): Weather | null {
   const w = (cloud: number, precip: number, kind: Precip, storm: boolean, fog: number, wind: number, n: WeatherName): Weather => ({
     cloud,
     precip,

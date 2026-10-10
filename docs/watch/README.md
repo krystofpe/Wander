@@ -18,5 +18,5 @@ What it shows:
 | A sunset | 40 s in (17:17 → 19:20 on his clock) |
 | A night camp with a fire | twice: he kneels and lights it at dusk, sits, lies, sleeps by it, packs at dawn |
 | Rain or fog | snow, rain and fog, as well as clear and cloudy skies |
-| Stopping to sit and smoke | he sat six times; smoking in 14 of the 90 moments |
+| Stopping to sit and smoke | he sat five times; smoking in 14 of the 90 moments |
 | The sound changes with all of it | −36.9 LUFS on a snowy walk at dusk, −32.8 sitting in fog, −26.7 to −24 by the fire at night, −35.6 at dawn, −23.3 asleep in the wind; crickets on the mild nights (none in the cold one), owls at night, birds by day, steps on snow, grass and then autumn leaves, leaf ticks in the autumn wind, the music thicker at night with pads by the fire |

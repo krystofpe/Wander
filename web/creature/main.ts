@@ -336,6 +336,8 @@ Object.assign(status, {
     away: b.away,
   }),
   sound: () => sound?.status() ?? null,
+  /** Where it stands in his world, and where he is (for the tools). */
+  road: () => ({ seed: worldSeed, at, home: home?.at ?? null, passer: game.passer, site }),
   /** Saves now (the tools use it). */
   save: () => save(false),
 });

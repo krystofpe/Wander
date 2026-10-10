@@ -164,7 +164,7 @@ if (journey !== null && !ephemeral) {
 }
 
 /**
- * It lives in the hollow: an old wood of its own under a canopy (a realm, world.ts), the same for this creature every
+ * It lives in the hollow: the world under the world, a place of its own (a realm, world.ts), the same for this creature every
  * time, painted from this seed.
  */
 const sceneSeed = realm(life.seed);

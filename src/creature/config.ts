@@ -228,7 +228,8 @@ export const BIOMES: Readonly<Record<PlaceName, BiomeDef>> = {
     world: 'deep',
     rain: 0,
     cold: false,
-    canopy: true,
+    // Not under a canopy: no tall one walking through a far glow, no eyes in the trees; nobody else lives down here.
+    canopy: false,
     nest: true,
     props: [['shrooms', 3], ['fern', 5], ['bush', 2], ['rock', 2]],
     forage: 'shrooms',

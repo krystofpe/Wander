@@ -91,8 +91,8 @@ export function weatherAt(ms: number, seed: number, biome: PlaceName): Weather {
   const precip = lerp(a.precip, b.precip, k);
   const storm = precip > 0.3 && (k < 0.5 ? a.storm : b.storm);
   const kind: Precip = precip <= 0.02 ? 'none' : snows(biome, season) ? 'snow' : 'rain';
-  // Under the canopy a little mist always hangs between the trunks; rain thickens it everywhere.
-  const fog = Math.min(0.9, (BIOMES[biome].canopy ? 0.12 : 0) + precip * 0.2);
+  // Under the canopy, and in the hollow under the world, a little mist always hangs; rain thickens it everywhere.
+  const fog = Math.min(0.9, (BIOMES[biome].canopy || biome === 'deep' ? 0.12 : 0) + precip * 0.2);
   const name: WeatherName = storm ? 'storm' : kind === 'snow' ? 'snow' : kind === 'rain' ? 'rain' : cloud > 0.6 ? 'overcast' : cloud > 0.3 ? 'cloudy' : 'clear';
   return { cloud, precip: kind === 'none' ? 0 : precip, kind, storm, fog, wind: windAt(ms, seed, storm, precip), name };
 }

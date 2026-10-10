@@ -1,6 +1,6 @@
 // The biomes of the road: what each one is, where it sits in the climate, how its weather leans, the shape of
 // its ground and far land, and what grows and stands in it. Colours live in palette.ts. And one place off the road:
-// the deep beyond the creature's hollow, under a sky of stone (web/creature; see `realm` in world.ts).
+// the deep where the creature lives, under a sky of stone (web/creature; see `realm` in world.ts).
 
 export const BIOME_IDS = [
   'pine',
@@ -21,7 +21,7 @@ export const BIOME_IDS = [
 ] as const;
 export type BiomeId = (typeof BIOME_IDS)[number];
 
-/** The biomes his road passes through: all but the deep, which lies beyond the hollow and is never on the road. */
+/** The biomes his road passes through: all but the deep, where the creature lives, which is never on the road. */
 export const ROAD_BIOMES: readonly BiomeId[] = BIOME_IDS.filter((id) => id !== 'deep');
 
 /** What a step sounds like. */
@@ -185,7 +185,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     air: { haze: 0.036, mist: 0.4 },
     cold: false,
   },
-  // Beyond the hollow: a cavern under a sky of stone, lit by its fungus and one old lamp; no weather but its mist.
+  // Where the creature lives: a cavern under a sky of stone, lit by what grows there; no weather but its mist.
   deep: {
     title: 'the deep',
     climate: [0, 0],
@@ -198,7 +198,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
   },
 };
 
-export const LANDMARK_KINDS = ['house', 'chapel', 'lighthouse', 'mast', 'car', 'bridge', 'train', 'circle', 'shrine', 'skeleton', 'camp', 'hollow'] as const;
+export const LANDMARK_KINDS = ['house', 'chapel', 'lighthouse', 'mast', 'car', 'bridge', 'train', 'circle', 'shrine', 'skeleton', 'camp'] as const;
 export type LandmarkKind = (typeof LANDMARK_KINDS)[number];
 
 /** Where each landmark may stand, with a weight per biome. */
@@ -214,14 +214,5 @@ export const LANDMARK_HOMES: Readonly<Record<LandmarkKind, Partial<Record<BiomeI
   shrine: { pass: 3, pine: 2, birch: 1, autumn: 1, swamp: 1 },
   skeleton: { desert: 4, saltflat: 3, tundra: 2, plateau: 1 },
   camp: { pine: 2, birch: 2, meadow: 1, autumn: 1, pass: 1, coast: 1, desert: 1, swamp: 1, tundra: 1 },
-  // The creature's hollow is not one of the weighted picks: it takes a few of the landmark places of its lands on its
-  // own (HOLLOW), so the other landmarks stay where they were.
-  hollow: {},
 };
 
-/**
- * The creature's hollow on his road (web/creature): the great tree in the forests, a turf shelter in the open lands.
- * Whatever hollow he comes to, it is the creature's: one world, two lives. A share of the landmark places in these lands;
- * his seat is this many metres past its door.
- */
-export const HOLLOW = { homes: new Set<BiomeId>(['pine', 'birch', 'meadow', 'tundra', 'swamp']), chance: 0.14, seat: 3.5 } as const;

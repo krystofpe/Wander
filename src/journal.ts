@@ -1,6 +1,6 @@
 // The journey as it is saved: the road's seed, the moon it started under, his life (clock, distance, state, log),
 // and the time away when it comes back (research-free, spec §8). Pure, shared by the page and the server.
-import { BIOMES, HOLLOW } from './biomes.ts';
+import { BIOMES } from './biomes.ts';
 import { ACTS, freshMemory } from './brain.ts';
 import { STAGES, newLife } from './life.ts';
 import type { Life, LogEntry } from './life.ts';
@@ -20,28 +20,8 @@ export type Journey = {
   life: Life;
 };
 
-/**
- * While away he walks on at this average pace (rests and nights included), up to this far; and at every hollow's door
- * on the way he sits a while (seconds), with the creature (src/creature/road.ts follows him from its hollow).
- */
-export const AWAY = { pace: 0.62, capMetres: 20000, minMs: 60_000, hollowSec: 150 } as const;
-
-/** Where he is `sec` seconds after leaving road distance `from` (seed's road), walking as he does while away. */
-export function awayAt(seed: number, from: number, sec: number): { at: number; sitting: boolean } {
-  const walked = Math.min(AWAY.capMetres, Math.max(0, sec) * AWAY.pace);
-  let at = from + walked;
-  if (walked >= AWAY.capMetres) return { at, sitting: false };
-  // Past a hollow's door, he sat there a while: as far behind as he would have walked meanwhile.
-  const pause = AWAY.hollowSec * AWAY.pace;
-  // (A door just behind him still has its seat ahead.)
-  for (const m of landmarksBetween(seed, from - HOLLOW.seat, at + 1)) {
-    const seat = m.at + HOLLOW.seat;
-    if (m.kind !== 'hollow' || seat < from || at < seat) continue;
-    if (at < seat + pause) return { at: seat, sitting: true };
-    at -= pause;
-  }
-  return { at, sitting: false };
-}
+/** While away he walks on at this average pace (rests and nights included), up to this far. */
+export const AWAY = { pace: 0.62, capMetres: 20000, minMs: 60_000 } as const;
 
 const WORDS = ['heath', 'ash', 'moss', 'fern', 'flint', 'birch', 'tarn', 'cairn', 'reed', 'slate', 'rowan', 'sloe', 'thorn', 'marsh', 'drift', 'ember', 'hollow', 'barrow'];
 
@@ -111,9 +91,9 @@ export function catchUp(j: Journey, now: number, dayLengthSec: number): Away {
   if (ms < AWAY.minMs) return { ms, metres: 0, places: 0 };
   const l = j.life;
   const sec = ms / 1000;
+  const metres = Math.min(AWAY.capMetres, sec * AWAY.pace);
   const from = l.at;
-  const to = awayAt(l.seed, from, sec).at;
-  const metres = to - from;
+  const to = from + metres;
   const clock0 = l.clock;
   const hours = (sec * 24) / dayLengthSec;
   const before = l.log.length;

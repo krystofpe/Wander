@@ -188,6 +188,16 @@ Columns: 8
  90  78 102	wing 0
 154 139 166	wing 1
 217 207 217	wing 2
+ 59  31 110	amethyst 0
+138  79 214	amethyst 1
+217 184 255	amethyst 2
+ 74  34  14	amber 0
+168  96  46	amber 1
+232 168 114	amber 2
+ 34   9  15	coral 0
+ 74  26  34	coral 1
+122  46  48	coral 2
+165  80  74	coral 3
 255   0 255	unused
 255   0   0	unused
 255   0   1	unused
@@ -251,13 +261,3 @@ Columns: 8
 255   0  59	unused
 255   0  60	unused
 255   0  61	unused
-255   0  62	unused
-255   0  63	unused
-255   0  64	unused
-255   0  65	unused
-255   0  66	unused
-255   0  67	unused
-255   0  68	unused
-255   0  69	unused
-255   0  70	unused
-255   0  71	unused

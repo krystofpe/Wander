@@ -1,9 +1,9 @@
 // npm run creature:tour -- [--seed WORD] [--out docs/creature] [--only group,group] [--size 1920x1080]
 // Pictures of the creature in its hollow, from headless Chromium on the GPU, stepped in fixed steps (no frame loop):
-// the deep beyond the hollow at dawn, by day, at dusk and at night; its moments (at the glass, waving,
-// sitting, digging, stacking its cairn, humming, eating, petted, playing); its nights (the lantern, the stars, asleep
-// at home, its eyes in the dark doorway, the visitor); the traveller come by (light in its doorway); and you (talking
-// to it, the journal, a question). JPEG at quality 90, with a contact sheet of each group.
+// the deep beyond the hollow at dawn, by day, at dusk and at night; its moments (at the glass, waving, sitting,
+// digging, stacking its cairn, humming, eating, petted, playing); its nights (the lantern, the stars, asleep at home,
+// its eyes in the dark doorway, the visitor); the traveller come by (light in its doorway); and you (talking to it, the
+// journal, a question). JPEG at quality 90, with a contact sheet of each group.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -90,12 +90,11 @@ add('nights', 'owl', { now: String(owlMoment(seedOf(word), 22.8)), weather: 'cle
 add('nights', 'eyes', { now: String(eyesMoment(seedOf(word))), weather: 'clear', act: 'idle' }, 0.5);
 add('nights', 'visitor', { now: String(visitMoment(seedOf(word))), weather: 'clear', act: 'watch' }, 3);
 
-// His road comes by its door above: the doorway fills with the light of his world; it goes to sit at the threshold.
-add('traveller', 'near', { hour: '10.5', weather: 'clear', passer: '-12', act: 'idle' }, 2);
-add('traveller', 'sits', { hour: '15.5', weather: 'clear', passer: 'sit', act: 'traveller' }, 24);
-add('traveller', 'night', { hour: '21.6', weather: 'clear', passer: 'sit', act: 'traveller' }, 24);
-// His evening fire is lit on the road above: it has gone up through its door to sit with him; the doorway flickers.
-add('traveller', 'fire', { hour: '20.5', weather: 'clear', fireside: '1', act: 'fireside' }, 32);
+// At the hour of his camp it goes to him: its portal opens, it steps through, a faint shimmer where it went; it comes
+// back the same way before dawn.
+add('visit', 'portal', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 16);
+add('visit', 'gone', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 40);
+add('visit', 'back', { hour: '15', weather: 'clear', visit: '1', act: 'idle', speed: '30' }, 22);
 
 add('you', 'talk', { hour: '15', weather: 'clear' }, 4, async (p) => {
   await p.keyboard.press('t');

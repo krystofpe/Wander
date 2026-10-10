@@ -12,10 +12,7 @@ import { CREATURE } from './look.ts';
 import type { EyeColour } from './look.ts';
 import { situationText } from './mind.ts';
 import { cameWhileAway, travellerCame } from './traveller.ts';
-import { PX_PER_M } from '../layers.ts';
-
-/** In the deep, how far from its door he sits when he comes down through it (native px; web/creature/hollow.ts). */
-export const DEEP_SEAT_PX = 20;
+import type { Visit } from './visit.ts';
 import type { Reply, Situation } from './mind.ts';
 import { rng } from '../noise.ts';
 import type { Away } from './save.ts';
@@ -99,8 +96,7 @@ const DOING: Readonly<Record<string, string>> = {
   hide: 'hiding',
   wander: 'wandering beyond the edge of your world',
   watch: 'watching something tall walk through the light at the end of the path',
-  traveller: 'sitting with the traveller in the long coat, who rests at your door',
-  fireside: 'up on the road above, sitting across the traveller\'s fire',
+  portal: 'gone through your portal to the traveller\'s camp, sitting by his fire',
   listen: 'at the glass, listening to them',
   greet: 'at the glass',
 };
@@ -138,17 +134,13 @@ export class Game implements Ctx {
   knocked = false;
   /** Real seconds since it started. */
   real = 0;
-  /**
-   * The traveller, when his road comes by its hollow (the page follows his road): metres past its door (negative before
-   * it), whether he sits there or walks (or stands), and which way he walks across the scene (1 left to right, -1 the
-   * other way).
-   */
-  passer: { readonly d: number; readonly sitting: boolean; readonly walking: boolean; readonly dir: 1 | -1 } | null = null;
   /** Where its scene is set (see GameSetup.place). */
   readonly place: PlaceName;
-  /** His evening fire is lit on the road above (the page follows his road); and it has gone up to sit by it. */
-  hisFire = false;
-  awayAtFire = false;
+  /** Its visit to the traveller's camp tonight, if it is the hour (the page follows his road: src/creature/visit.ts). */
+  hisNight: Visit | null = null;
+  /** How open its portal is (0 shut … 1 open), and whether it has gone through. */
+  portal = 0;
+  gone = false;
   private worldMs: number;
   private readonly speed: number;
   private readonly rand: () => number;
@@ -232,7 +224,7 @@ export class Game implements Ctx {
     // The traveller came by while you were away: it tells you first.
     if (cameWhileAway(life, this.worldMs - ms)) {
       this.greetTopic = 'travellerBack';
-      this.greetMoment = 'While they were away, the traveller in the long coat, the one who walks the endless road, came by and sat at your door a while. Greet them, and tell them.';
+      this.greetMoment = 'While they were away you went through your portal to the camp of the traveller in the long coat, the one who walks the endless road, and sat by his fire. Greet them, and tell them.';
     }
     this.brain.run('greet');
   }
@@ -335,33 +327,18 @@ export class Game implements Ctx {
     if (!this.hasFocus) this.knocked = true;
   }
 
-  traveller(): { x: number; sitting: boolean } | null {
-    const p = this.passer;
-    if (p === null) return null;
-    const door = this.geo.door(this.scene.layout.home);
-    // In the deep he is beyond its door, up on his road: it watches the doorway; when he sits there, he comes down
-    // through it and sits on the root beside it (web/creature/hollow.ts), and it goes to sit with him.
-    if (this.place === 'deep') {
-      const side = this.scene.layout.homeLeft ? 1 : -1;
-      return { x: door.x + (side * (p.sitting ? DEEP_SEAT_PX : 0.035 * this.geo.w)) / this.geo.w, sitting: p.sitting };
-    }
-    return { x: door.x + (p.dir * p.d * PX_PER_M) / this.geo.w, sitting: p.sitting };
+  visit(): Visit | null {
+    return this.hisNight;
   }
 
-  fireside(): boolean {
-    return this.hisFire;
+  opening(k: number): void {
+    this.portal = Math.max(0, Math.min(1, k));
   }
 
-  atFire(on: boolean): void {
-    this.awayAtFire = on;
-    if (on) travellerCame(this.life, this.worldMs, 'fire');
-  }
-
-  travellerSat(): void {
-    // Off wandering beyond the edge of the world, it was not there to see him.
-    if (this.life.away || this.brain.current === 'wander') return;
-    const how = this.life.asleep ? 'asleep' : this.body.inside ? 'night' : 'day';
-    travellerCame(this.life, this.worldMs, how);
+  through(gone: boolean): void {
+    this.gone = gone;
+    // Back from his fire: it keeps the visit (how the night went for him).
+    if (!gone && this.hisNight !== null) travellerCame(this.life, this.worldMs, this.hisNight.woke ? 'woke' : 'slept');
   }
 
   // ── Time ─────────────────────────────────────────────────────────────────

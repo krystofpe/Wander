@@ -472,7 +472,6 @@ const GROUPS: readonly Group[] = [
   { when: (c) => c.near === 'circle', weight: 5, lines: ['A ring of stones. Whatever they were waiting for, it has not come.', 'Stand in the middle and the wind goes quiet. Probably my imagination.'] },
   { when: (c) => c.near === 'shrine', weight: 5, lines: ['Someone keeps flowers at the shrine. Or kept them.', 'A shrine by the road. I left a match. It is all I had.'] },
   { when: (c) => c.near === 'skeleton', weight: 5, lines: ['Whatever it was, it was big, and it lay down here, and that was that.', 'Bones as tall as a house. I am glad I never met it.'] },
-  { when: (c) => c.near === 'hollow', weight: 7, lines: ['A small one lives in that tree. Lamp eyes. It sat with me and said nothing. Good company.', 'It waved. I am not sure anything has waved at me since {place}.', 'I should bring it something next time. I never know where next time is.', 'It watched me smoke as if smoke were a wonder. Maybe it is.'] },
   { when: (c) => c.near === 'camp', weight: 5, lines: ["Someone else's fire ring. Cold. They left in a hurry, or not at all.", 'Somebody slept here. I hope they got where they were going.'] },
 ];
 

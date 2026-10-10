@@ -64,6 +64,10 @@ export const LEGEND: Readonly<Record<string, number>> = {
   '/': role('bone', 1),
   '·': role('flower', 1),
   '•': role('flower', 2),
+  // The portal it comes through (portal.ts): violet light at its rim.
+  'α': role('amethyst', 0),
+  'β': role('amethyst', 1),
+  'γ': role('amethyst', 2),
   P: role('water', 2),
   Q: role('water', 3),
   F: role('firefly', 0),

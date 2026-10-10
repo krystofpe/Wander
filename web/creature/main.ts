@@ -1,25 +1,26 @@
-// The creature's page: its life loaded (or a new one born), lived through the time it was closed, and set in a still
-// stretch of the wanderer's world; the stage's sky and air over it, the hollow drawn, its sounds; you at the glass
-// with the keys, the mouse and a box to type in; saved every half minute and when the window closes. Its hollow stands
-// on his road, and when his road comes by (the live road on the published page, his journey here), he does.
-import { BIOMES as WORLD_BIOMES, HOLLOW } from '../../src/biomes.ts';
+// The creature's page: its life loaded (or a new one born), lived through the time it was closed, and set in the deep
+// where it lives; the stage's sky and air over it, its home drawn, its sounds; you at the glass with the keys, the
+// mouse and a box to type in; saved every half minute and when the window closes. At night, at the hour of his camp on
+// his road (the live road on the published page, his journey here), it goes through its portal to sit by his fire.
+import { BIOMES as WORLD_BIOMES } from '../../src/biomes.ts';
 import { BIOMES, SAVE_EVERY_SEC, STEP_SEC } from '../../src/creature/config.ts';
 import { Game } from '../../src/creature/game.ts';
 import type { MindLink } from '../../src/creature/game.ts';
-import { addDiary, isNightFor, newLife } from '../../src/creature/life.ts';
+import { addDiary, newLife } from '../../src/creature/life.ts';
 import type { Life } from '../../src/creature/life.ts';
 import type { Reply } from '../../src/creature/mind.ts';
 import { parseCreatureOptions } from '../../src/creature/options.ts';
-import { firesideAt, hollowBy, homeHollow, roadFrom, satBetween } from '../../src/creature/road.ts';
+import { VISIT, camping, visitAt } from '../../src/creature/visit.ts';
+import type { Visit } from '../../src/creature/visit.ts';
+import { clockAt } from '../../src/creature/road.ts';
 import type { Saved } from '../../src/creature/road.ts';
-import { travellerCame } from '../../src/creature/traveller.ts';
 import { catchUp, revive } from '../../src/creature/save.ts';
 import type { Away } from '../../src/creature/save.ts';
 import { Geometry } from '../../src/creature/scene.ts';
 import { localHour } from '../../src/creature/sky.ts';
 import { PX_PER_M } from '../../src/layers.ts';
 import type { Life as Road, LifeEvent } from '../../src/life.ts';
-import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, msOfStep, stepAt, stepLive } from '../../src/live.ts';
+import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, stepAt, stepLive } from '../../src/live.ts';
 import { PLAYFIELD } from '../../src/paint/scene.ts';
 import { rng } from '../../src/noise.ts';
 import { seedOf } from '../../src/options.ts';
@@ -31,7 +32,6 @@ import { Renderer } from '../render.ts';
 import { loadAtlas } from '../sprites.ts';
 import { Stage } from '../stage.ts';
 import { Hollow } from './hollow.ts';
-import { comesToFire } from '../hollowmark.ts';
 import { modes } from '../modes.ts';
 import { CreatureUi } from './ui.ts';
 
@@ -85,7 +85,7 @@ function todayAt(hour: number, now: number = Date.now()): number {
 }
 
 /** Runs that bend time or take pictures are not saved. */
-const ephemeral = opts.speed !== 1 || opts.hour !== null || opts.now !== null || opts.manual || opts.weather !== null || opts.bench !== null || params.has('passer') || params.has('fireside');
+const ephemeral = opts.speed !== 1 || opts.hour !== null || opts.now !== null || opts.manual || opts.weather !== null || opts.bench !== null || params.has('visit');
 const start = opts.hour !== null ? todayAt(opts.hour, opts.now ?? Date.now()) : (opts.now ?? Date.now());
 
 /** The saved life (lived through the time away), or a new one; and whether the server can ask Claude. */
@@ -142,7 +142,7 @@ const life = b.life;
 
 // ── His road ───────────────────────────────────────────────────────────────
 
-/** His journey here, as last saved: the road its hollow stands on, and where he was on it. Null without one. */
+/** His journey here, as last saved: his road, where he was on it, and his clock then. Null without one. */
 async function journeyOf(): Promise<Saved | null> {
   if (site || !b.server) return null;
   try {
@@ -158,23 +158,14 @@ async function journeyOf(): Promise<Saved | null> {
   }
 }
 let journey = await journeyOf();
-/** His world, where its hollow stands: the shared live road's on the published page, his own road's here (its own before he has one). */
-const worldSeed = site ? LIVE_SEED : (journey?.seed ?? life.seed);
-// He came by while the window was closed: it finds the ash on the root by its door.
-if (journey !== null && b.away !== null && !ephemeral && !life.away) {
-  const t = satBetween(journey, start - b.away.ms, start);
-  if (t !== null) travellerCame(life, t, isNightFor(life.traits, localHour(t)) ? 'asleep' : 'day');
-}
 if (journey !== null && !ephemeral) {
   // The road page may be open in another window, saving as he goes.
   setInterval(() => void journeyOf().then((j) => (journey = j ?? journey)), 60_000);
 }
 
-/** The hollow on his road it lives beyond: its door, where he sits when he comes by. */
-const home = homeHollow(worldSeed, life.biome);
 /**
- * Beyond the hollow lies the deep: a place of its own under a sky of stone (a realm, world.ts), the same for this
- * creature every time. Its scene is painted from this seed; his road stays his.
+ * It lives in the deep: a place of its own under a sky of stone (a realm, world.ts), the same for this creature every
+ * time, painted from this seed.
  */
 const sceneSeed = realm(life.seed);
 /** Where in the deep the view stands (any place is like any other there, but always the same one). */
@@ -246,54 +237,32 @@ const game = new Game(life, {
   place: 'deep',
 });
 const at = DEEP_AT;
-/** Past its door is into the clearing: he comes from behind its home and goes on across. */
-const dir: 1 | -1 = game.scene.layout.homeLeft ? 1 : -1;
-
-/** Pictures put him where they want him: ?passer=-12 (metres before its door, walking), ?passer=sit. */
-const pinned = ((): { d: number; sitting: boolean; walking: boolean } | null => {
-  const p = params.get('passer');
-  if (p === null) return null;
-  return p === 'sit' ? { d: HOLLOW.seat, sitting: true, walking: false } : { d: Number(p), sitting: false, walking: true };
-})();
 /** The live road (the published page): his life stepped along with the clock, as the road page steps it. */
-const road = { env: liveEnv(LIVE_SEED), sim: null as Road | null, step: 0, before: 0, events: [] as LifeEvent[] };
+const road = { env: liveEnv(LIVE_SEED), sim: null as Road | null, step: 0, events: [] as LifeEvent[] };
+/** `?visit` (`--visit`): a visit that begins now, for a look: his clock as if it were just before the hour. */
+const visitFrom = params.has('visit') ? start : null;
 
-/** Where he is now if his road comes by a hollow (whichever it is, it is its own): metres past its door, and how. */
-function passerAt(ms: number): { d: number; sitting: boolean; walking: boolean } | null {
-  if (pinned !== null) return pinned;
+/**
+ * Its visit to his camp tonight, if it is the hour (src/creature/visit.ts): on the published page the live road's,
+ * when he is camping; here his journey's clock moved on (a day an hour, his road's own pace unless opened with --day).
+ */
+function hisNight(ms: number): Visit | null {
+  if (visitFrom !== null) return visitAt(VISIT.from - 0.04 + ((ms - visitFrom) / 1000) * (24 / 3600), 0);
   if (site) {
     if (ms < LIVE.epoch) return null;
-    const target = stepAt(ms) + 1;
-    if (road.sim === null || target <= road.step || target - road.step > STEPS_PER_DAY) {
-      road.sim = liveAt(LIVE_SEED, target - 1, road.env);
-      road.step = target - 1;
+    const target = stepAt(ms);
+    if (road.sim === null || target < road.step || target - road.step > STEPS_PER_DAY) {
+      road.sim = liveAt(LIVE_SEED, target, road.env);
+      road.step = target;
     }
-    while (road.step < target) {
-      road.before = road.sim.at;
-      road.sim = stepLive(road.sim, ++road.step, road.env, road.events);
-    }
-    const s = road.sim;
-    const k = Math.min(1, Math.max(0, (ms - msOfStep(target - 1)) / (LIVE.tick * 1000)));
-    const by = hollowBy(LIVE_SEED, road.before + (s.at - road.before) * k);
-    if (by === null) return null;
-    const sitting = (s.stage === 'sit' || s.stage === 'sitdown' || s.stage === 'standup') && s.what === 'hollow' && Math.abs(by.d - HOLLOW.seat) < 2;
-    return { d: by.d, sitting, walking: s.stage === 'walk' };
+    while (road.step < target) road.sim = stepLive(road.sim, ++road.step, road.env, road.events);
+    return camping(road.sim) ? visitAt(road.sim.clock, LIVE_SEED) : null;
   }
-  if (journey === null) return null;
-  const pos = roadFrom(journey, ms);
-  const by = hollowBy(journey.seed, pos.at);
-  return by === null ? null : { d: by.d, sitting: pos.sitting, walking: !pos.sitting };
+  return journey === null ? null : visitAt(clockAt(journey, ms), journey.seed);
 }
-let wasSitting = false;
-/** Follows his road: where he is for the creature and the drawing; when he sits down at its door, it keeps the visit. */
+/** Follows his road: whether it is the hour of its visit to him. */
 function follow(): void {
-  const ms = game.worldNow();
-  const p = passerAt(ms);
-  game.passer = p === null ? null : { ...p, dir };
-  // His evening fire on the road above: the live road's camp, or his journey's clock moved on here (pictures: ?fireside).
-  game.hisFire = params.has('fireside') || (site ? road.sim !== null && comesToFire(road.sim, null) : journey !== null && firesideAt(journey, ms));
-  if (p?.sitting === true && !wasSitting) game.travellerSat();
-  wasSitting = p?.sitting === true;
+  game.hisNight = hisNight(game.worldNow());
 }
 follow();
 if (opts.act !== null) game.brain.run(opts.act as Parameters<typeof game.brain.run>[0]);
@@ -333,7 +302,7 @@ Object.assign(status, {
   }),
   sound: () => sound?.status() ?? null,
   /** Where it stands in his world, and where he is (for the tools). */
-  road: () => ({ seed: worldSeed, at, home: home?.at ?? null, passer: game.passer, site }),
+  road: () => ({ visit: game.hisNight, portal: game.portal, gone: game.gone, site }),
   /** Saves now (the tools use it). */
   save: () => save(false),
 });

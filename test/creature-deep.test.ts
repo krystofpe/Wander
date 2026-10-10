@@ -63,7 +63,7 @@ test('its giant mushrooms glow underneath and trail threads; stalagmites point; 
   assert.ok([...glowCaps(2, 7).roles].some((r) => glow.has(r)));
 });
 
-test('set in the deep: no rain, its own small lives, and his visits seen at its door', () => {
+test('set in the deep: no rain, its own small lives, its home', () => {
   assert.equal(BIOMES.deep.rain, 0);
   for (let t = Date.UTC(2026, 9, 10); t < Date.UTC(2026, 10, 10); t += 3 * 3600000) assert.equal(skyAt(t, 11, 'deep').weather.precip, 0);
   for (const k of [...BIOMES.deep.dayCritters, ...BIOMES.deep.nightCritters]) assert.ok(['moth', 'bat', 'frog', 'firefly'].includes(k), k);
@@ -71,13 +71,5 @@ test('set in the deep: no rain, its own small lives, and his visits seen at its 
   const life = newLife(12, now - 86400000, { biome: 'meadow' });
   const g = new Game(life, { geo: new Geometry(640), now, random: rng(4), mind: null, login: 'k', firstMeeting: false, away: null, place: 'deep' });
   assert.equal(g.place, 'deep');
-  assert.ok(g.scene.layout.home.edge !== undefined, 'it lives in the great tree down there, whatever its land above');
-  assert.equal(g.traveller(), null);
-  g.passer = { d: -20, sitting: false, walking: true, dir: 1 };
-  const door = g.geo.door(g.scene.layout.home).x;
-  const far = g.traveller();
-  g.passer = { d: 3.5, sitting: true, walking: false, dir: 1 };
-  const sat = g.traveller();
-  assert.ok(far !== null && Math.abs(far.x - door) < 0.05, 'beyond its door: it watches the doorway');
-  assert.ok(sat !== null && sat.sitting && Math.abs(sat.x - door) < 0.05 && sat.x !== door, 'sitting, he has come down to sit on the root beside it');
+  assert.ok(g.scene.layout.home.edge !== undefined, 'its home down there, whatever its land above');
 });

@@ -3,6 +3,10 @@
 // creature (feat/creature src/brain.ts) as it was, walking in native pixels and leaving sprites instead of glyphs.
 import { BIOMES, BRAIN, COOLDOWN_SEC, DEPTH_PX, IDLE_KNOCK_SEC, MOON_FINDS, PRESENT_SEC, SELF_FEED_CAP, SELF_PLAY_CAP } from './config.ts';
 import type { PlaceName } from './config.ts';
+import type { Visit } from './visit.ts';
+
+/** Where in its world its portal opens (a share across, a depth). */
+export const PORTAL = { x: 0.74, z: 0.3 } as const;
 import { MAX_CAIRN, clamp01, isNightFor, warm } from './life.ts';
 import type { Feelings, Life, Mood } from './life.ts';
 import { CREATURE } from './look.ts';
@@ -89,14 +93,12 @@ export interface Ctx {
   askName(): void;
   /** Where you last clicked on the ground, or null. */
   pointed(): { x: number; z: number } | null;
-  /** The traveller, when his road comes by its hollow: where he is across the scene (a share), and whether he sits. */
-  traveller(): { readonly x: number; readonly sitting: boolean } | null;
-  /** He sat down at its door: it keeps the visit. */
-  travellerSat(): void;
-  /** Whether his evening fire is lit on the road above (the page follows his road). */
-  fireside(): boolean;
-  /** It has gone up through its door to his fire (true), or come home (false); going, it keeps the visit. */
-  atFire(on: boolean): void;
+  /** Its visit to the traveller's camp tonight, if it is the hour (src/creature/visit.ts). */
+  visit(): Visit | null;
+  /** Opens its portal to `k` (0 shut … 1 open). */
+  opening(k: number): void;
+  /** It has gone through its portal (true), or come back (false: it keeps the visit). */
+  through(gone: boolean): void;
   /** Rings the bell, if allowed. */
   bell(): void;
 }
@@ -105,7 +107,7 @@ export type Script = Generator<void, void, number>;
 
 export const ACTIVITIES = [
   'idle', 'stroll', 'sit', 'nap', 'sleep', 'forage', 'eat', 'drink', 'chase', 'critter', 'play', 'stargaze', 'shelter',
-  'dance', 'ponder', 'dig', 'hum', 'stack', 'visit', 'knock', 'gift', 'ask', 'hide', 'wander', 'watch', 'traveller', 'fireside',
+  'dance', 'ponder', 'dig', 'hum', 'stack', 'visit', 'knock', 'gift', 'ask', 'hide', 'wander', 'watch', 'portal',
 ] as const;
 export type ActivityName = (typeof ACTIVITIES)[number];
 export const REACTIONS = ['listen', 'petted', 'woken', 'startle', 'greet', 'arrive', 'return', 'go', 'wave', 'jump', 'spin'] as const;
@@ -599,75 +601,44 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       c.feelings.joy = clamp01(c.feelings.joy + 0.2);
     },
   },
-  // The traveller comes by: it sees him, watches him come, sits beside him at its door while he smokes, and waves him
-  // off. Only outside and awake; asleep or inside, the page keeps the visit all the same.
-  traveller: {
-    cooldown: 300,
-    score: (c) => (c.traveller() !== null && c.body.visible && !c.body.inside && !c.life.asleep ? 3.5 : 0),
-    *run(c) {
-      const him = (): { x: number; sitting: boolean } | null => c.traveller();
-      const look = (): void => {
-        const t = him();
-        if (t !== null) c.body.gaze = t.x < c.body.x - 0.02 ? 'left' : t.x > c.body.x + 0.02 ? 'right' : null;
-      };
-      c.body.pose = 'stand';
-      c.body.icon = '!';
-      yield* wait(0.8);
-      c.body.icon = null;
-      c.say('travellerHere');
-      // Watch him come.
-      let t = 0;
-      while (him() !== null && him()?.sitting !== true && t < 90) {
-        look();
-        t += yield;
-      }
-      const sat = him();
-      if (sat !== null && sat.sitting) {
-        // Sit with him, a little way off, on its side of him.
-        const side = sat.x < c.body.x ? 1 : -1;
-        yield* walkTo(c, Math.max(0.03, Math.min(0.97, sat.x + side * 0.045)), 0.04);
-        c.body.facing = side > 0 ? -1 : 1;
-        c.body.pose = 'sit';
-        c.body.gaze = null;
-        c.travellerSat();
-        let s = 0;
-        while (him()?.sitting === true && s < 300) {
-          const dt = yield;
-          s += dt;
-          if (c.random() < dt * 0.15) particles(c, '♥', 0, 1, { up: 1, spread: 2, life: 2 });
-        }
-        c.body.pose = 'stand';
-        c.life.needs.love = clamp01(c.life.needs.love + 0.08);
-        c.feelings.joy = clamp01(c.feelings.joy + 0.3);
-      }
-      // He goes on: a wave, and it watches him go.
-      c.body.pose = 'wave';
-      look();
-      yield* wait(1.6);
-      c.body.pose = 'stand';
-      t = 0;
-      while (him() !== null && t < 60) {
-        look();
-        t += yield;
-      }
-      c.body.gaze = null;
+  // At night his camp is far away on his road, and it goes to him: it opens its portal, steps through, and is gone a
+  // while (his road draws it by his fire); before dawn it comes back the same way, and keeps the visit.
+  portal: {
+    cooldown: 60,
+    score: (c) => {
+      const v = c.visit();
+      return v !== null && v.phase !== 'going' && v.phase !== 'closing' && c.body.visible && !c.body.inside && !c.life.asleep ? 7 : 0;
     },
-  },
-  // His fire is lit on the road above: it goes up through its door to sit with him, and comes home once he is asleep.
-  fireside: {
-    cooldown: 120,
-    score: (c) => (c.fireside() && c.body.visible && !c.body.inside && !c.life.asleep ? 6 : 0),
     *run(c) {
       c.body.pose = 'stand';
-      c.say('fireside');
-      yield* hush(c, 4);
-      yield* goIn(c);
-      c.atFire(true);
+      c.say('portal');
+      yield* hush(c, 3);
+      yield* walkTo(c, PORTAL.x - 0.03, PORTAL.z);
+      c.body.facing = 1;
+      for (let t = 0; t < 1.6; t += yield) c.opening(t / 1.6);
+      c.opening(1);
+      yield* walkTo(c, PORTAL.x, PORTAL.z);
+      // Through.
+      for (let t = 0; t < 0.8; t += yield) c.body.doorway = t / 0.8;
+      c.body.visible = false;
+      c.body.doorway = 0;
+      c.through(true);
+      for (let t = 0; t < 1.6; t += yield) c.opening(1 - t / 1.6);
+      c.opening(0);
+      // Gone, until its visit is over.
       let t = 0;
-      while (c.fireside() && t < 1800) t += yield;
-      c.atFire(false);
-      yield* comeOut(c);
-      c.say('firesideBack');
+      while (c.visit() !== null && c.visit()?.phase !== 'closing' && t < 1800) t += yield;
+      for (let k = 0; k < 1.6; k += yield) c.opening(k / 1.6);
+      c.opening(1);
+      c.body.visible = true;
+      c.body.doorway = 1;
+      for (let k = 0; k < 0.8; k += yield) c.body.doorway = 1 - k / 0.8;
+      c.body.doorway = 0;
+      c.through(false);
+      yield* walkTo(c, PORTAL.x - 0.08, Math.min(1, PORTAL.z + 0.1));
+      for (let k = 0; k < 1.6; k += yield) c.opening(1 - k / 1.6);
+      c.opening(0);
+      c.say('portalBack');
       c.feelings.joy = clamp01(c.feelings.joy + 0.25);
       c.life.needs.love = clamp01(c.life.needs.love + 0.1);
     },

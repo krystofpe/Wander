@@ -3,15 +3,14 @@
 // static server, nothing else. That it starts with no server behind it and asks for nothing that is not there; that
 // the wanderer it shows is the one live.ts computes for that step (so the same for everyone); that the hour turns
 // without a jump; that the page tells how to hear it. And the hollow beside it: a creature of the visitor's own, kept
-// in their browser, its hollow on the live road, the traveller there when the live road sits at a hollow; Tab from
+// in their browser, following the live road, gone through its portal to his camp when the live road camps; Tab from
 // one to the other and back, and the last one opens again. Writes pictures of a few moments to DIR.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import type { Page } from 'playwright-core';
 import { HEADLESS_FLAGS, findChromium } from '../server/browser.ts';
-import { HOLLOW } from '../src/biomes.ts';
-import { hollowBy } from '../src/creature/road.ts';
+import { camping, visitAt } from '../src/creature/visit.ts';
 import type { Life, LifeEvent } from '../src/life.ts';
 import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, msOfStep, stepLive } from '../src/live.ts';
 import { ROOT, flags } from './headless.ts';
@@ -28,17 +27,15 @@ const asked: string[] = [];
 const server = await pagesServer(dist, 0, asked);
 const base = server.base;
 
-/** The first moment (ms) from the road's start when the live road has him sitting at a hollow's door, a little in. */
-function sittingAtHollow(): number | null {
+/** The first moment (ms) from the road's start when the creature sits with him at his camp on the live road. */
+function visitMoment(): number | null {
   const env = liveEnv(LIVE_SEED);
   const events: LifeEvent[] = [];
   let l: Life = liveAt(LIVE_SEED, 0, env);
-  let sat = 0;
-  for (let n = 1; n < 400 * STEPS_PER_DAY; n++) {
+  for (let n = 1; n < 100 * STEPS_PER_DAY; n++) {
     l = stepLive(l, n, env, events);
-    const by = l.stage === 'sit' && l.what === 'hollow' ? hollowBy(LIVE_SEED, l.at) : null;
-    sat = by !== null && Math.abs(by.d - HOLLOW.seat) < 2 ? sat + 1 : 0;
-    if (sat === 40) return msOfStep(n);
+    const v = camping(l) ? visitAt(l.clock, LIVE_SEED) : null;
+    if (v !== null && v.phase === 'with' && v.k > 0.3) return msOfStep(n);
   }
   return null;
 }
@@ -75,7 +72,7 @@ async function openAt(query: string): Promise<Page> {
 }
 const liveOf = (page: Page): Promise<Live> => page.evaluate(() => (window as unknown as { __wander: W }).__wander.liveStep());
 
-type Road = { seed: number; at: number; home: number | null; passer: { d: number; sitting: boolean } | null; site: boolean };
+type Road = { visit: { phase: string } | null; portal: number; gone: boolean; site: boolean };
 type C = { ready: boolean; error: string | null; save(): void; road(): Road; game: { life: { name: string; seed: number } } };
 /** Waits for whichever page is there to be drawn: the road (`__wander`) or the hollow (`__creature`). */
 async function drawn(page: Page, which: '__wander' | '__creature'): Promise<boolean> {
@@ -159,7 +156,7 @@ try {
       c.save();
       return { name: c.game.life.name, road: c.road(), kept: localStorage.getItem('wander.creature') !== null, mode: localStorage.getItem('wander.mode') };
     });
-    check(first.road.site && first.road.seed === LIVE_SEED && first.road.home !== null, `its hollow stands on the live road, at ${first.road.home?.toFixed(0)} m`);
+    check(first.road.site, 'it follows the live road');
     check(first.kept && first.mode === 'creature', `${first.name} is kept in this browser, and the hollow is the mode last open`);
     writeFileSync(join(out, 'hollow.png'), await page.screenshot());
     // Tab: to the road and back again; then the road's address opens the hollow, the mode last open.
@@ -176,18 +173,23 @@ try {
     await page.waitForURL((u) => u.pathname.includes('creature'), { timeout: 10000 });
     check(await drawn(page, '__creature'), `opening the road's address again opens the hollow, the mode last open`);
     await ctx.close();
-    // When the live road has him sitting at a hollow's door, he sits at its door here too.
-    const ms = sittingAtHollow();
-    if (ms === null) check(false, 'the live road sits at a hollow within 400 hours');
+    // When the creature sits with him at his camp on the live road, it is gone through its portal here.
+    const ms = visitMoment();
+    if (ms === null) check(false, 'the creature visits his camp within 100 hours of the live road');
     else {
       const p = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
       p.on('pageerror', (e) => errors.push(e.message));
+      await p.goto(`${base}?now=${ms}&speed=0.0001`);
+      await drawn(p, '__wander');
+      await p.waitForTimeout(1200);
+      const there = await p.evaluate(() => (window as unknown as { __wander: { visit(): { phase: string } | null } }).__wander.visit());
+      check(there !== null && there.phase === 'with', `on the road it sits by his fire at night, through its portal (${new Date(ms).toISOString()})`);
+      writeFileSync(join(out, 'visit.png'), await p.screenshot());
       await p.goto(`${base}creature/?now=${ms}&speed=0.0001&seed=moss&user=Krystof`);
       await drawn(p, '__creature');
       await p.waitForTimeout(1200);
       const r = await p.evaluate(() => (window as unknown as { __creature: C }).__creature.road());
-      check(r.passer !== null && r.passer.sitting, `the traveller sits at its door when the live road sits at a hollow (${new Date(ms).toISOString()})`);
-      writeFileSync(join(out, 'traveller.png'), await p.screenshot());
+      check(r.visit !== null && r.visit.phase === 'with', 'and from its own page it is the hour of its visit');
       await p.close();
     }
   }

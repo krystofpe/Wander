@@ -1,13 +1,14 @@
 // npm run tour -- [--seed S] [--out docs/tour] [--work DIR] [--only group,group] [--png]
 // The tour: every biome at dawn, noon, golden hour, dusk, blue hour and night; the blends between them; every weather;
-// every pose; every landmark (the creature's hollow too, him sitting at its door); the life around him; and a few
-// frames at 4K. Each is a frozen frame rendered in headless Chromium on the GPU at 1920×1080 (or 3840×2160). Full-
-// quality PNGs go to the work folder (for looking); the committed copies in docs/tour are JPEG at quality 90 with full
-// chroma, because film grain makes a 1080p PNG 2.3 MB (see the spec). Contact sheets of each group are written too.
+// every pose; every landmark (and the creature come through its portal to his fire at night); the life around him; and
+// a few frames at 4K. Each is a frozen frame rendered in headless Chromium on the GPU at 1920×1080 (or 3840×2160).
+// Full- quality PNGs go to the work folder (for looking); the committed copies in docs/tour are JPEG at quality 90 with
+// full chroma, because film grain makes a 1080p PNG 2.3 MB (see the spec). Contact sheets of each group are written
+// too.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { HOLLOW, LANDMARK_KINDS, ROAD_BIOMES } from '../src/biomes.ts';
+import { LANDMARK_KINDS, ROAD_BIOMES } from '../src/biomes.ts';
 import { seedOf } from '../src/options.ts';
 import { flags, open, session } from './headless.ts';
 import { TIMES, biomeCentres, borders, firstLandmarks } from './places.ts';
@@ -59,7 +60,7 @@ for (const [pose, time] of [
 add('poses', 'thought', { at: pine, hour: String(TIMES.golden), weather: 'clear', pose: 'sitsmoke', t: '3.1', thought: 'The pines have been talking all afternoon. Not to me.' });
 // Every landmark, at the hour it is best seen.
 const marks = firstLandmarks(seed);
-const MARK_TIME: Record<string, string> = { house: 'blue', chapel: 'golden', lighthouse: 'dusk', mast: 'blue', car: 'golden', bridge: 'golden', train: 'night', circle: 'dawn', shrine: 'blue', skeleton: 'golden', camp: 'dusk', hollow: 'golden' };
+const MARK_TIME: Record<string, string> = { house: 'blue', chapel: 'golden', lighthouse: 'dusk', mast: 'blue', car: 'golden', bridge: 'golden', train: 'night', circle: 'dawn', shrine: 'blue', skeleton: 'golden', camp: 'dusk' };
 for (const kind of LANDMARK_KINDS) {
   const at = marks.get(kind);
   if (at === undefined) continue;
@@ -67,13 +68,9 @@ for (const kind of LANDMARK_KINDS) {
   const t = kind === 'train' ? '40' : '3.1';
   add('landmarks', kind, { at: String(Math.round(at - 4)), hour: String(TIMES[MARK_TIME[kind]]), weather: 'clear', t, show: kind === 'bridge' ? 'fish' : '' });
 }
-// The creature's hollow: he sits at its door with it in the golden hour, and on as the light goes.
-const hollow = marks.get('hollow');
-if (hollow !== undefined) {
-  const seat = String(Math.round(hollow + HOLLOW.seat));
-  add('landmarks', 'hollow-sitting', { at: seat, hour: String(TIMES.golden), weather: 'clear', pose: 'sitsmoke', t: '3.1' });
-  add('landmarks', 'hollow-blue', { at: seat, hour: String(TIMES.blue), weather: 'clear', pose: 'sitsmoke', t: '3.1' });
-}
+// At night at his camp the creature comes through its portal to sit by his fire: just come, and some hours on.
+add('landmarks', 'visit', { at: pine, hour: '0.4', weather: 'clear', pose: 'camp', t: '3.1' });
+add('landmarks', 'visit-later', { at: pine, hour: '1.5', weather: 'clear', pose: 'camp', t: '3.1' });
 // The life around him.
 add('life', 'deer', { at: String(Math.round(centres.get('birch') ?? 0)), hour: String(TIMES.dawn), weather: 'clear', show: 'deer' });
 add('life', 'deer-alert', { at: String(Math.round(centres.get('autumn') ?? 0)), hour: String(TIMES.golden), weather: 'clear', show: 'deer,alert' });

@@ -1,7 +1,7 @@
 // The road, as pure functions of the seed and the distance along it (metres): which biome, how they blend,
 // how high the ground lies, and where the landmarks stand. The same seed and distance always give the same
 // place, and any distance can be looked up directly, without walking there from the start.
-import { BIOMES, HOLLOW, LANDMARK_HOMES, LANDMARK_KINDS, ROAD_BIOMES } from './biomes.ts';
+import { BIOMES, LANDMARK_HOMES, LANDMARK_KINDS, ROAD_BIOMES } from './biomes.ts';
 import type { BiomeId, LandmarkKind } from './biomes.ts';
 import { fbm1, noise1, unit } from './noise.ts';
 import type { Tendency } from './sky.ts';
@@ -19,7 +19,7 @@ export const WORLD = {
 } as const;
 
 // Salts keep the hash streams for different decisions apart.
-const SALT = { bound: 0x51a7, pick: 0x9b1c, climate: 0x3c11, warp: 0x7a05, ground: 0x2f6d, mark: 0x6e2b, markKind: 0x1d4f, hollow: 0x4011 } as const;
+const SALT = { bound: 0x51a7, pick: 0x9b1c, climate: 0x3c11, warp: 0x7a05, ground: 0x2f6d, mark: 0x6e2b, markKind: 0x1d4f } as const;
 
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 const smooth = (a: number, b: number, v: number): number => {
@@ -111,11 +111,11 @@ function biomeOfStretch(seed: number, k: number): BiomeId {
 
 const stretchCache = new Map<string, BiomeId>();
 
-/** Seeds that are not roads but places of their own, every stretch the same biome: the deep beyond the hollow. */
+/** Seeds that are not roads but places of their own, every stretch the same biome: the deep, where the creature lives. */
 const REALMS = new Map<number, BiomeId>();
 
 /**
- * A realm: a world that is one place all the way along (the deep beyond the creature's hollow), with no landmarks,
+ * A realm: a world that is one place all the way along (the deep, where the creature lives), with no landmarks,
  * painted and graded by the same engine as his road. Returns the seed to paint it with, made from `seed`.
  */
 export function realm(seed: number, biome: BiomeId = 'deep'): number {
@@ -232,7 +232,7 @@ export function groundHeight(seed: number, d: number): number {
   // Near a landmark the ground flattens, so the moment reads as a pause; at a bridge it is level from bank to bank.
   const mark = landmarkNear(seed, d, 60);
   if (mark === null) return h;
-  const level = mark.kind === 'bridge' || mark.kind === 'hollow';
+  const level = mark.kind === 'bridge';
   const calm = level ? smooth(12, 60, Math.abs(d - mark.at)) : 1 - 0.6 * (1 - smooth(20, 60, Math.abs(d - mark.at)));
   return h * calm;
 }
@@ -247,7 +247,6 @@ export function landmarkAt(seed: number, cell: number): Landmark | null {
   if (unit(cell, seed ^ SALT.mark) >= L.chance) return null;
   const at = cell * L.cell + unit(cell * 3 + 1, seed ^ SALT.mark) * (L.cell - L.gap);
   const here = stretchAt(seed, at).biome;
-  if (HOLLOW.homes.has(here) && unit(cell, seed ^ SALT.hollow) < HOLLOW.chance) return { cell, at, kind: 'hollow' };
   let total = 0;
   for (const kind of LANDMARK_KINDS) total += LANDMARK_HOMES[kind][here] ?? 0;
   if (total === 0) return null;

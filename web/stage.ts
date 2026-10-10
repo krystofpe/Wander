@@ -6,7 +6,7 @@ import { dragging } from '../src/life.ts';
 import type { Life } from '../src/life.ts';
 import { gradeOf, newGrade, newMoment } from '../src/palette.ts';
 import { HORIZON } from '../src/paint/land.ts';
-import { BIOMES, HOLLOW } from '../src/biomes.ts';
+import { BIOMES } from '../src/biomes.ts';
 import { LAYERS, baseline } from '../src/layers.ts';
 import { labToBytes } from '../src/palette.ts';
 import { arcX, flashAt, moonAt, roadMoon, shownHour, sunElevation } from '../src/sky.ts';
@@ -15,8 +15,10 @@ import { loopFrame, walkFrame } from '../src/walker.ts';
 import { unit } from '../src/noise.ts';
 import { biomeAt, blended, groundHeight, isRealm, landmarksBetween, stretchAt } from '../src/world.ts';
 import { awakeAt } from '../src/creature/traveller.ts';
-import { comesToFire, drawHollow, drawNeighbour } from './hollowmark.ts';
-import type { Neighbour } from './hollowmark.ts';
+import { camping, sitsUp, visitAt } from '../src/creature/visit.ts';
+import type { Visit } from '../src/creature/visit.ts';
+import { drawNeighbour } from './neighbour.ts';
+import type { Neighbour } from './neighbour.ts';
 import { ALBEDO_ROW, FOG_AFTER, paletteRow } from './render.ts';
 import type { Renderer, View } from './render.ts';
 import type { Atlas } from './sprites.ts';
@@ -51,15 +53,12 @@ export class Stage {
   private readonly bytes = new Uint8Array(3);
   readonly moonStart: number;
   readonly around = new Around();
-  /** Who lives in the hollows on his road: the creature, as its save says (null: a stranger's look). */
+  /** The creature that comes to his camp at night, as its save says (null: a stranger's look). */
   neighbour: Neighbour | null = null;
   /** The real time by the creature's clock (it keeps real hours; his days are faster): whether it is awake to visit. */
   creatureClock: () => number = () => Date.now();
-  /** Since when (animation seconds) the creature has been at his fire, and when it left (null: not). */
-  private fireSince: number | null = null;
-  private fireLeft: number | null = null;
-  /** A still frame (pictures): what comes and goes is shown already there. */
-  private still = false;
+  /** The creature's visit to his camp this frame (src/creature/visit.ts), or null. */
+  visit: Visit | null = null;
   /** Where his head is on the native view this frame (for his thoughts). */
   headX = 0;
   headY = 0;
@@ -134,7 +133,6 @@ export class Stage {
     // The camera: him left of centre while he walks, eased toward the middle when he stops.
     this.sky(r, { seed: l.seed, at: l.at, clock: l.clock, framing: l.stage !== 'walk' ? 0.5 : HIM_X }, hour, natural, w, time, dt, still);
     if (atlas === null) return;
-    this.still = still;
     this.him(r, atlas, l, w, time, dt, pose);
   }
 
@@ -159,7 +157,7 @@ export class Stage {
     m.side = Math.max(-1, Math.min(1, ax * 2 - 1));
     v.moonPhase = l.moon ?? roadMoon(l.clock, this.moonStart);
     m.moonlight = 1 - Math.abs(v.moonPhase - 0.5) * 2;
-    // The deep beyond the hollow (a realm, world.ts): its own keys, no weather but its mist, a roof of stone.
+    // The deep, where the creature lives (a realm, world.ts): its own keys, no weather but its mist, a roof of stone.
     const deep = isRealm(l.seed);
     m.flash = !deep && flashAt(time, l.seed, w) ? 1 : 0;
     v.flash = m.flash;
@@ -333,58 +331,47 @@ export class Stage {
     // The life around him and what moves at the landmarks (behind him on the playfield).
     this.around.update(r, atlas, v, l, { sun: m.elevation, night: this.grade.night, weather: w, time, dt, extra, camY: this.camY, himX: colOf(l.at) });
 
-    // In the evening, while he sits by his fire and until he is asleep, the creature comes up out of the dark from the
-    // deep and sits across the fire from him, its lantern set down beside it; then it goes home.
-    if (l.fire !== null) {
-      const here = comesToFire(l, this.neighbour);
-      // Asleep by its own clock (it keeps real hours), it dozes by his fire, its eyes shut.
-      const dozing = this.neighbour !== null && !awakeAt(this.neighbour.nightOwl, this.creatureClock());
-      if (here && this.fireSince === null) this.fireSince = this.still ? time - 10 : time;
-      if (!here && this.fireSince !== null) {
-        this.fireSince = null;
-        this.fireLeft = time;
-      }
-      const seat = l.fire.at + 1.25;
-      const foot = groundRow(seat);
+    // At night at his camp a portal opens beyond his fire, and the creature comes through to sit by the fire with
+    // him until the small hours (src/creature/visit.ts); then it goes back and the portal closes.
+    const visit = l.fire !== null && camping(l) ? visitAt(l.clock, l.seed) : null;
+    this.visit = visit;
+    if (visit !== null && l.fire !== null) {
       const rows: [number, number, number] = [rowA, rowB, b.k];
-      if (this.fireSince !== null) {
-        // It walks in from the dark beyond the fire, then sits facing him and the fire.
-        const t = time - this.fireSince;
-        const walk = Math.max(0, 1 - t / 5);
-        const x = colOf(seat + 4.5 * walk);
-        const tag = walk > 0 ? 'walk' : 'sit';
-        drawNeighbour(r, atlas, x, foot, tag, true, this.neighbour, rows, dozing && walk === 0 ? 'shut' : l.stage === 'sleep' || l.stage === 'lie' ? 'happy' : 'open', time, Math.min(1, t / 1.5), 4.5 * walk * PX_PER_M);
-        if (this.grade.night > 0.4 && walk === 0) {
-          const lantern = atlas.sheets.carry.lantern[0];
-          r.ground.add(Math.round(x + 9), Math.round(foot - lantern[3]), lantern, rowA, rowB, b.k);
-          if (light.count < 6) {
-            const o = light.count * 4;
-            light.lights[o] = x + 11;
-            light.lights[o + 1] = foot - 4;
-            light.lights[o + 2] = 22;
-            light.lights[o + 3] = 0.5;
-            light.count++;
-          }
-        }
-      } else if (this.fireLeft !== null && time - this.fireLeft < 5) {
-        // Going home into the dark.
-        const t = (time - this.fireLeft) / 5;
-        drawNeighbour(r, atlas, colOf(seat + 4.5 * t), foot, 'walk', false, this.neighbour, rows, 'open', time, 1 - t, 4.5 * t * PX_PER_M);
+      const gate = l.fire.at + 3.4;
+      const seat = l.fire.at + 1.3;
+      const gx = colOf(gate);
+      const gy = groundRow(gate);
+      // The portal: opening from a slit, turning while it is open, closing again.
+      const sheet = atlas.sheets.portal;
+      const opening = visit.phase === 'opening' ? visit.k : visit.phase === 'closing' ? 1 - visit.k : 1;
+      const frame = opening < 1 ? sheet.open[Math.min(sheet.open.length - 1, Math.floor(opening * sheet.open.length))] : sheet.loop[Math.floor(time * 7) % sheet.loop.length];
+      // While it sits with him the portal stays, dimmed, waiting.
+      const dim = visit.phase === 'with' ? 0.55 : 1;
+      r.ground.add(Math.round(gx - frame[2] / 2), Math.round(gy - frame[3] + 2), frame, rowA, rowB, b.k, false, dim);
+      if (light.count < 6) {
+        const o = light.count * 4;
+        light.lights[o] = gx;
+        light.lights[o + 1] = gy - 16;
+        light.lights[o + 2] = 30 * opening;
+        light.lights[o + 3] = 0.45 * opening * dim;
+        light.count++;
       }
-    } else this.fireSince = null;
-
-    // The creature's hollow, when his road passes one: drawn before him, so he walks in front of its tree.
-    for (const mark of landmarksBetween(l.seed, (v.camX - 120) / PX_PER_M, (v.camX + W + 120) / PX_PER_M)) {
-      if (mark.kind !== 'hollow') continue;
-      const hb = biomeAt(l.seed, mark.at);
-      const rows: [number, number, number] = [paletteRow(GROUND, BIOME_IDS.indexOf(hb.a)), paletteRow(GROUND, BIOME_IDS.indexOf(hb.b)), hb.k];
-      const sitting = (l.stage === 'sit' || l.stage === 'sitdown' || l.stage === 'standup') && l.what === 'hollow' && Math.abs(l.at - mark.at - HOLLOW.seat) < 2;
-      drawHollow(r, atlas, v, colOf(mark.at), groundRow(mark.at), stretchAt(l.seed, mark.at).biome, rows, this.neighbour, { d: l.at - mark.at, sitting }, this.grade.night, time);
+      // The creature: through the portal and over to the fire, there a while, back and through again.
+      const dozing = this.neighbour !== null && !awakeAt(this.neighbour.nightOwl, this.creatureClock());
+      if (visit.phase === 'coming' || visit.phase === 'going') {
+        const k = visit.phase === 'coming' ? visit.k : 1 - visit.k;
+        const fade = Math.min(1, k * 5);
+        drawNeighbour(r, atlas, colOf(gate + (seat - gate) * k), groundRow(seat), 'walk', true, this.neighbour, rows, 'open', time, fade, (gate - seat) * k * PX_PER_M);
+      } else if (visit.phase === 'with') {
+        const awake = sitsUp(visit);
+        drawNeighbour(r, atlas, colOf(seat), groundRow(seat), 'sit', true, this.neighbour, rows, dozing && !awake ? 'shut' : awake ? 'happy' : 'open', time);
+      }
     }
 
     // Him.
     const sheet = atlas.sheets.wanderer;
-    const stage = pose ?? l.stage;
+    // On the nights he wakes, he sits up by the fire while the creature is with him.
+    const stage = pose ?? (sitsUp(this.visit) ? 'wake' : l.stage);
     const seat = l.seat <= 2 ? 0 : l.seat <= 7 ? 5 : 10;
     let frame: readonly number[];
     let lift = 0;

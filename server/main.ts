@@ -1,5 +1,5 @@
 // npm start [-- --seed moss --speed 20 --day 30 --realclock --hour 18 --biome coast --offline --new]
-// npm run creature [-- --biome forest --name Ori --seed moss --speed 20 --hour 21 --passer sit --fireside --offline --new --mute]
+// npm run creature [-- --biome forest --name Ori --seed moss --speed 20 --hour 21 --visit --offline --new --mute]
 // Starts the server for both modes, the endless walk and the creature's hollow, then opens one of them (the one used
 // last; the hollow with --creature) in its own Chromium window, full screen, sound allowed. Tab goes from one to the
 // other. Closing the window ends it; if the page stops answering, the window is opened again. Extra flags:
@@ -93,7 +93,7 @@ const api: Api = {
     if (data === null) return false;
     const life = revive(data);
     const how = (r as { how?: unknown }).how;
-    const kept = travellerCame(life, Date.now(), how === 'night' || how === 'asleep' || how === 'fire' ? how : 'day');
+    const kept = travellerCame(life, Date.now(), how === 'woke' ? 'woke' : 'slept');
     if (kept) creatures.save(life);
     return kept;
   },

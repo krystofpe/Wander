@@ -26,11 +26,8 @@ export const MARK_ON: Readonly<Record<LandmarkKind, string>> = {
   shrine: 'ground',
   camp: 'ground',
   bridge: 'ground',
-  hollow: 'ground',
 };
 
-/** The hollow's half-width on the playfield (native px): the great tree's foot, drawn by the stage as sprites. */
-export const HOLLOW_HALF = 80;
 
 /** The bridge: half the gorge's width (metres), and the river's depth below the deck (native px). */
 export const BRIDGE = { half: 6, deep: 28, bank: 34 } as const;
@@ -50,7 +47,7 @@ export function marksOn(seed: number, layer: LayerDef, u0: number, u1: number): 
     if (MARK_ON[m.kind] !== layer.name) continue;
     const u = Math.round((m.at * PX_PER_M) / z);
     const s = markStamp(m, z);
-    const half = m.kind === 'bridge' ? Math.round(((BRIDGE.half + 1.5) * PX_PER_M) / z) : m.kind === 'train' ? Math.round((TRAIN_LINE.half * PX_PER_M) / z) : m.kind === 'hollow' ? HOLLOW_HALF : Math.ceil((s?.w ?? 0) / 2);
+    const half = m.kind === 'bridge' ? Math.round(((BRIDGE.half + 1.5) * PX_PER_M) / z) : m.kind === 'train' ? Math.round((TRAIN_LINE.half * PX_PER_M) / z) : Math.ceil((s?.w ?? 0) / 2);
     if (u + half + 40 < u0 || u - half - 40 >= u1) continue;
     out.push({ mark: m, u, stamp: s, half });
   }

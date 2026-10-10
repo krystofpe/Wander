@@ -20,16 +20,16 @@ import { Renderer } from './render.ts';
 import { loadAtlas } from './sprites.ts';
 import { Stage } from './stage.ts';
 import { lastMode, modes } from './modes.ts';
-import { comesToFire, meetingOf } from './hollowmark.ts';
-import type { Neighbour } from './hollowmark.ts';
+import type { Neighbour } from './neighbour.ts';
 import { revive } from '../src/creature/save.ts';
 import { travellerCame } from '../src/creature/traveller.ts';
+import type { Meeting } from '../src/creature/traveller.ts';
 
 const params = new URLSearchParams(location.search);
 const opts = parseOptions((k) => params.get(k));
 /** The published page: plain files, no server behind it (tools/site.ts marks its copy of the page). */
 const site = document.documentElement.hasAttribute('data-site');
-// On the published page, a visitor who was last in their hollow goes back to it.
+// On the published page, a visitor who was last with their creature goes back to it.
 if (site && params.toString() === '' && lastMode() === 'creature') {
   location.replace(new URL('creature/', location.href).href);
   await new Promise(() => {});
@@ -185,8 +185,8 @@ journey.life = life;
 status.life = life;
 (status as unknown as { mind: string }).mind = mind;
 const stage = new Stage(life.seed, journey.moonStart);
-// Who lives in the hollows on his road: your creature, from its save (its file here, this browser on the published
-// page), or a stranger's look when there is none yet.
+// The creature that comes through its portal to his camp at night: yours, from its save (its file here, this browser
+// on the published page), or a stranger's look when there is none yet.
 async function neighbourOf(): Promise<Neighbour | null> {
   let data: unknown = null;
   if (site) {
@@ -213,10 +213,10 @@ async function neighbourOf(): Promise<Neighbour | null> {
 }
 stage.neighbour = await neighbourOf();
 
-/** He sat down by the hollow's door, or it came to his fire: the creature keeps the visit (its file, or this browser). */
-function visitHollow(fire = false): void {
-  const how = fire ? 'fire' : meetingOf(stage.grade.night, stage.neighbour);
-  if (how === null || stage.neighbour === null) return;
+/** It came through its portal and sat by his fire: the creature keeps the visit (its file, or this browser). */
+let keptNight = -1;
+function keepVisit(how: Meeting): void {
+  if (stage.neighbour === null) return;
   if (site) {
     try {
       const c = revive(JSON.parse(localStorage.getItem('wander.creature') ?? 'null') as unknown);
@@ -285,8 +285,6 @@ if (opts.frozen && opts.pose !== null) {
   life.stage = map[pose] ?? (pose as LifeStage);
   life.seat = life.stage === 'sit' ? 6 : 0;
   if (pose === 'smoke' || pose === 'sitsmoke' || pose === 'camp') life.smoking = 3;
-  // Sitting by a hollow's door: he sits there with the creature.
-  if (life.stage === 'sit' && landmarkNear(life.seed, life.at, 6)?.kind === 'hollow') life.what = 'hollow';
   if (['kneel', 'campsit', 'lie', 'sleep', 'wake', 'pack'].includes(life.stage)) {
     life.act = 'camp';
     life.fire = { at: life.at + 0.9, heat: life.stage === 'kneel' ? 0.3 : life.stage === 'pack' ? 0.1 : 1 };
@@ -432,7 +430,7 @@ let hintUntil = performance.now() + 15_000;
 addEventListener('pointermove', () => {
   hintUntil = Math.max(hintUntil, performance.now() + 4000);
 });
-// The other mode, the creature's hollow: Tab, or the dim line that shows with the bar and when the mouse moves.
+// The other mode, the creature's deep: Tab, or the dim line that shows with the bar and when the mouse moves.
 if (!tool) modes('wander', site, () => ui.barOn || performance.now() < hintUntil);
 let drawnAt = anim;
 let uiAt = 0;
@@ -442,8 +440,6 @@ const before = { at: 0, walked: 0, clock: 0, smoking: -1, heat: 0 };
 const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
 
 function note(e: LifeEvent): void {
-  if (e.type === 'stage' && e.stage === 'sit' && sim.what === 'hollow') visitHollow();
-  if (e.type === 'stage' && e.stage === 'campsit' && comesToFire(sim, stage.neighbour)) visitHollow(true);
   if (status.events.length < 400 && e.type !== 'drag' && e.type !== 'exhale') {
     const what = e.type === 'stage' ? e.stage : e.type === 'act' ? e.act : e.type === 'biome' ? e.id : e.type === 'landmark' ? e.kind : '';
     status.events.push(`${sim.clock.toFixed(2)} ${e.type}:${what}`);
@@ -515,6 +511,12 @@ function step(now: number): void {
   const hour = env.hourAt(life.clock);
   stage.update(renderer, renderer.atlas, life, hour, opts.realClock, weatherOf(life, env), anim, opts.frozen ? 0 : Math.min(0.1, anim - drawnAt), opts.frozen, null);
   drawnAt = anim;
+  // The creature came through its portal and sits with him: it keeps the visit, once a night.
+  const visit = stage.visit;
+  if (visit !== null && visit.phase === 'with' && visit.night !== keptNight) {
+    keptNight = visit.night;
+    keepVisit(visit.woke ? 'woke' : 'slept');
+  }
   if (stage.around.trainStarted !== null) sound?.train(stage.around.trainStarted);
   // Text sits in CSS pixels: one art pixel is scale / devicePixelRatio of them.
   const css = renderer.scale / devicePixelRatio;
@@ -596,6 +598,8 @@ const percentile = (a: Float32Array, n: number, q: number): number => {
 Object.assign(status, {
   /** The live road's last step, for the tools to check against live.ts. */
   liveStep: () => ({ step: simStep, at: sim.at, stage: sim.stage, clock: sim.clock, drawnAt: life.at, waiting: sound?.waiting ?? null }),
+  /** The creature's visit to his camp this frame, or null. */
+  visit: () => stage.visit,
   bench: null as unknown,
   /** One sample for the soak: the road, the JS heap after a collection, GPU resources alive, frame times. */
   soak: () => {

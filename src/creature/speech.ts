@@ -81,12 +81,11 @@ export const LINES = {
   spring: ['Something is growing. I can hear it.', 'It smells green.'],
   summer: ['The air is thick.', 'Even the shadows are warm today.'],
   listening: ['...', '?', 'I am listening.'],
-  // The traveller: the one who walks the endless road and now and then sits at its door.
-  travellerBack: ['The traveller came while you were gone. He sat at my door.', 'He came by again, the one who walks. You missed him.', 'There was a man in a long coat here. He smoked. I think he is lonely too.'],
-  traveller: ['I think about the one who walks. Where does he sleep?', 'The traveller never says where he is going. Maybe he does not know.', 'He leaves a little ash and a little quiet. I keep both.', 'If he comes again, I will show him the cairn.'],
-  travellerHere: ['...it is him.', 'The one who walks.', 'Shh. He is resting.'],
-  fireside: ['His fire is lit up there. I will go and sit with him.', 'I can smell his fire through the door.', 'The traveller is camping. He should not be alone.'],
-  firesideBack: ['He is asleep. I kept his fire a while.', 'His fire was warm.', 'I sat with him. He did not mind.'],
+  // The traveller: the one who walks the endless road, whose fire it goes to through its portal at night.
+  travellerBack: ['While you were gone I went to the traveller\'s fire. He was asleep. I kept him company.', 'I sat with the one who walks last night. You missed it.', 'There is a man in a long coat who sleeps by his fire. I go to him at night. I think he is lonely too.'],
+  traveller: ['I think about the one who walks. Where will he sleep tonight?', 'The traveller never says where he is going. Maybe he does not know.', 'His fire smells of far places.', 'Tonight I will go to him again.'],
+  portal: ['He has made his camp. I will go and sit with him.', 'His fire is lit, far away. I know the way.', 'The traveller should not be alone tonight.'],
+  portalBack: ['His fire was warm.', 'I sat with him until the embers went grey.', 'I am back. He did not mind me.'],
 } as const;
 
 export type Topic = keyof typeof LINES;

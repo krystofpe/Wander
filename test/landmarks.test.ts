@@ -10,12 +10,12 @@ import { groundHeight, landmarksBetween } from '../src/world.ts';
 const clear = namedWeather('clear');
 if (clear === null) throw new Error('no clear weather');
 
-test('every landmark kind has a layer, and a stamp unless it is painted in place or drawn by the stage', () => {
+test('every landmark kind has a layer, and a stamp unless it is painted in place', () => {
   for (const kind of LANDMARK_KINDS) {
     const layer = LAYERS.find((l) => l.name === MARK_ON[kind]);
     assert.ok(layer, kind);
     const s = markStamp({ cell: 3, at: 2000, kind }, layer.z);
-    if (kind === 'bridge' || kind === 'train' || kind === 'hollow') assert.equal(s, null);
+    if (kind === 'bridge' || kind === 'train') assert.equal(s, null);
     else assert.ok(s !== null && s.w > 0 && s.h > 0 && s.roles.some((r) => r !== 0), kind);
   }
 });

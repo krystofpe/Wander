@@ -4,6 +4,8 @@ A lone hooded wanderer walks forever through pixel-art lands made up as he goes.
 
 Nobody plays it. It is something to look at, or to leave running for hours full screen on a second monitor.
 
+**Live: [krystofpe.github.io/Wander](https://krystofpe.github.io/Wander/)**: one wanderer for everyone, walking day and night. Whoever opens the page finds him in the same place at the same moment. Or run your own road from this repository ([Run](#run)).
+
 ![Golden hour in the pine forest, at 4K](docs/tour/4k/pine-golden.jpg)
 
 ![He sits and smokes; a thought fades in beside him](docs/tour/poses/thought.jpg)
@@ -43,6 +45,8 @@ The same options work on the command line (`npm start -- --seed moss --speed 20`
 | `--offline` | Never ask Claude; his own voice only. |
 | `--mute` | Start with the sound off. |
 | `--frozen --at M --weather W --pose P` | A still frame for pictures: time stopped at a distance, hour and weather. |
+| `--live` | The live road of the published page instead of your own (below). |
+| `--now TIME --speed X` | On the live road: show another moment (a date, or ms since 1970), running X times faster. |
 | `--no-browser`, `--port N`, `--save PATH` | Serve only; pick the port; keep the journey somewhere else. |
 
 Runs that bend time (`--speed`, `--hour`) or take pictures (`--frozen`, `--at`) are never saved, so they cannot disturb the road.
@@ -54,6 +58,12 @@ Every three to five minutes a short line fades in beside him and out again. With
 ### The journey
 
 The road is saved to `~/.local/share/wander/journey.json` (or under `$XDG_DATA_HOME`): its seed, how far he has come, the clock, what he is doing, and a log of the places he has passed. Close it and open it again and he goes on along the same road. While it was closed he walked on: the time away becomes distance (capped at 20 km), so you come back to somewhere new, with the places he passed in the log.
+
+### The live page
+
+[The published page](https://krystofpe.github.io/Wander/) has no server behind it and saves nothing, yet everyone sees the same wanderer. Each real hour is one of his days. At the top of every hour he lies asleep by the fire at that night's camp, and where each night's camp lies is fixed in advance, so any browser can start from the last camp and live the hour up to now, in the same half-second steps as everyone else's (`src/live.ts`). Through the day a plan brings him to the next camp by nightfall: he never walks past it, waits by it if he is early, and stops for nothing if he is late. Every hour ends exactly where the next begins (`npm run live` checks thousands of them). His thoughts there come from his own voice, picked alike for everyone; a public page cannot hold an API key. Click once for sound (browsers ask for that), double-click or F for full screen.
+
+`npm run site` builds it into `dist/` (the TypeScript with its types stripped, the page marked as the site), and the [Live page workflow](.github/workflows/pages.yml) publishes it on every push to `main`. `npm start -- --live` opens the same road locally.
 
 ## What there is
 
@@ -101,6 +111,9 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 | `npm run listen` | Records the sound of a scene and measures its loudness (EBU R 128). |
 | `npm run bench` | The in-page bench: frame interval, CPU and GPU time, p50 and p99, at 1080p and 4K. |
 | `npm run soak -- --speed 16 --hours 48` | Leaves it running and samples heap, GPU resources and frame time every minute. |
+| `npm run live -- --hours 1000` | Lives the live road's hours one after another and checks that each ends where the next begins. |
+| `npm run site` | Builds the published page into `dist/`. |
+| `npm run site:check` | Serves `dist/` as GitHub Pages would and checks it: the same wanderer as `src/live.ts`, the hour turning without a jump, no requests for anything that is not there. |
 | `npm run art:draw`, `npm run art` | Builds the hand-drawn sprites into Aseprite files, then exports the atlas. |
 
 ## How it is made

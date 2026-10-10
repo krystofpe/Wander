@@ -36,6 +36,10 @@ export type Options = {
   readonly t: number | null;
   /** No frame loop: a tool advances the world step by step (motion capture). */
   readonly manual: boolean;
+  /** The live road (live.ts): the one wanderer everyone sees, his life a function of the real clock. */
+  readonly live: boolean;
+  /** On the live road, the moment to show instead of now (ms since 1970, or a date), for pictures and tests. */
+  readonly now: number | null;
 };
 
 export const DEFAULTS: Options = {
@@ -56,6 +60,8 @@ export const DEFAULTS: Options = {
   mute: false,
   t: null,
   manual: false,
+  live: false,
+  now: null,
 };
 
 /** Option names and whether each takes a value; the command line and the URL share them. */
@@ -77,6 +83,8 @@ export const OPTION_NAMES: Readonly<Record<string, boolean>> = {
   mute: false,
   t: true,
   manual: false,
+  live: false,
+  now: true,
 };
 
 const num = (v: string | null, min: number, max: number): number | null => {
@@ -86,6 +94,13 @@ const num = (v: string | null, min: number, max: number): number | null => {
 };
 
 const flag = (v: string | null): boolean => v !== null && v !== '0' && v !== 'false' && v !== 'no';
+
+/** A moment: milliseconds since 1970, or anything Date can read ("2026-10-11T18:20Z"). */
+const moment = (v: string | null): number | null => {
+  if (v === null || v.trim() === '') return null;
+  const ms = /^\d+$/.test(v) ? Number(v) : Date.parse(v);
+  return Number.isFinite(ms) ? ms : null;
+};
 
 /** Options from a lookup of raw values (URLSearchParams.get, or parsed argv). Unknown or bad values fall back. */
 export function parseOptions(get: (name: string) => string | null): Options {
@@ -109,6 +124,8 @@ export function parseOptions(get: (name: string) => string | null): Options {
     mute: flag(get('mute')),
     t: num(get('t'), 0, 1e9),
     manual: flag(get('manual')),
+    live: flag(get('live')),
+    now: moment(get('now')),
   };
 }
 

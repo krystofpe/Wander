@@ -5,10 +5,11 @@ import { catchUp, newJourney, reviveJourney, roadWord } from '../src/journal.ts'
 import type { Journey } from '../src/journal.ts';
 import { groundAt, stepLife, thoughtContext, weatherOf } from '../src/life.ts';
 import type { Env, Life, LifeEvent, Stage as LifeStage } from '../src/life.ts';
-import { rng } from '../src/noise.ts';
+import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, msOfStep, stepAt, stepLive } from '../src/live.ts';
+import { rng, squirrel } from '../src/noise.ts';
 import { parseOptions, seedOf } from '../src/options.ts';
 import { PX_PER_M } from '../src/layers.ts';
-import { dayOf, hourOfDay, localHour, moonPhase, namedWeather, shownHour, sunElevation } from '../src/sky.ts';
+import { dayOf, hourOfDay, localHour, moonPhase, namedWeather, roadMoon, shownHour, sunElevation } from '../src/sky.ts';
 import { localThought } from '../src/thoughts.ts';
 import { biomeAt, firstStretchOf, landmarkNear, stretchAt } from '../src/world.ts';
 import { Sound, ticker } from './audio/sound.ts';
@@ -21,6 +22,8 @@ import { Stage } from './stage.ts';
 
 const params = new URLSearchParams(location.search);
 const opts = parseOptions((k) => params.get(k));
+/** The published page: plain files, no server behind it (tools/site.ts marks its copy of the page). */
+const site = document.documentElement.hasAttribute('data-site');
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const renderer = new Renderer(canvas, false);
@@ -69,25 +72,56 @@ if (opts.size !== null) {
 
 // ── His life ───────────────────────────────────────────────────────────────
 
-const env: Env = {
-  hourAt: (clock) => (opts.realClock ? localHour(Date.now()) : hourOfDay(clock)),
-  natural: opts.realClock,
-  weather: opts.weather !== null ? namedWeather(opts.weather) : null,
-};
-const dayLength = opts.day * 60;
-/** Runs that bend time or only take pictures are not saved. */
-const ephemeral = opts.frozen || opts.manual || opts.speed !== 1 || opts.hour !== null || opts.bench !== null || opts.at !== null;
 const tool = opts.frozen || opts.manual || opts.bench !== null;
+/** The live road (live.ts): the published page, or `--live` here. Everyone sees the same wanderer, nothing is saved. */
+const shared = (site || opts.live) && !tool;
+const env: Env = shared
+  ? liveEnv(LIVE_SEED)
+  : {
+      hourAt: (clock) => (opts.realClock ? localHour(Date.now()) : hourOfDay(clock)),
+      natural: opts.realClock,
+      weather: opts.weather !== null ? namedWeather(opts.weather) : null,
+    };
+const dayLength = shared ? LIVE.day : opts.day * 60;
+/** Runs that bend time or only take pictures are not saved, and nor is the live road. */
+const ephemeral = shared || opts.frozen || opts.manual || opts.speed !== 1 || opts.hour !== null || opts.bench !== null || opts.at !== null;
+
+/** The live road's moment for a performance.now() time: now (or `?now`, run at `?speed`). */
+let offset = Date.now() - performance.now();
+const startPerf = performance.now();
+const startMs = opts.now ?? Date.now();
+const liveMs = (perf: number): number => (opts.now === null && opts.speed === 1 ? offset + perf : startMs + (perf - startPerf) * opts.speed);
+if (shared) {
+  // The computer's clock is the road's: follow it if it is set again or the machine slept.
+  setInterval(() => {
+    const o = Date.now() - performance.now();
+    if (Math.abs(o - offset) > 250) offset = o;
+  }, 10_000);
+}
+
+/** A live thought at step n: the local voice, with a randomness of the step's own, so everyone hears the same one. */
+const liveThought = (l: Life, n: number): string => localThought(thoughtContext(l, env, roadMoon(l.clock, LIVE.moon)), rng(squirrel(n, LIVE_SEED ^ 0x7409)), l.thoughts);
+const remember = (l: Life, text: string): void => {
+  l.thoughts.push(text);
+  if (l.thoughts.length > 8) l.thoughts.shift();
+};
 
 /**
  * The road: the saved one (caught up on the time away), or a new one. `keep` says whether this run may write over
  * the saved road: not when it only looks at another seed's road, nor when the save could not be read.
  */
 async function road(): Promise<{ journey: Journey; mind: string; keep: boolean }> {
+  if (shared) {
+    // The hour's camp, lived up to now; the thoughts he had on the way are thought too, so the next ones come alike.
+    const life = liveAt(LIVE_SEED, stepAt(liveMs(performance.now())), env, (l, evs, n) => {
+      for (const e of evs) if (e.type === 'thought') remember(l, liveThought(l, n));
+    });
+    return { journey: { version: 2, word: LIVE.word, moonStart: LIVE.moon, startedAt: LIVE.epoch, savedAt: Date.now(), life }, mind: 'local', keep: false };
+  }
   let saved: unknown = null;
   let mind = 'local';
   let keep = true;
-  if (!tool) {
+  if (!tool && !site) {
     try {
       const res = await fetch('/api/journey');
       const body = (await res.json()) as { journey?: unknown; mind?: unknown };
@@ -126,7 +160,12 @@ const started = await road();
 const journey = started.journey;
 /** Who speaks for him: `claude` while the server can ask Claude, `local` otherwise (it may change as replies come). */
 let mind = started.mind;
-const life = journey.life;
+/** The life that is stepped. On the live road it steps in fixed half seconds, and `life`, what is drawn and heard, is
+ * a copy of it in between the last two steps; elsewhere they are one and the same. */
+let sim = journey.life;
+let simStep = shared ? stepAt(liveMs(performance.now())) : 0;
+const life: Life = shared ? { ...sim } : sim;
+journey.life = life;
 status.life = life;
 (status as unknown as { mind: string }).mind = mind;
 const stage = new Stage(life.seed, journey.moonStart);
@@ -204,7 +243,7 @@ function save(beacon: boolean): void {
   if (beacon) navigator.sendBeacon('/api/journey', new Blob([body], { type: 'application/json' }));
   else void fetch('/api/journey', { method: 'PUT', body }).catch(() => {});
 }
-if (!tool) {
+if (!tool && !site) {
   setInterval(() => save(false), 15_000);
   // The server asks for a save when it is about to stop (Ctrl-C in the terminal, the session ending).
   try {
@@ -214,6 +253,8 @@ if (!tool) {
   }
   setInterval(() => void fetch('/api/beat', { method: 'POST' }).catch(() => {}), 15_000);
   addEventListener('pagehide', () => save(true));
+}
+if (!tool) {
   // Keep the screen awake while he walks (asked again whenever the page is shown).
   const wake = (): void => {
     if (document.visibilityState === 'visible') void (navigator as Navigator & { wakeLock?: { request(t: string): Promise<unknown> } }).wakeLock?.request('screen').catch(() => {});
@@ -249,12 +290,11 @@ let asking = false;
 /** A thought is due: ask Claude (through the server) if it is there, otherwise, or if it is slow, the local voice. */
 function think(now: number): void {
   if (asking) return;
-  const ctx = thoughtContext(life, env, stage.view.moonPhase);
-  const local = localThought(ctx, Math.random, life.thoughts);
+  const ctx = thoughtContext(sim, env, stage.view.moonPhase);
+  const local = shared ? liveThought(sim, simStep) : localThought(ctx, Math.random, sim.thoughts);
   const show = (text: string): void => {
     ui.say(text, anim);
-    life.thoughts.push(text);
-    if (life.thoughts.length > 8) life.thoughts.shift();
+    remember(sim, text);
     shown.push(text);
     if (shown.length > 50) shown.shift();
   };
@@ -265,7 +305,7 @@ function think(now: number): void {
   asking = true;
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), 12_000);
-  fetch('/api/thought', { method: 'POST', body: JSON.stringify({ ...ctx, place: BIOMES[ctx.biome as BiomeId]?.title ?? ctx.biome, recent: life.thoughts }), signal: abort.signal })
+  fetch('/api/thought', { method: 'POST', body: JSON.stringify({ ...ctx, place: BIOMES[ctx.biome as BiomeId]?.title ?? ctx.biome, recent: sim.thoughts }), signal: abort.signal })
     .then((r) => r.json() as Promise<{ thought: string | null; mind?: string }>)
     .then((r) => {
       if (r.mind === 'claude' || r.mind === 'local') {
@@ -291,9 +331,17 @@ addEventListener('keydown', (e) => {
   else if (k === 'f') {
     if (document.fullscreenElement === null) void document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
     else void document.exitFullscreen();
-  } else if (k === 'm') sound?.toggle();
+  } else if (k === 'm') {
+    // A page not yet touched holds its sound: this key wakes it (sound.ts), and only turns it off once it plays.
+    if (sound?.waiting !== true) sound?.toggle();
+  }
   else if (k === '+' || k === '=') sound?.volume(1);
   else if (k === '-') sound?.volume(-1);
+});
+
+addEventListener('dblclick', () => {
+  if (document.fullscreenElement === null) void document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  else void document.exitFullscreen();
 });
 
 const pad = (n: number): string => String(Math.floor(n)).padStart(2, '0');
@@ -303,11 +351,11 @@ function barText(hour: number): string {
   const w = weatherOf(life, env);
   const place = BIOMES[stretchAt(life.seed, life.at).biome].title;
   const km = (life.at / 1000).toFixed(1);
-  return `day ${dayOf(life.clock)} on the road · ${km} km · ${place} · ${clockText(shownHour(hour, opts.realClock))} · ${w.name} · mind: ${mind}`;
+  return `day ${dayOf(life.clock)} on the road · ${km} km · ${place} · ${clockText(shownHour(hour, opts.realClock))} · ${w.name} · mind: ${mind}${shared ? ' · live' : ''}`;
 }
 
 function logLines(): string[] {
-  const out: string[] = [`the road from “${journey.word}”`];
+  const out: string[] = [shared ? 'the live road' : `the road from “${journey.word}”`];
   for (let i = life.log.length - 1; i >= 0 && out.length < 32; i--) {
     const e = life.log[i];
     const what = e.kind === 'camp' ? `a night's camp, ${e.name}` : e.kind === 'landmark' ? `a ${e.name}` : e.name;
@@ -321,8 +369,63 @@ function logLines(): string[] {
 const events: LifeEvent[] = [];
 let last = performance.now();
 let anim = opts.t ?? 0;
+let hintUntil = performance.now() + 15_000;
+addEventListener('pointermove', () => {
+  hintUntil = Math.max(hintUntil, performance.now() + 4000);
+});
 let drawnAt = anim;
 let uiAt = 0;
+
+/** What the step before this one looked like, for the frames in between (the live road). */
+const before = { at: 0, walked: 0, clock: 0, smoking: -1, heat: 0 };
+const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
+
+function note(e: LifeEvent): void {
+  if (status.events.length < 400 && e.type !== 'drag' && e.type !== 'exhale') {
+    const what = e.type === 'stage' ? e.stage : e.type === 'act' ? e.act : e.type === 'biome' ? e.id : e.type === 'landmark' ? e.kind : '';
+    status.events.push(`${sim.clock.toFixed(2)} ${e.type}:${what}`);
+  }
+}
+
+/**
+ * The live road: steps up to the step after this moment, then draws in between that one and the one before. A long
+ * gap (a sleeping machine) starts again from the hour's camp; a short one catches up quietly, thinking on the way.
+ */
+function liveShared(now: number): void {
+  const ms = liveMs(now);
+  const target = stepAt(ms) + 1;
+  if (target - simStep > STEPS_PER_DAY) {
+    sim = liveAt(LIVE_SEED, target - 1, env, (l, evs, n) => {
+      for (const e of evs) if (e.type === 'thought') remember(l, liveThought(l, n));
+    });
+    simStep = target - 1;
+  }
+  const loud = target - simStep <= 4;
+  while (simStep < target) {
+    before.at = sim.at;
+    before.walked = sim.walked;
+    before.clock = sim.clock;
+    before.smoking = sim.smoking;
+    before.heat = sim.fire?.heat ?? 0;
+    simStep++;
+    sim = stepLive(sim, simStep, env, events);
+    for (const e of events) {
+      if (e.type === 'thought') {
+        if (loud) think(now);
+        else remember(sim, liveThought(sim, simStep));
+      } else if (loud) sound?.event(e);
+      note(e);
+    }
+  }
+  const k = Math.min(1, Math.max(0, (ms - msOfStep(target - 1)) / (LIVE.tick * 1000)));
+  Object.assign(life, sim);
+  life.at = lerp(before.at, sim.at, k);
+  life.walked = lerp(before.walked, sim.walked, k);
+  life.clock = lerp(before.clock, sim.clock, k);
+  life.stageTime = Math.max(0, sim.stageTime - (1 - k) * LIVE.tick);
+  life.smoking = sim.smoking < 0 || before.smoking < 0 ? sim.smoking : lerp(before.smoking, sim.smoking, k);
+  life.fire = sim.fire === null ? null : { at: sim.fire.at, heat: lerp(before.heat, sim.fire.heat, k) };
+}
 
 /** Lives the time since the last call: his life, its events (thoughts, sounds), the status for the tools. */
 function live(now: number, hidden: boolean): void {
@@ -332,14 +435,15 @@ function live(now: number, hidden: boolean): void {
   last = now;
   anim += dt;
   if (opts.frozen) return;
+  if (shared) {
+    liveShared(now);
+    return;
+  }
   stepLife(life, dt * opts.speed, dayLength, env, events);
   for (const e of events) {
     if (e.type === 'thought') think(now);
     sound?.event(e);
-    if (status.events.length < 400 && e.type !== 'drag' && e.type !== 'exhale') {
-      const what = e.type === 'stage' ? e.stage : e.type === 'act' ? e.act : e.type === 'biome' ? e.id : e.type === 'landmark' ? e.kind : '';
-      status.events.push(`${life.clock.toFixed(2)} ${e.type}:${what}`);
-    }
+    note(e);
   }
 }
 
@@ -358,6 +462,8 @@ function step(now: number): void {
     uiAt = now;
     ui.showBar(barText(hour));
     ui.showLog(logLines());
+    // The published page says, for a while and when the mouse moves, how to hear it and what the keys do.
+    if (site) ui.showHint(now < hintUntil ? `${sound?.waiting === true ? 'click for sound' : 'M sound'} · F full screen · H, L more` : null);
   }
 }
 
@@ -425,6 +531,8 @@ const percentile = (a: Float32Array, n: number, q: number): number => {
 };
 
 Object.assign(status, {
+  /** The live road's last step, for the tools to check against live.ts. */
+  liveStep: () => ({ step: simStep, at: sim.at, stage: sim.stage, clock: sim.clock, drawnAt: life.at, waiting: sound?.waiting ?? null }),
   bench: null as unknown,
   /** One sample for the soak: the road, the JS heap after a collection, GPU resources alive, frame times. */
   soak: () => {

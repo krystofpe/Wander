@@ -463,7 +463,8 @@ function frame(now: number): void {
     renderer.frame(stage.view, opts.frozen ? 999 : 1);
     bench?.end();
     if (bench?.report != null && (status as unknown as { bench: unknown }).bench === null) (status as unknown as { bench: unknown }).bench = bench.report;
-    if (lastFrame > 0) {
+    // A gap of more than a second is a pause (a hidden window), not a frame: it is not counted as one.
+    if (lastFrame > 0 && now - lastFrame < 1000) {
       const i = logged % intervals.length;
       intervals[i] = now - lastFrame;
       cpuTimes[i] = performance.now() - t0;

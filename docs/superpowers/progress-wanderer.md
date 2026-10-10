@@ -6,18 +6,18 @@ The brief is `~/wander-ambient-prompt.md`. Read this file first after a restart,
 
 | # | Item | State | Evidence |
 |---|---|---|---|
-| 1 | `main` is the old `feat/creature`; only `main` and `feat/wanderer` exist locally and on origin | partly: main fast-forwarded to cc5acf5 and pushed; branch deletion blocked by the permission classifier, left to the owner | see "Branch cleanup" |
-| 2 | Research doc with real sources; spec shows how they shaped choices | in progress | |
-| 3 | `npm start` full screen, unattended; 30 min shows 3 biomes blend, sunset, night camp with fire, rain or fog, sit and smoke; sound follows | | |
-| 4 | Tour at 1080p and 4K, every biome/blend/hour/weather beautiful; docs/tour committed; README shows the best | | |
-| 5 | Smooth motion: no shimmer, jitter or popping | | |
-| 6 | Steady 60 fps at 1080p and 4K, in-page bench p50/p99 | | |
-| 7 | Soaks: 48 in-world h at speed; 2 real h at normal speed in background; heap/GPU/frame time flat | | |
-| 8 | Same seed + distance → same place (tested) | | |
-| 9 | Close and reopen continues; time away moves him on | | |
-| 10 | Offline works (`mind: local`); with a key, Claude thoughts and `mind: claude`; slow API never blocks | | |
-| 11 | Terminal and Tamagotchi code gone; `npm test` green; README rewritten; docs/CREDITS.md | | |
-| 12 | Final review of the whole diff against main, findings fixed | | |
+| 1 | `main` is the old `feat/creature`; only `main` and `feat/wanderer` exist locally and on origin | partly: main fast-forwarded to cc5acf5 and pushed; branch deletion refused by the permission classifier, left to the owner | see "Branch cleanup" |
+| 2 | Research doc with real sources; spec shows how they shaped choices | done | docs/research/wanderer-research.md; spec cites R: sections in its choices table |
+| 3 | `npm start` full screen, unattended; 30 min shows 3 biomes blend, sunset, night camp with fire, rain or fog, sit and smoke; sound follows | in progress | `npm run watch` 30 min at speed 3 (docs/watch/) |
+| 4 | Tour at 1080p and 4K, every biome/blend/hour/weather beautiful; docs/tour committed; README shows the best | in progress | `npm run tour`, docs/tour/, README gallery |
+| 5 | Smooth motion: no shimmer, jitter or popping | done | docs/soak/motion-slits.png: 240 frames 1/60 s apart across a border, clean diagonals |
+| 6 | Steady 60 fps at 1080p and 4K, in-page bench p50/p99 | done | docs/soak/bench.json: 8 runs × 30 s, interval p50 16.7 / p99 16.8 ms, 1 late frame in 14 400 |
+| 7 | Soaks: 48 in-world h at speed; 2 real h at normal speed in background; heap/GPU/frame time flat | fast done, 2 h running | docs/soak/fast-48h.json (0 errors, heap 24.4→24.7 MB, 48 textures/52 MB constant); docs/soak/normal-2h.json |
+| 8 | Same seed + distance → same place (tested) | done | test/world.test.ts, test/landmarks.test.ts |
+| 9 | Close and reopen continues; time away moves him on | done | `npm run check` (docs/soak/check.txt), test/journal.test.ts |
+| 10 | Offline works (`mind: local`); with a key, Claude thoughts and `mind: claude`; slow API never blocks | done | `npm run check`: local, claude through the real SDK to a stand-in API, slow/500/401 fall back at 60 fps |
+| 11 | Terminal and Tamagotchi code gone; `npm test` green; README rewritten; docs/CREDITS.md | done | 80 tests pass; README.md; docs/CREDITS.md |
+| 12 | Final review of the whole diff against main, findings fixed | in progress | fresh-eye review |
 | 13 | Draft PR from feat/wanderer into main | | |
 
 ## Branch cleanup (2026-10-09)

@@ -127,8 +127,8 @@ export const BIOME_NAMES = ['forest', 'meadow', 'tundra', 'swamp'] as const;
 export const FORMER_BIOMES: Readonly<Record<string, string>> = { shore: 'Shore', desert: 'Desert' };
 export type BiomeName = (typeof BIOME_NAMES)[number];
 /**
- * Where a creature's scene is set: one of the biomes, or the hollow (called 'deep' in the code), the old wood where
- * they all live now (the page sets it there). The hollow is not a biome a creature can be of.
+ * Where a creature's scene is set: one of the biomes, or the hollow (called 'deep' in the code), the world under the
+ * world where they all live now (the page sets it there). The hollow is not a biome a creature can be of.
  */
 export type PlaceName = BiomeName | 'deep';
 
@@ -145,7 +145,7 @@ export type BiomeDef = {
   readonly cold: boolean;
   /** Under a dense canopy: its home is the great tree, the woods are full of life, the visitor walks at night. */
   readonly canopy: boolean;
-  /** Its home is a nest of moss under a giant toadstool (the hollow), not the great tree or a shelter. */
+  /** Its home is a big mossy stone it sleeps on (the hollow), not the great tree or a shelter. */
   readonly nest?: boolean;
   /** Props besides the home: kind and how many. */
   readonly props: readonly (readonly [PropKind, number])[];
@@ -220,8 +220,8 @@ export const BIOMES: Readonly<Record<PlaceName, BiomeDef>> = {
     finds: ['a frog-shaped stone', 'glowing moss', 'a lily seed', 'a bent spoon', 'a tooth of something', 'a bubble that will not pop'],
     forageFood: 'mushrooms',
   },
-  // The hollow, an old wood under a canopy: it lives in a nest of moss under a giant toadstool, glowing toadstools,
-  // ferns and flowers all about it, giant mushrooms in ranks into the mist; no weather but the mist; butterflies and wisps of
+  // The hollow, the world under the world: it sleeps on a big mossy stone among soft hills of moss and old trees,
+  // ferns and flowers all about it, a few toadstools glowing, giant mushrooms in ranks into the mist; no weather but the mist; butterflies and wisps of
   // light, moths, bats, a pale frog.
   deep: {
     title: 'Hollow',

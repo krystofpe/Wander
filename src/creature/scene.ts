@@ -41,7 +41,7 @@ export type Prop = {
   readonly sprite: Footprint;
   /** Set for the great tree, which stands against the view's left (-1) or right (1) edge, whatever its width. */
   readonly edge?: -1 | 1;
-  /** Set for the nest under its giant mushroom; `variant` 1 turns it round (the mushroom on the left). */
+  /** Set for its stone in the hollow (the code calls it the nest); `variant` 1 turns it round. */
   readonly nest?: boolean;
 };
 
@@ -67,7 +67,7 @@ export type Layout = {
 /** Low things that grow among the others and need no room of their own. */
 const COVER: ReadonlySet<PropKind> = new Set(['shrooms', 'mushrooms', 'fern']);
 const HOME_Z = 0.15;
-/** The nest stands a little nearer than a shelter: its giant mushroom over it, the creature curled in it. */
+/** Its stone stands a little nearer than a shelter. */
 const NEST_Z = 0.28;
 const TREE_Z = 0.22;
 const CAIRN_Z = 0.3;
@@ -116,7 +116,7 @@ export function layoutScene(seed: number, biome: PlaceName): Layout {
   let home: Prop;
   let homeX: number;
   if (def.nest === true) {
-    // In the hollow it sleeps in a nest of moss under a giant toadstool, the toadstool on the side of the view's edge.
+    // In the hollow it sleeps on a big mossy stone, toward the side of the view's edge.
     const sprite = FOOTPRINTS.nest;
     homeX = place(sprite.w / 2, NEST_Z, homeLeft ? 0.12 : 0.62, homeLeft ? 0.38 : 0.88, true);
     home = { kind: 'home', x: homeX, z: NEST_Z, variant: homeLeft ? 1 : 0, sprite, nest: true };

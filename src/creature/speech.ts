@@ -161,7 +161,7 @@ export function localReply(
     return { say: `I'm ${context.mood}.${extra}`, do: null, userName: null };
   }
   if (/who are you|what are you|kdo jsi|co jsi/.test(t)) {
-    return reply(["I'm {name}. I live here, behind the glass.", 'Just a little spirit of moss, with glowing eyes.', "I'm not sure. I was a wisp, once."]);
+    return reply(["I'm {name}. I live here, behind the glass.", 'Just a small thing wearing its moss, down here.', "I'm not sure. I was a wisp, once."]);
   }
   if (/your name|jak se jmenujes/.test(t)) return reply(['{name}. Did you forget already?', "It's {name}."]);
   if (/love you|like you|mam te rad|mam te rada/.test(t)) {

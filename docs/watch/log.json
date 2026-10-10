@@ -1,0 +1,6650 @@
+{
+ "query": "seed=wander&speed=3&size=1280x720",
+ "minutes": 30,
+ "lines": [
+  {
+   "t": 0,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0000.png",
+   "moment": {
+    "day": 1,
+    "hour": 17.29,
+    "sun": 1.8,
+    "at": 1,
+    "biome": "ruins",
+    "weather": "snow",
+    "precip": 0.7,
+    "fog": 0.07,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "chapel",
+    "seen": {
+     "flock": 0,
+     "bats": 0,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "18 leaves"
+    ],
+    "thought": null
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 7,
+    "wind": 0.28,
+    "trees": 0.3,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.43,
+    "crickets": 0,
+    "temperature": 15.9,
+    "fire": 0,
+    "ground": "snow",
+    "ambience": {
+     "leaf": 0,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 1,
+     "lighter": 0,
+     "drag": 0,
+     "exhale": 0,
+     "crackle": 0
+    },
+    "music": {
+     "pluck": 0,
+     "bell": 0,
+     "pad": 0,
+     "motif": 1
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0000.webm",
+    "lufs": -36.9,
+    "peak": -23.2
+   }
+  },
+  {
+   "t": 20,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0001.png",
+   "moment": {
+    "day": 1,
+    "hour": 17.81,
+    "sun": 0.1,
+    "at": 54,
+    "biome": "ruins",
+    "weather": "snow",
+    "precip": 0.7,
+    "fog": 0.07,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "chapel",
+    "seen": {
+     "flock": 0,
+     "bats": 0,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Snow makes it so quiet I can hear the cigarette burn."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.19,
+    "trees": 0.3,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.33,
+    "crickets": 0,
+    "temperature": 15.48,
+    "fire": 0,
+    "ground": "snow",
+    "ambience": {
+     "leaf": 0,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 68,
+     "lighter": 0,
+     "drag": 0,
+     "exhale": 0,
+     "crackle": 0
+    },
+    "music": {
+     "pluck": 2,
+     "bell": 0,
+     "pad": 0,
+     "motif": 1
+    }
+   }
+  },
+  {
+   "t": 40,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0002.png",
+   "moment": {
+    "day": 1,
+    "hour": 18.66,
+    "sun": -1.5,
+    "at": 105,
+    "biome": "ruins→stones 3%",
+    "weather": "snow",
+    "precip": 0.7,
+    "fog": 0.07,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "chapel",
+    "seen": {
+     "flock": 0,
+     "bats": 0,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Snow makes it so quiet I can hear the cigarette burn."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.16,
+    "trees": 0.29,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.22,
+    "crickets": 0,
+    "temperature": 14.51,
+    "fire": 0,
+    "ground": "snow",
+    "ambience": {
+     "leaf": 0,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 135,
+     "lighter": 0,
+     "drag": 0,
+     "exhale": 0,
+     "crackle": 0
+    },
+    "music": {
+     "pluck": 7,
+     "bell": 0,
+     "pad": 0,
+     "motif": 1
+    }
+   }
+  },
+  {
+   "t": 60,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0003.png",
+   "moment": {
+    "day": 1,
+    "hour": 18.96,
+    "sun": -3.2,
+    "at": 157,
+    "biome": "ruins→stones 40%",
+    "weather": "snow",
+    "precip": 0.7,
+    "fog": 0.07,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "chapel",
+    "seen": {
+     "flock": 0,
+     "bats": 0,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Snow makes it so quiet I can hear the cigarette burn."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.15,
+    "trees": 0.22,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.1,
+    "dawn": 0.12,
+    "crickets": 0.06,
+    "temperature": 12.73,
+    "fire": 0,
+    "ground": "snow",
+    "ambience": {
+     "leaf": 0,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 200,
+     "lighter": 0,
+     "drag": 0,
+     "exhale": 0,
+     "crackle": 0
+    },
+    "music": {
+     "pluck": 10,
+     "bell": 0,
+     "pad": 0,
+     "motif": 1
+    }
+   }
+  },
+  {
+   "t": 80,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0004.png",
+   "moment": {
+    "day": 1,
+    "hour": 19.14,
+    "sun": -4.5,
+    "at": 210,
+    "biome": "ruins→stones 69%",
+    "weather": "snow",
+    "precip": 0.63,
+    "fog": 0.14,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "chapel",
+    "seen": {
+     "flock": 0,
+     "bats": 0,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Snow makes it so quiet I can hear the cigarette burn."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 8,
+    "wind": 0.15,
+    "trees": 0.16,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.38,
+    "dawn": 0.06,
+    "crickets": 0.2,
+    "temperature": 11.81,
+    "fire": 0,
+    "ground": "snow",
+    "ambience": {
+     "leaf": 0,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 270,
+     "lighter": 0,
+     "drag": 0,
+     "exhale": 0,
+     "crackle": 0
+    },
+    "music": {
+     "pluck": 15,
+     "bell": 0,
+     "pad": 0,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 100,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0005.png",
+   "moment": {
+    "day": 1,
+    "hour": 19.27,
+    "sun": -5.5,
+    "at": 270,
+    "biome": "ruins→stones 96%",
+    "weather": "rain",
+    "precip": 0.24,
+    "fog": 0.48,
+    "stage": "walk",
+    "act": "look",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "chapel",
+    "seen": {
+     "flock": 0,
+     "bats": 1,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Snow makes it so quiet I can hear the cigarette burn."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 4,
+    "wind": 0.26,
+    "trees": 0.11,
+    "rain": 0.24,
+    "surf": 0,
+    "night": 0.63,
+    "dawn": 0.03,
+    "crickets": 0.32,
+    "temperature": 13.4,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 0,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 331,
+     "lighter": 0,
+     "drag": 0,
+     "exhale": 0,
+     "crackle": 0
+    },
+    "music": {
+     "pluck": 18,
+     "bell": 0,
+     "pad": 0,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 120,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0006.png",
+   "moment": {
+    "day": 1,
+    "hour": 19.38,
+    "sun": -6.5,
+    "at": 299,
+    "biome": "ruins→stones 98%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.7,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": true,
+    "fire": 0,
+    "landmark": "chapel",
+    "seen": {
+     "flock": 0,
+     "bats": 1,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Blue hour. The quietest the world gets before it gets darker."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.26,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.85,
+    "dawn": 0.01,
+    "crickets": 0.43,
+    "temperature": 14.13,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 0,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 351,
+     "lighter": 1,
+     "drag": 2,
+     "exhale": 2,
+     "crackle": 0
+    },
+    "music": {
+     "pluck": 20,
+     "bell": 0,
+     "pad": 0,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0006.webm",
+    "lufs": -32.8,
+    "peak": -22.6
+   }
+  },
+  {
+   "t": 140,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0007.png",
+   "moment": {
+    "day": 1,
+    "hour": 19.49,
+    "sun": -7.5,
+    "at": 299,
+    "biome": "ruins→stones 98%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.7,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": true,
+    "fire": 0,
+    "landmark": "chapel",
+    "seen": {
+     "flock": 0,
+     "bats": 1,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Blue hour. The quietest the world gets before it gets darker."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.35,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.98,
+    "dawn": 0,
+    "crickets": 0.49,
+    "temperature": 14,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 0,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 351,
+     "lighter": 1,
+     "drag": 8,
+     "exhale": 8,
+     "crackle": 0
+    },
+    "music": {
+     "pluck": 26,
+     "bell": 0,
+     "pad": 0,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 160,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0008.png",
+   "moment": {
+    "day": 1,
+    "hour": 19.64,
+    "sun": -9,
+    "at": 299,
+    "biome": "ruins→stones 98%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.7,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": true,
+    "fire": 0,
+    "landmark": "chapel",
+    "seen": {
+     "flock": 0,
+     "bats": 1,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Blue hour. The quietest the world gets before it gets darker."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.32,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.5,
+    "temperature": 13.81,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 0,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 351,
+     "lighter": 1,
+     "drag": 15,
+     "exhale": 14,
+     "crackle": 0
+    },
+    "music": {
+     "pluck": 28,
+     "bell": 2,
+     "pad": 0,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 180,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0009.png",
+   "moment": {
+    "day": 1,
+    "hour": 19.83,
+    "sun": -11,
+    "at": 320,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.7,
+    "stage": "kneel",
+    "act": "camp",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 1,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Blue hour. The quietest the world gets before it gets darker."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 0,
+    "wind": 0.38,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.5,
+    "temperature": 13.51,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 0,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 1,
+     "drag": 16,
+     "exhale": 16,
+     "crackle": 0
+    },
+    "music": {
+     "pluck": 30,
+     "bell": 3,
+     "pad": 0,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 200,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0010.png",
+   "moment": {
+    "day": 1,
+    "hour": 20,
+    "sun": -13,
+    "at": 320,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.7,
+    "stage": "campsit",
+    "act": "camp",
+    "smoking": true,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 1,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 5,
+    "wind": 0.34,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.5,
+    "temperature": 13.29,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 1,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 21,
+     "exhale": 21,
+     "crackle": 84
+    },
+    "music": {
+     "pluck": 33,
+     "bell": 3,
+     "pad": 0,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 220,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0011.png",
+   "moment": {
+    "day": 1,
+    "hour": 20.17,
+    "sun": -15,
+    "at": 320,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.7,
+    "stage": "campsit",
+    "act": "camp",
+    "smoking": true,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 1,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 9,
+    "wind": 0.33,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.5,
+    "temperature": 13.08,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 1,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 27,
+     "exhale": 27,
+     "crackle": 209
+    },
+    "music": {
+     "pluck": 34,
+     "bell": 4,
+     "pad": 3,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 240,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0012.png",
+   "moment": {
+    "day": 1,
+    "hour": 20.33,
+    "sun": -17,
+    "at": 320,
+    "biome": "stones",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0.44,
+    "stage": "lie",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.33,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.5,
+    "temperature": 12.87,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 1,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 359
+    },
+    "music": {
+     "pluck": 36,
+     "bell": 4,
+     "pad": 3,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0012.webm",
+    "lufs": -26.7,
+    "peak": -14.2
+   }
+  },
+  {
+   "t": 260,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0013.png",
+   "moment": {
+    "day": 1,
+    "hour": 20.56,
+    "sun": -20.1,
+    "at": 320,
+    "biome": "stones",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0.07,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.44,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.5,
+    "temperature": 12.57,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 1,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 472
+    },
+    "music": {
+     "pluck": 36,
+     "bell": 4,
+     "pad": 4,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 280,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0014.png",
+   "moment": {
+    "day": 1,
+    "hour": 20.86,
+    "sun": -24.1,
+    "at": 320,
+    "biome": "stones",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.5,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.5,
+    "temperature": 12.18,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 1,
+     "drop": 0,
+     "wave": 0,
+     "owl": 0,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 591
+    },
+    "music": {
+     "pluck": 37,
+     "bell": 4,
+     "pad": 4,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 300,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0015.png",
+   "moment": {
+    "day": 1,
+    "hour": 21.15,
+    "sun": -28.1,
+    "at": 320,
+    "biome": "stones",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.41,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.5,
+    "temperature": 11.8,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 1,
+     "drop": 0,
+     "wave": 0,
+     "owl": 1,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 712
+    },
+    "music": {
+     "pluck": 37,
+     "bell": 4,
+     "pad": 4,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 320,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0016.png",
+   "moment": {
+    "day": 1,
+    "hour": 21.45,
+    "sun": -32.1,
+    "at": 320,
+    "biome": "stones",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.8,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.5,
+    "temperature": 11.41,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 1,
+     "drop": 0,
+     "wave": 0,
+     "owl": 1,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 793
+    },
+    "music": {
+     "pluck": 37,
+     "bell": 4,
+     "pad": 4,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 340,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0017.png",
+   "moment": {
+    "day": 1,
+    "hour": 21.76,
+    "sun": -36.1,
+    "at": 320,
+    "biome": "stones",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 5,
+    "wind": 0.58,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.5,
+    "temperature": 11.01,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 1,
+     "drop": 0,
+     "wave": 0,
+     "owl": 1,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 923
+    },
+    "music": {
+     "pluck": 37,
+     "bell": 4,
+     "pad": 5,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 360,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0018.png",
+   "moment": {
+    "day": 1,
+    "hour": 22.09,
+    "sun": -40.1,
+    "at": 320,
+    "biome": "stones",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.81,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 10.59,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 1,
+     "drop": 0,
+     "wave": 0,
+     "owl": 1,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 1040
+    },
+    "music": {
+     "pluck": 37,
+     "bell": 4,
+     "pad": 5,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 380,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0019.png",
+   "moment": {
+    "day": 1,
+    "hour": 22.47,
+    "sun": -44.1,
+    "at": 320,
+    "biome": "stones",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.73,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 10.12,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 3,
+     "drop": 0,
+     "wave": 0,
+     "owl": 1,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 1144
+    },
+    "music": {
+     "pluck": 38,
+     "bell": 4,
+     "pad": 5,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0019.webm",
+    "lufs": -24,
+    "peak": -12.2
+   }
+  },
+  {
+   "t": 400,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0020.png",
+   "moment": {
+    "day": 1,
+    "hour": 22.94,
+    "sun": -48.1,
+    "at": 320,
+    "biome": "stones",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 7,
+    "wind": 0.76,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 9.57,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 4,
+     "drop": 0,
+     "wave": 0,
+     "owl": 1,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 1274
+    },
+    "music": {
+     "pluck": 39,
+     "bell": 4,
+     "pad": 5,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 420,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0021.png",
+   "moment": {
+    "day": 2,
+    "hour": 0.16,
+    "sun": -51.9,
+    "at": 320,
+    "biome": "stones",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 6,
+    "wind": 0.49,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 8.33,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 6,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 1392
+    },
+    "music": {
+     "pluck": 39,
+     "bell": 4,
+     "pad": 6,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 440,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0022.png",
+   "moment": {
+    "day": 2,
+    "hour": 1.09,
+    "sun": -47.9,
+    "at": 320,
+    "biome": "stones",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.67,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7.62,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 10,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 1503
+    },
+    "music": {
+     "pluck": 39,
+     "bell": 4,
+     "pad": 7,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 460,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0023.png",
+   "moment": {
+    "day": 2,
+    "hour": 1.55,
+    "sun": -43.9,
+    "at": 320,
+    "biome": "stones",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 9,
+    "wind": 0.39,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7.36,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 1590
+    },
+    "music": {
+     "pluck": 39,
+     "bell": 5,
+     "pad": 8,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 480,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0024.png",
+   "moment": {
+    "day": 2,
+    "hour": 1.92,
+    "sun": -39.9,
+    "at": 320,
+    "biome": "stones",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.36,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7.2,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 1692
+    },
+    "music": {
+     "pluck": 40,
+     "bell": 6,
+     "pad": 8,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 500,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0025.png",
+   "moment": {
+    "day": 2,
+    "hour": 2.25,
+    "sun": -35.9,
+    "at": 320,
+    "biome": "stones",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.31,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7.1,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 1794
+    },
+    "music": {
+     "pluck": 42,
+     "bell": 6,
+     "pad": 8,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 520,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0026.png",
+   "moment": {
+    "day": 2,
+    "hour": 2.56,
+    "sun": -31.9,
+    "at": 320,
+    "biome": "stones",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 6,
+    "wind": 0.09,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7.03,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 1907
+    },
+    "music": {
+     "pluck": 43,
+     "bell": 6,
+     "pad": 9,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0026.webm",
+    "lufs": -26.8,
+    "peak": -13.6
+   }
+  },
+  {
+   "t": 540,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0027.png",
+   "moment": {
+    "day": 2,
+    "hour": 2.86,
+    "sun": -27.9,
+    "at": 320,
+    "biome": "stones",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0.28,
+    "stage": "campsit",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody hauled these stones up here. I hope they got to rest after."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 7,
+    "wind": 0.19,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2043
+    },
+    "music": {
+     "pluck": 48,
+     "bell": 7,
+     "pad": 9,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 560,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0028.png",
+   "moment": {
+    "day": 2,
+    "hour": 3.15,
+    "sun": -23.9,
+    "at": 320,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.7,
+    "stage": "campsit",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 2,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Every sound at this hour sounds like someone coming."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 6,
+    "wind": 0.09,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2193
+    },
+    "music": {
+     "pluck": 52,
+     "bell": 8,
+     "pad": 10,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 580,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0029.png",
+   "moment": {
+    "day": 2,
+    "hour": 3.45,
+    "sun": -19.9,
+    "at": 320,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.77,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Every sound at this hour sounds like someone coming."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 8,
+    "wind": 0.17,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7.03,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2308
+    },
+    "music": {
+     "pluck": 53,
+     "bell": 8,
+     "pad": 10,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 600,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0030.png",
+   "moment": {
+    "day": 2,
+    "hour": 3.72,
+    "sun": -16.4,
+    "at": 320,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.77,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Every sound at this hour sounds like someone coming."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.09,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7.09,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2413
+    },
+    "music": {
+     "pluck": 53,
+     "bell": 9,
+     "pad": 11,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 620,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0031.png",
+   "moment": {
+    "day": 2,
+    "hour": 3.96,
+    "sun": -13.4,
+    "at": 320,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.77,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Every sound at this hour sounds like someone coming."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 4,
+    "wind": 0.21,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7.16,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2522
+    },
+    "music": {
+     "pluck": 54,
+     "bell": 9,
+     "pad": 11,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 640,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0032.png",
+   "moment": {
+    "day": 2,
+    "hour": 4.23,
+    "sun": -10.4,
+    "at": 320,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.77,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Every sound at this hour sounds like someone coming."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 5,
+    "wind": 0.2,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 7.26,
+    "fire": 1,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2663
+    },
+    "music": {
+     "pluck": 55,
+     "bell": 9,
+     "pad": 12,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 660,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0033.png",
+   "moment": {
+    "day": 2,
+    "hour": 4.52,
+    "sun": -7.4,
+    "at": 320,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.77,
+    "stage": "pack",
+    "act": "camp",
+    "smoking": false,
+    "fire": 0.95,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Every sound at this hour sounds like someone coming."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 8,
+    "wind": 0.31,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.98,
+    "dawn": 0.01,
+    "crickets": 0,
+    "temperature": 7.39,
+    "fire": 0.95,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 366,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2769
+    },
+    "music": {
+     "pluck": 58,
+     "bell": 10,
+     "pad": 12,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0033.webm",
+    "lufs": -28.2,
+    "peak": -14.8
+   }
+  },
+  {
+   "t": 680,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0034.png",
+   "moment": {
+    "day": 2,
+    "hour": 4.74,
+    "sun": -5.5,
+    "at": 332,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.8,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Every sound at this hour sounds like someone coming."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.46,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.62,
+    "dawn": 0.09,
+    "crickets": 0,
+    "temperature": 7.51,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 375,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 59,
+     "bell": 10,
+     "pad": 12,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 700,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0035.png",
+   "moment": {
+    "day": 2,
+    "hour": 4.86,
+    "sun": -4.5,
+    "at": 402,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.92,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Every sound at this hour sounds like someone coming."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.47,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.37,
+    "dawn": 0.18,
+    "crickets": 0,
+    "temperature": 7.58,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 421,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 60,
+     "bell": 10,
+     "pad": 12,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 720,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0036.png",
+   "moment": {
+    "day": 2,
+    "hour": 5.12,
+    "sun": -2.7,
+    "at": 473,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 1,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 0,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Old stones, older than any name for them."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.37,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.04,
+    "dawn": 0.41,
+    "crickets": 0,
+    "temperature": 7.75,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 466,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 62,
+     "bell": 10,
+     "pad": 12,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 740,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0037.png",
+   "moment": {
+    "day": 2,
+    "hour": 5.77,
+    "sun": -0.2,
+    "at": 487,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 1,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 1,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "flock of 5"
+    ],
+    "thought": "Old stones, older than any name for them."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.34,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.8,
+    "crickets": 0,
+    "temperature": 8.25,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 0
+    },
+    "body": {
+     "step": 475,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 63,
+     "bell": 10,
+     "pad": 12,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 760,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0038.png",
+   "moment": {
+    "day": 2,
+    "hour": 6.81,
+    "sun": 2.3,
+    "at": 487,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 1,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 1,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Old stones, older than any name for them."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.22,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 1,
+    "crickets": 0,
+    "temperature": 9.29,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 1
+    },
+    "body": {
+     "step": 475,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 13,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 780,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0039.png",
+   "moment": {
+    "day": 2,
+    "hour": 7.18,
+    "sun": 4.8,
+    "at": 512,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 1,
+    "stage": "walk",
+    "act": "look",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 1,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Old stones, older than any name for them."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.27,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 1,
+    "crickets": 0,
+    "temperature": 9.71,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 1
+    },
+    "body": {
+     "step": 492,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 14,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0039.webm",
+    "lufs": -35.6,
+    "peak": -20.2
+   }
+  },
+  {
+   "t": 800,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0040.png",
+   "moment": {
+    "day": 2,
+    "hour": 7.61,
+    "sun": 8.7,
+    "at": 562,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 1,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 1,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "The birds start before the sun. They always know first."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.12,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.56,
+    "crickets": 0,
+    "temperature": 10.22,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 3
+    },
+    "body": {
+     "step": 524,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 14,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 820,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0041.png",
+   "moment": {
+    "day": 2,
+    "hour": 8.07,
+    "sun": 13.8,
+    "at": 629,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 1,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 1,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "The birds start before the sun. They always know first."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.29,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.19,
+    "crickets": 0,
+    "temperature": 10.79,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 4
+    },
+    "body": {
+     "step": 568,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 14,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 840,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0042.png",
+   "moment": {
+    "day": 2,
+    "hour": 8.47,
+    "sun": 18.9,
+    "at": 696,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.88,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 1,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "The birds start before the sun. They always know first."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.34,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 11.31,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 4
+    },
+    "body": {
+     "step": 613,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 14,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 860,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0043.png",
+   "moment": {
+    "day": 2,
+    "hour": 8.85,
+    "sun": 24,
+    "at": 761,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.69,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 1,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "The birds start before the sun. They always know first."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.32,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 11.81,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 4
+    },
+    "body": {
+     "step": 661,
+     "lighter": 2,
+     "drag": 32,
+     "exhale": 32,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 14,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 880,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0044.png",
+   "moment": {
+    "day": 2,
+    "hour": 9.23,
+    "sun": 29.1,
+    "at": 770,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.66,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": true,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 1,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "The birds start before the sun. They always know first."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.38,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 12.3,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 4
+    },
+    "body": {
+     "step": 668,
+     "lighter": 3,
+     "drag": 38,
+     "exhale": 37,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 15,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 900,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0045.png",
+   "moment": {
+    "day": 2,
+    "hour": 9.61,
+    "sun": 34.2,
+    "at": 770,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.66,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": true,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 2,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "flock of 8"
+    ],
+    "thought": "I could still find my way around the village with one bus a day in the dark. It does not help out here."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.5,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 12.8,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 4
+    },
+    "body": {
+     "step": 668,
+     "lighter": 3,
+     "drag": 44,
+     "exhale": 44,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 15,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0045.webm",
+    "lufs": -31.5,
+    "peak": -21.3
+   }
+  },
+  {
+   "t": 920,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0046.png",
+   "moment": {
+    "day": 2,
+    "hour": 10.03,
+    "sun": 39.3,
+    "at": 770,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.66,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 2,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "I could still find my way around the village with one bus a day in the dark. It does not help out here."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 0,
+    "wind": 0.44,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 13.33,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 11,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 4
+    },
+    "body": {
+     "step": 668,
+     "lighter": 3,
+     "drag": 48,
+     "exhale": 48,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 15,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 940,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0047.png",
+   "moment": {
+    "day": 2,
+    "hour": 10.51,
+    "sun": 44.4,
+    "at": 830,
+    "biome": "stones",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.66,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 2,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "I could still find my way around the village with one bus a day in the dark. It does not help out here."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.59,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 13.92,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 13,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 4
+    },
+    "body": {
+     "step": 736,
+     "lighter": 3,
+     "drag": 48,
+     "exhale": 48,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 960,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0048.png",
+   "moment": {
+    "day": 2,
+    "hour": 11.17,
+    "sun": 49.6,
+    "at": 891,
+    "biome": "stones→meadow 3%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.66,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 2,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "I could still find my way around the village with one bus a day in the dark. It does not help out here."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.53,
+    "trees": 0.1,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 14.92,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 15,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 4
+    },
+    "body": {
+     "step": 810,
+     "lighter": 3,
+     "drag": 48,
+     "exhale": 48,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 64,
+     "bell": 11,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 980,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0049.png",
+   "moment": {
+    "day": 2,
+    "hour": 12.87,
+    "sun": 49.3,
+    "at": 927,
+    "biome": "stones→meadow 33%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.67,
+    "stage": "back",
+    "act": "look",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 2,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody else lives in the house on Linden Street now. Their furniture, their arguments."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 0,
+    "wind": 0.35,
+    "trees": 0.15,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 18.88,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 15,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 4
+    },
+    "body": {
+     "step": 845,
+     "lighter": 3,
+     "drag": 48,
+     "exhale": 48,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 65,
+     "bell": 11,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1000,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0050.png",
+   "moment": {
+    "day": 2,
+    "hour": 13.52,
+    "sun": 44.2,
+    "at": 992,
+    "biome": "stones→meadow 77%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.52,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 2,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 0,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody else lives in the house on Linden Street now. Their furniture, their arguments."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.31,
+    "trees": 0.22,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 22.81,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 15,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 889,
+     "lighter": 3,
+     "drag": 48,
+     "exhale": 48,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 65,
+     "bell": 11,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1020,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0051.png",
+   "moment": {
+    "day": 2,
+    "hour": 13.99,
+    "sun": 39.1,
+    "at": 1059,
+    "biome": "stones→meadow 99%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.78,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 3,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "flock of 11"
+    ],
+    "thought": "Somebody else lives in the house on Linden Street now. Their furniture, their arguments."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.21,
+    "trees": 0.25,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 24.77,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 15,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 934,
+     "lighter": 3,
+     "drag": 48,
+     "exhale": 48,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 65,
+     "bell": 11,
+     "pad": 16,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0051.webm",
+    "lufs": -35.1,
+    "peak": -20.7
+   }
+  },
+  {
+   "t": 1040,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0052.png",
+   "moment": {
+    "day": 2,
+    "hour": 14.4,
+    "sun": 34,
+    "at": 1105,
+    "biome": "meadow",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.78,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": true,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 3,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody else lives in the house on Linden Street now. Their furniture, their arguments."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.28,
+    "trees": 0.25,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 24.94,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 15,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 969,
+     "lighter": 4,
+     "drag": 50,
+     "exhale": 50,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 67,
+     "bell": 11,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1060,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0053.png",
+   "moment": {
+    "day": 2,
+    "hour": 14.79,
+    "sun": 28.9,
+    "at": 1105,
+    "biome": "meadow",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.78,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": true,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 3,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Somebody else lives in the house on Linden Street now. Their furniture, their arguments."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.4,
+    "trees": 0.25,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 24.99,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 15,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 969,
+     "lighter": 4,
+     "drag": 56,
+     "exhale": 56,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 69,
+     "bell": 12,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1080,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0054.png",
+   "moment": {
+    "day": 2,
+    "hour": 15.16,
+    "sun": 23.8,
+    "at": 1105,
+    "biome": "meadow",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.78,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 3,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 0,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "One more, then I walk on."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 4,
+    "wind": 0.21,
+    "trees": 0.25,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 25,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 15,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 970,
+     "lighter": 4,
+     "drag": 63,
+     "exhale": 62,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 71,
+     "bell": 12,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1100,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0055.png",
+   "moment": {
+    "day": 2,
+    "hour": 15.55,
+    "sun": 18.7,
+    "at": 1172,
+    "biome": "meadow",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.78,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 4,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 17,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "flock of 6"
+    ],
+    "thought": "One more, then I walk on."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.38,
+    "trees": 0.25,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.15,
+    "crickets": 0,
+    "temperature": 24.95,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 15,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 1017,
+     "lighter": 4,
+     "drag": 63,
+     "exhale": 62,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 73,
+     "bell": 12,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1120,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0056.png",
+   "moment": {
+    "day": 2,
+    "hour": 15.95,
+    "sun": 13.6,
+    "at": 1240,
+    "biome": "meadow",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.78,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 4,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "flock of 6"
+    ],
+    "thought": "One more, then I walk on."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 5,
+    "wind": 0.26,
+    "trees": 0.25,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.17,
+    "crickets": 0,
+    "temperature": 24.85,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 21,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 1061,
+     "lighter": 4,
+     "drag": 63,
+     "exhale": 62,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 76,
+     "bell": 12,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1140,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0057.png",
+   "moment": {
+    "day": 2,
+    "hour": 16.42,
+    "sun": 8.4,
+    "at": 1305,
+    "biome": "meadow",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.5,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 4,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "One more, then I walk on."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.33,
+    "trees": 0.25,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.3,
+    "crickets": 0,
+    "temperature": 24.66,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 23,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 1110,
+     "lighter": 4,
+     "drag": 63,
+     "exhale": 62,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 78,
+     "bell": 12,
+     "pad": 16,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0057.webm",
+    "lufs": -33.1,
+    "peak": -18
+   }
+  },
+  {
+   "t": 1160,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0058.png",
+   "moment": {
+    "day": 2,
+    "hour": 16.78,
+    "sun": 5.1,
+    "at": 1373,
+    "biome": "meadow→autumn 10%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0.07,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 4,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 0,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [],
+    "thought": "Not a cloud. The sky looks rinsed."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.52,
+    "trees": 0.31,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.46,
+    "crickets": 0,
+    "temperature": 23.8,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 27,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 1157,
+     "lighter": 4,
+     "drag": 63,
+     "exhale": 62,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 80,
+     "bell": 12,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1180,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0059.png",
+   "moment": {
+    "day": 2,
+    "hour": 17,
+    "sun": 3.5,
+    "at": 1417,
+    "biome": "meadow→autumn 40%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": true,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 4,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 16,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "9 leaves"
+    ],
+    "thought": "Not a cloud. The sky looks rinsed."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.46,
+    "trees": 0.49,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.47,
+    "crickets": 0,
+    "temperature": 21.53,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 48,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 1186,
+     "lighter": 5,
+     "drag": 65,
+     "exhale": 64,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 81,
+     "bell": 12,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1200,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0060.png",
+   "moment": {
+    "day": 2,
+    "hour": 17.29,
+    "sun": 1.8,
+    "at": 1417,
+    "biome": "meadow→autumn 40%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": true,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 4,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 39,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "10 leaves"
+    ],
+    "thought": "Not a cloud. The sky looks rinsed."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 5,
+    "wind": 0.45,
+    "trees": 0.49,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.43,
+    "crickets": 0,
+    "temperature": 21.33,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 86,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 5
+    },
+    "body": {
+     "step": 1186,
+     "lighter": 5,
+     "drag": 72,
+     "exhale": 70,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 84,
+     "bell": 12,
+     "pad": 16,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1220,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0061.png",
+   "moment": {
+    "day": 2,
+    "hour": 17.81,
+    "sun": 0.1,
+    "at": 1417,
+    "biome": "meadow→autumn 40%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sit",
+    "act": "sit",
+    "smoking": true,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 4,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 58,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "6 leaves"
+    ],
+    "thought": "In the village with one bus a day, Teo would check the locks twice. Odd what comes back out here."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.28,
+    "trees": 0.49,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.33,
+    "crickets": 0,
+    "temperature": 20.9,
+    "fire": 0,
+    "ground": "grass",
+    "ambience": {
+     "leaf": 105,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 6
+    },
+    "body": {
+     "step": 1186,
+     "lighter": 5,
+     "drag": 78,
+     "exhale": 77,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 86,
+     "bell": 12,
+     "pad": 17,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1240,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0062.png",
+   "moment": {
+    "day": 2,
+    "hour": 18.66,
+    "sun": -1.5,
+    "at": 1449,
+    "biome": "meadow→autumn 60%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": "house",
+    "seen": {
+     "flock": 5,
+     "bats": 3,
+     "fireflies": 0,
+     "leaves": 78,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "flock of 8",
+     "5 leaves"
+    ],
+    "thought": "In the village with one bus a day, Teo would check the locks twice. Odd what comes back out here."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.32,
+    "trees": 0.61,
+    "rain": 0,
+    "surf": 0,
+    "night": 0,
+    "dawn": 0.22,
+    "crickets": 0,
+    "temperature": 18.69,
+    "fire": 0,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 118,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 6
+    },
+    "body": {
+     "step": 1208,
+     "lighter": 5,
+     "drag": 79,
+     "exhale": 78,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 87,
+     "bell": 13,
+     "pad": 17,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1260,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0063.png",
+   "moment": {
+    "day": 2,
+    "hour": 18.96,
+    "sun": -3.2,
+    "at": 1515,
+    "biome": "meadow→autumn 89%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "walk",
+    "act": "walk",
+    "smoking": false,
+    "fire": 0,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 4,
+     "fireflies": 0,
+     "leaves": 110,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "12 leaves"
+    ],
+    "thought": "In the village with one bus a day, Teo would check the locks twice. Odd what comes back out here."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.3,
+    "trees": 0.78,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.1,
+    "dawn": 0.12,
+    "crickets": 0.06,
+    "temperature": 16.35,
+    "fire": 0,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 144,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1256,
+     "lighter": 5,
+     "drag": 79,
+     "exhale": 78,
+     "crackle": 2794
+    },
+    "music": {
+     "pluck": 88,
+     "bell": 13,
+     "pad": 17,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0063.webm",
+    "lufs": -30,
+    "peak": -15.3
+   }
+  },
+  {
+   "t": 1280,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0064.png",
+   "moment": {
+    "day": 2,
+    "hour": 19.14,
+    "sun": -4.5,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "campsit",
+    "act": "camp",
+    "smoking": true,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 4,
+     "fireflies": 2,
+     "leaves": 148,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "18 leaves"
+    ],
+    "thought": "In the village with one bus a day, Teo would check the locks twice. Odd what comes back out here."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 11,
+    "wind": 0.19,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.38,
+    "dawn": 0.06,
+    "crickets": 0.21,
+    "temperature": 15.96,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 169,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 83,
+     "exhale": 82,
+     "crackle": 2867
+    },
+    "music": {
+     "pluck": 90,
+     "bell": 14,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1300,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0065.png",
+   "moment": {
+    "day": 2,
+    "hour": 19.27,
+    "sun": -5.5,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "campsit",
+    "act": "camp",
+    "smoking": true,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 4,
+     "fireflies": 3,
+     "leaves": 179,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "17 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 6,
+    "wind": 0.16,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.63,
+    "dawn": 0.03,
+    "crickets": 0.34,
+    "temperature": 15.82,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 170,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 89,
+     "exhale": 88,
+     "crackle": 2996
+    },
+    "music": {
+     "pluck": 92,
+     "bell": 14,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1320,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0066.png",
+   "moment": {
+    "day": 2,
+    "hour": 19.38,
+    "sun": -6.5,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "lie",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 4,
+     "fireflies": 4,
+     "leaves": 208,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "15 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.19,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.85,
+    "dawn": 0.01,
+    "crickets": 0.46,
+    "temperature": 15.68,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 170,
+     "drop": 0,
+     "wave": 0,
+     "owl": 2,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 3114
+    },
+    "music": {
+     "pluck": 94,
+     "bell": 15,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1340,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0067.png",
+   "moment": {
+    "day": 2,
+    "hour": 19.49,
+    "sun": -7.5,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 4,
+     "fireflies": 5,
+     "leaves": 233,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "10 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.19,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 0.98,
+    "dawn": 0,
+    "crickets": 0.53,
+    "temperature": 15.55,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 170,
+     "drop": 0,
+     "wave": 0,
+     "owl": 3,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 3227
+    },
+    "music": {
+     "pluck": 95,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1360,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0068.png",
+   "moment": {
+    "day": 2,
+    "hour": 19.64,
+    "sun": -9,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 4,
+     "fireflies": 6,
+     "leaves": 258,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "12 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.09,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 15.37,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 170,
+     "drop": 0,
+     "wave": 0,
+     "owl": 3,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 3334
+    },
+    "music": {
+     "pluck": 95,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1380,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0069.png",
+   "moment": {
+    "day": 2,
+    "hour": 19.83,
+    "sun": -11,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 4,
+     "fireflies": 8,
+     "leaves": 283,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "11 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.12,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 15.14,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 170,
+     "drop": 0,
+     "wave": 0,
+     "owl": 3,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 3421
+    },
+    "music": {
+     "pluck": 95,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0069.webm",
+    "lufs": -26.8,
+    "peak": -15.6
+   }
+  },
+  {
+   "t": 1400,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0070.png",
+   "moment": {
+    "day": 2,
+    "hour": 20,
+    "sun": -13,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 4,
+     "fireflies": 9,
+     "leaves": 307,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "10 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 0,
+    "wind": 0.12,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 14.92,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 170,
+     "drop": 0,
+     "wave": 0,
+     "owl": 3,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 3533
+    },
+    "music": {
+     "pluck": 97,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1420,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0071.png",
+   "moment": {
+    "day": 2,
+    "hour": 20.17,
+    "sun": -15,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 4,
+     "fireflies": 10,
+     "leaves": 338,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "15 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 7,
+    "wind": 0.26,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 14.71,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 170,
+     "drop": 0,
+     "wave": 0,
+     "owl": 3,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 3625
+    },
+    "music": {
+     "pluck": 100,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1440,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0072.png",
+   "moment": {
+    "day": 2,
+    "hour": 20.33,
+    "sun": -17,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "clear",
+    "precip": 0,
+    "fog": 0.28,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 374,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "18 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 5,
+    "wind": 0.24,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 14.5,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 185,
+     "drop": 0,
+     "wave": 0,
+     "owl": 3,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 3755
+    },
+    "music": {
+     "pluck": 100,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1460,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0073.png",
+   "moment": {
+    "day": 2,
+    "hour": 20.56,
+    "sun": -20.1,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.69,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 406,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "15 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 4,
+    "wind": 0.22,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 14.2,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 195,
+     "drop": 0,
+     "wave": 0,
+     "owl": 3,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 3859
+    },
+    "music": {
+     "pluck": 100,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1480,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0074.png",
+   "moment": {
+    "day": 2,
+    "hour": 20.86,
+    "sun": -24.1,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.77,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 434,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "13 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 4,
+    "wind": 0.1,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 13.81,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 203,
+     "drop": 0,
+     "wave": 0,
+     "owl": 3,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 3966
+    },
+    "music": {
+     "pluck": 101,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1500,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0075.png",
+   "moment": {
+    "day": 2,
+    "hour": 21.15,
+    "sun": -28.1,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.77,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 457,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "11 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 2,
+    "wind": 0.1,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 13.43,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 203,
+     "drop": 0,
+     "wave": 0,
+     "owl": 4,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 4093
+    },
+    "music": {
+     "pluck": 102,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0075.webm",
+    "lufs": -26.8,
+    "peak": -14.1
+   }
+  },
+  {
+   "t": 1520,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0076.png",
+   "moment": {
+    "day": 2,
+    "hour": 21.45,
+    "sun": -32.1,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.77,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 483,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "15 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 1,
+    "wind": 0.18,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 13.04,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 203,
+     "drop": 0,
+     "wave": 0,
+     "owl": 4,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 4186
+    },
+    "music": {
+     "pluck": 104,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1540,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0077.png",
+   "moment": {
+    "day": 2,
+    "hour": 21.76,
+    "sun": -36.1,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.77,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 513,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "14 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.28,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 12.64,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 203,
+     "drop": 0,
+     "wave": 0,
+     "owl": 4,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 4303
+    },
+    "music": {
+     "pluck": 106,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1560,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0078.png",
+   "moment": {
+    "day": 2,
+    "hour": 22.09,
+    "sun": -40.1,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.77,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 545,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "12 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 9,
+    "wind": 0.22,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 12.22,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 203,
+     "drop": 0,
+     "wave": 0,
+     "owl": 4,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 4395
+    },
+    "music": {
+     "pluck": 107,
+     "bell": 16,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1580,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0079.png",
+   "moment": {
+    "day": 2,
+    "hour": 22.47,
+    "sun": -44.1,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.68,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 586,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "20 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 5,
+    "wind": 0.31,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 11.75,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 203,
+     "drop": 0,
+     "wave": 0,
+     "owl": 4,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 4496
+    },
+    "music": {
+     "pluck": 108,
+     "bell": 18,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1600,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0080.png",
+   "moment": {
+    "day": 2,
+    "hour": 22.94,
+    "sun": -48.1,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0.26,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 633,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "21 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.32,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0.54,
+    "temperature": 11.2,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 221,
+     "drop": 0,
+     "wave": 0,
+     "owl": 4,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 4582
+    },
+    "music": {
+     "pluck": 111,
+     "bell": 18,
+     "pad": 18,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1620,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0081.png",
+   "moment": {
+    "day": 3,
+    "hour": 0.16,
+    "sun": -51.9,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 688,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "25 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 4,
+    "wind": 0.44,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 9.95,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 261,
+     "drop": 0,
+     "wave": 0,
+     "owl": 4,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 4655
+    },
+    "music": {
+     "pluck": 111,
+     "bell": 18,
+     "pad": 18,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0081.webm",
+    "lufs": -24.9,
+    "peak": -12.7
+   }
+  },
+  {
+   "t": 1640,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0082.png",
+   "moment": {
+    "day": 3,
+    "hour": 1.09,
+    "sun": -47.9,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 748,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "21 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 7,
+    "wind": 0.53,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 9.24,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 330,
+     "drop": 0,
+     "wave": 0,
+     "owl": 4,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 4772
+    },
+    "music": {
+     "pluck": 112,
+     "bell": 18,
+     "pad": 20,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1660,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0083.png",
+   "moment": {
+    "day": 3,
+    "hour": 1.55,
+    "sun": -43.9,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 805,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "23 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 3,
+    "wind": 0.45,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 8.98,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 389,
+     "drop": 0,
+     "wave": 0,
+     "owl": 5,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 4916
+    },
+    "music": {
+     "pluck": 112,
+     "bell": 18,
+     "pad": 20,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1680,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0084.png",
+   "moment": {
+    "day": 3,
+    "hour": 1.92,
+    "sun": -39.9,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 861,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "24 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 6,
+    "wind": 0.42,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 8.83,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 448,
+     "drop": 0,
+     "wave": 0,
+     "owl": 5,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 5021
+    },
+    "music": {
+     "pluck": 112,
+     "bell": 18,
+     "pad": 21,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1700,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0085.png",
+   "moment": {
+    "day": 3,
+    "hour": 2.25,
+    "sun": -35.9,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 922,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "27 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 11,
+    "wind": 0.63,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 8.72,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 529,
+     "drop": 0,
+     "wave": 0,
+     "owl": 5,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 5155
+    },
+    "music": {
+     "pluck": 112,
+     "bell": 20,
+     "pad": 22,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1720,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0086.png",
+   "moment": {
+    "day": 3,
+    "hour": 2.56,
+    "sun": -31.9,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 979,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "28 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 9,
+    "wind": 0.59,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 8.66,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 617,
+     "drop": 0,
+     "wave": 0,
+     "owl": 5,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 5292
+    },
+    "music": {
+     "pluck": 112,
+     "bell": 20,
+     "pad": 22,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1740,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0087.png",
+   "moment": {
+    "day": 3,
+    "hour": 2.86,
+    "sun": -27.9,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "cloudy",
+    "precip": 0,
+    "fog": 0.26,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 1034,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "25 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 5,
+    "wind": 0.64,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 8.63,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 723,
+     "drop": 0,
+     "wave": 0,
+     "owl": 5,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 5414
+    },
+    "music": {
+     "pluck": 113,
+     "bell": 20,
+     "pad": 22,
+     "motif": 2
+    }
+   },
+   "clip": {
+    "file": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0087.webm",
+    "lufs": -23.3,
+    "peak": -12.7
+   }
+  },
+  {
+   "t": 1760,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0088.png",
+   "moment": {
+    "day": 3,
+    "hour": 3.15,
+    "sun": -23.9,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.63,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 5,
+     "fireflies": 10,
+     "leaves": 1085,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "21 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 8,
+    "wind": 0.44,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 8.63,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 822,
+     "drop": 0,
+     "wave": 0,
+     "owl": 5,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 5494
+    },
+    "music": {
+     "pluck": 115,
+     "bell": 21,
+     "pad": 22,
+     "motif": 2
+    }
+   }
+  },
+  {
+   "t": 1780,
+   "shot": "/tmp/claude-1000/-home-krystofpe-Projects-Wander/704fb4b6-232c-4b8f-9c05-3d676a46e2fb/scratchpad/watch30/0089.png",
+   "moment": {
+    "day": 3,
+    "hour": 3.45,
+    "sun": -19.9,
+    "at": 1520,
+    "biome": "meadow→autumn 91%",
+    "weather": "fog",
+    "precip": 0,
+    "fog": 0.7,
+    "stage": "sleep",
+    "act": "camp",
+    "smoking": false,
+    "fire": 1,
+    "landmark": null,
+    "seen": {
+     "flock": 5,
+     "bats": 6,
+     "fireflies": 10,
+     "leaves": 1138,
+     "deer": 1,
+     "fox": 0,
+     "fish": 0,
+     "train": 0,
+     "smoke": 32,
+     "lamp": 0,
+     "beacon": 0
+    },
+    "around": [
+     "24 leaves"
+    ],
+    "thought": "The fire is the only thing out here that answers."
+   },
+   "sound": {
+    "on": true,
+    "state": "running",
+    "voices": 10,
+    "wind": 0.43,
+    "trees": 0.8,
+    "rain": 0,
+    "surf": 0,
+    "night": 1,
+    "dawn": 0,
+    "crickets": 0,
+    "temperature": 8.66,
+    "fire": 1,
+    "ground": "leaves",
+    "ambience": {
+     "leaf": 908,
+     "drop": 0,
+     "wave": 0,
+     "owl": 5,
+     "train": 0,
+     "thunder": 0,
+     "bird": 7
+    },
+    "body": {
+     "step": 1259,
+     "lighter": 6,
+     "drag": 95,
+     "exhale": 94,
+     "crackle": 5600
+    },
+    "music": {
+     "pluck": 115,
+     "bell": 22,
+     "pad": 23,
+     "motif": 2
+    }
+   }
+  }
+ ],
+ "events": [
+  "15.63 act:walk",
+  "15.74 landmark:chapel",
+  "15.87 thought:",
+  "15.90 act:walk",
+  "16.25 act:walk",
+  "16.68 act:walk",
+  "16.95 act:walk",
+  "17.02 biome:stones",
+  "17.39 act:look",
+  "17.62 stage:back",
+  "17.72 stage:walk",
+  "17.73 act:sit",
+  "17.77 thought:",
+  "17.89 stage:sitdown",
+  "17.90 stage:sit",
+  "17.90 lighter:",
+  "19.04 stage:standup",
+  "19.05 stage:walk",
+  "19.06 act:camp",
+  "19.17 stage:kneel",
+  "19.21 fire:",
+  "19.30 thought:",
+  "19.32 stage:campsit",
+  "19.32 lighter:",
+  "20.32 stage:lie",
+  "20.48 stage:sleep",
+  "26.03 stage:campsit",
+  "26.56 thought:",
+  "26.83 stage:lie",
+  "27.00 stage:sleep",
+  "28.60 stage:wake",
+  "28.80 stage:pack",
+  "28.89 stage:walk",
+  "28.91 act:look",
+  "28.94 stage:back",
+  "28.97 fire:",
+  "29.19 stage:walk",
+  "29.20 act:walk",
+  "29.68 act:walk",
+  "30.00 thought:",
+  "30.02 act:sit",
+  "30.09 stage:sitdown",
+  "30.10 stage:sit",
+  "31.06 stage:standup",
+  "31.07 stage:walk",
+  "31.08 act:look",
+  "31.37 stage:look",
+  "31.47 stage:walk",
+  "31.49 act:walk",
+  "31.51 thought:",
+  "31.72 act:walk",
+  "32.00 act:walk",
+  "32.41 act:walk",
+  "32.84 act:sit",
+  "32.87 stage:sitdown",
+  "32.88 stage:sit",
+  "32.88 lighter:",
+  "33.31 thought:",
+  "34.01 stage:standup",
+  "34.02 stage:walk",
+  "34.03 act:walk",
+  "34.51 act:walk",
+  "34.99 act:look",
+  "35.04 stage:back",
+  "35.09 thought:",
+  "35.23 stage:walk",
+  "35.24 act:walk",
+  "35.38 biome:meadow",
+  "35.64 act:walk",
+  "35.82 act:walk",
+  "36.16 act:sit",
+  "36.29 stage:sitdown",
+  "36.30 stage:sit",
+  "36.30 lighter:",
+  "36.92 thought:",
+  "37.19 stage:standup",
+  "37.20 stage:walk",
+  "37.22 act:walk",
+  "37.49 act:walk",
+  "37.71 landmark:house",
+  "37.72 act:walk",
+  "38.16 act:walk",
+  "38.56 act:walk",
+  "38.64 thought:",
+  "39.02 act:sit",
+  "39.08 stage:sitdown",
+  "39.09 stage:sit",
+  "39.09 lighter:",
+  "39.96 thought:",
+  "40.21 stage:standup",
+  "40.22 stage:walk",
+  "40.23 act:walk",
+  "40.35 biome:autumn",
+  "40.55 act:walk",
+  "40.82 act:camp",
+  "40.84 stage:kneel",
+  "40.88 fire:",
+  "40.99 stage:campsit",
+  "40.99 lighter:",
+  "41.47 thought:",
+  "41.99 stage:lie",
+  "42.15 stage:sleep"
+ ]
+}

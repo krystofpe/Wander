@@ -45,7 +45,7 @@ try {
     const line: Line = { t: Math.round(t), shot, moment: state.moment, sound: state.sound };
     if (clip > 0 && t - lastClip >= clipEvery) {
       lastClip = t;
-      const file = join(out, `${String(i).padStart(4, '0')}.webm`);
+      const file = join(out, `${String(i).padStart(4, '0')}-sound.webm`);
       const m = await listen(page, clip, file);
       line.clip = { file, lufs: m.lufs, peak: m.peak };
     }

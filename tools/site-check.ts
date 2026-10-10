@@ -2,13 +2,14 @@
 // Checks the published page as GitHub Pages will serve it: the built files (npm run site) under /Wander/ on a plain
 // static server, nothing else. That it starts with no server behind it and asks for nothing that is not there; that
 // the wanderer it shows is the one live.ts computes for that step (so the same for everyone); that the hour turns
-// without a jump; that the page tells how to hear it. And the creature beside it: a creature of the visitor's own, kept
-// in their browser, following the live road, gone through its portal to his camp when the live road camps; Tab from
-// one to the other and back, and the last one opens again. Writes pictures of a few moments to DIR.
+// without a jump; that the page tells how to hear it; that both pages load Google Analytics. And the creature beside
+// it: a creature of the visitor's own, kept in their browser, following the live road, gone up through its ring to his
+// camp when the live road camps; Tab from one to the other and back, and the last one opens again. Writes pictures of
+// a few moments to DIR.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
-import type { Page } from 'playwright-core';
+import type { Page, Route } from 'playwright-core';
 import { HEADLESS_FLAGS, findChromium } from '../server/browser.ts';
 import { camping, visitAt } from '../src/creature/visit.ts';
 import type { Life, LifeEvent } from '../src/life.ts';
@@ -57,8 +58,17 @@ const check = (ok: boolean, what: string): void => {
 type Live = { step: number; at: number; stage: string; clock: number; drawnAt: number; waiting: boolean | null };
 type W = { ready: boolean; error: string | null; liveStep(): Live; moment(): Record<string, unknown> };
 const errors: string[] = [];
+// Google Analytics answers with nothing here, so checking the pages counts no visits and needs no network; which
+// page asked is kept, so both are seen to load it.
+const GOOGLE = /^https:\/\/[^/]*(googletagmanager|google-analytics)\.com\//;
+const tags: { tag: string; page: string }[] = [];
+const quiet = (route: Route): Promise<void> => {
+  tags.push({ tag: route.request().url(), page: route.request().frame().url() });
+  return route.fulfill({ status: 200, contentType: 'application/javascript', body: '' });
+};
 async function openAt(query: string): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
+  await page.route(GOOGLE, quiet);
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text());
@@ -146,6 +156,7 @@ try {
   // 4. The creature: a visitor's own creature, born in their browser and kept there; on the live road; Tab between them.
   {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
+    await ctx.route(GOOGLE, quiet);
     const page = await ctx.newPage();
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(`${base}creature/`);
@@ -173,17 +184,18 @@ try {
     await page.waitForURL((u) => u.pathname.includes('creature'), { timeout: 10000 });
     check(await drawn(page, '__creature'), `opening the road's address again opens the creature, the mode last open`);
     await ctx.close();
-    // When the creature sits with him at his camp on the live road, it is gone through its portal here.
+    // When the creature sits with him at his camp on the live road, it is gone up through its ring here.
     const ms = visitMoment();
     if (ms === null) check(false, 'the creature visits his camp within 100 hours of the live road');
     else {
       const p = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
+      await p.route(GOOGLE, quiet);
       p.on('pageerror', (e) => errors.push(e.message));
       await p.goto(`${base}?now=${ms}&speed=0.0001`);
       await drawn(p, '__wander');
       await p.waitForTimeout(1200);
       const there = await p.evaluate(() => (window as unknown as { __wander: { visit(): { phase: string } | null } }).__wander.visit());
-      check(there !== null && there.phase === 'with', `on the road it sits by his fire at night, through its portal (${new Date(ms).toISOString()})`);
+      check(there !== null && there.phase === 'with', `on the road it sits by his fire at night, come up through its ring (${new Date(ms).toISOString()})`);
       writeFileSync(join(out, 'visit.png'), await p.screenshot());
       await p.goto(`${base}creature/?now=${ms}&speed=0.0001&seed=moss&user=Krystof`);
       await drawn(p, '__creature');
@@ -203,6 +215,11 @@ try {
     await page.close();
   }
 
+  const gaOn = (creature: boolean): string | undefined =>
+    tags.find((t) => t.tag.startsWith('https://www.googletagmanager.com/gtag/js?id=G-') && new URL(t.page).pathname.includes('/creature') === creature)?.tag;
+  const ga = gaOn(false);
+  check(ga !== undefined, `the page loads Google Analytics${ga !== undefined ? ` (${new URL(ga).searchParams.get('id')})` : ''}`);
+  check(gaOn(true) !== undefined, "and so does the creature's page");
   const strange = asked.filter((r) => !r.startsWith('GET /Wander/'));
   check(strange.length === 0, `asked only for its own files${strange.length > 0 ? `; also: ${[...new Set(strange)].join(', ')}` : ''}`);
   const missing = errors.filter((e) => !/AudioContext was not allowed to start/.test(e));

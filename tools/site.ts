@@ -2,13 +2,16 @@
 // Builds the published page (GitHub Pages): plain files with no server behind them. The TypeScript of web/ and src/
 // with its types stripped (as the local server does) and its imports pointed at .js, both pages marked as the site
 // (the road: the live road, one wanderer for everyone, nothing saved; the hollow at creature/: each visitor's own
-// creature, kept in their browser), the style, the font and its licence, the sprite atlas. With --serve, it then
-// serves them as Pages will, to look at here first.
+// creature, kept in their browser) and counted by Google Analytics, the style, the font and its licence, the sprite
+// atlas. With --serve, it then serves them as Pages will, to look at here first.
 import { stripTypeScriptTypes } from 'node:module';
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { flags } from './headless.ts';
 import { pagesServer } from './pages.ts';
+
+// The Google Analytics stream of the published page.
+const GA = 'G-J854CYPC2N';
 
 const root = join(import.meta.dirname, '..');
 const f = flags(process.argv.slice(2));
@@ -39,11 +42,23 @@ for (const rel of [...files('web'), ...files('src')]) {
     put(rel, readFileSync(join(root, rel)));
   }
 }
-// The pages: marked as the site, their scripts the built ones; the hollow at creature/, as the local server has it.
+// The pages: marked as the site, their scripts the built ones, Google Analytics counting who comes (only here, not
+// locally); the hollow at creature/, as the local server has it.
+const analytics = `<script async src="https://www.googletagmanager.com/gtag/js?id=${GA}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA}');
+</script>
+</head>`;
 for (const [from, to, script] of [['web/index.html', 'index.html', 'web/main'], ['web/creature/index.html', 'creature/index.html', 'web/creature/main']] as const) {
   const html = readFileSync(join(root, from), 'utf8');
-  const page = html.replace('<html lang="en">', '<html lang="en" data-site>').replace(`${script}.ts"`, `${script}.js"`);
-  if (!page.includes('data-site') || !page.includes(`${script}.js"`)) throw new Error(`${from}: could not mark the page`);
+  const page = html
+    .replace('<html lang="en">', '<html lang="en" data-site>')
+    .replace(`${script}.ts"`, `${script}.js"`)
+    .replace('</head>', analytics);
+  if (!page.includes('data-site') || !page.includes(`${script}.js"`) || !page.includes(`id=${GA}`)) throw new Error(`${from}: could not mark the page`);
   put(to, page);
 }
 for (const name of ['atlas.png', 'atlas.json']) put(join('assets', name), readFileSync(join(root, 'assets', name)));

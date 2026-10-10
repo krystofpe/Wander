@@ -70,7 +70,7 @@ The road is saved to `~/.local/share/wander/journey.json` (or under `$XDG_DATA_H
 
 Tab there opens [the creature](https://krystofpe.github.io/Wander/creature/): one of your own, born in your browser and kept there, with its own small voice (no Claude on a public page). It keeps the live road's nights: when the live wanderer has lain down at his camp, it goes up through its ring to his fire, and the road shows it there with him. The page remembers which of the two you had open last.
 
-`npm run site` builds both pages into `dist/` (the TypeScript with its types stripped, the pages marked as the site), and the [Live page workflow](.github/workflows/pages.yml) publishes it on every push to `main`. `npm run site -- --serve` then serves the build as GitHub Pages will, to look at locally first; `npm start -- --live` opens the same road with the local server.
+`npm run site` builds both pages into `dist/` (the TypeScript with its types stripped, the pages marked as the site and given the Google Analytics tag, so only the published pages are counted), and the [Live page workflow](.github/workflows/pages.yml) publishes it on every push to `main`. `npm run site -- --serve` then serves the build as GitHub Pages will, to look at locally first; `npm start -- --live` opens the same road with the local server.
 
 ## The creature
 
@@ -162,7 +162,7 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 | `npm run soak -- --speed 16 --hours 48` | Leaves it running and samples heap, GPU resources and frame time every minute. |
 | `npm run live -- --hours 1000` | Lives the live road's hours one after another and checks that each ends where the next begins. |
 | `npm run site` | Builds the published page into `dist/`, both modes; `-- --serve` then serves it as GitHub Pages will, to look at locally. |
-| `npm run site:check` | Serves `dist/` as GitHub Pages would and checks it: the same wanderer as `src/live.ts`, the hour turning without a jump, the creature kept in the browser, its visit to the live road's camp seen from both pages, Tab both ways, the last mode opening again, no requests for anything that is not there. |
+| `npm run site:check` | Serves `dist/` as GitHub Pages would and checks it: the same wanderer as `src/live.ts`, the hour turning without a jump, the creature kept in the browser, its visit to the live road's camp seen from both pages, Tab both ways, the last mode opening again, the Google Analytics tag on both pages (answered with nothing, so no visits are counted), no requests for anything that is not there. |
 | `npm run creature:tour` | Pictures of the creature: the hollow through the day, its moments, its nights, its visit up through its ring, you (`docs/creature/`). |
 | `npm run creature:check` | The creature end to end through the real server: its first meeting, saving and reopening, days away, a terminal-era save moving in, Claude and when it fails, and one world, two lives: up through its ring to his camp at night and the visit kept, Tab both ways (`docs/creature/check.txt`). |
 | `npm run art:draw`, `npm run art` | Builds the hand-drawn sprites into Aseprite files, then exports the atlas. |

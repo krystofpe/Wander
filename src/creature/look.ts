@@ -2,13 +2,13 @@
 // its head is in each frame (so the eyes, drawn apart, sit in its face), where its hands hold things, and which
 // glowing colour its eyes take for each mood. Pure.
 
-/** The sheet's canvas: 24 × 26, facing right, its feet on the last row; `tall` from there to the sprout on its crown. */
-export const CREATURE = { w: 24, h: 26, foot: 25, tall: 24 } as const;
+/** The sheet's canvas: 24 × 26, facing right, its feet on the last row; `tall` from there to the blades on its crown. */
+export const CREATURE = { w: 24, h: 26, foot: 25, tall: 25 } as const;
 
 export const POSE_TAGS = ['stand', 'walk', 'sit', 'jump', 'wave', 'dig', 'eat', 'front', 'frontwave', 'curl'] as const;
 export type PoseTag = (typeof POSE_TAGS)[number];
 
-/** Where its face (with the sprout on its crown) is, frame by frame, from the standing face (dx, dy): the eyes move with it. */
+/** Where its face (with the blades on its crown) is, frame by frame, from the standing face (dx, dy): the eyes move with it. */
 export const HEAD: Readonly<Record<PoseTag, readonly (readonly [number, number])[]>> = {
   stand: [
     [0, 0],
@@ -30,12 +30,12 @@ export const HEAD: Readonly<Record<PoseTag, readonly (readonly [number, number])
     [0, 0],
   ],
   dig: [
+    [1, 3],
     [1, 4],
-    [1, 5],
   ],
   eat: [
+    [1, 4],
     [1, 5],
-    [1, 6],
   ],
   front: [
     [0, 0],
@@ -46,29 +46,29 @@ export const HEAD: Readonly<Record<PoseTag, readonly (readonly [number, number])
     [0, 0],
   ],
   curl: [
-    [2, 8],
-    [2, 9],
+    [2, 6],
+    [2, 6],
   ],
 };
 
-/** The top-left of its eyes (a 5 × 3 sprite) with the face unmoved, in the dark patch of its face. */
-export const EYES_SIDE: readonly [number, number] = [13, 10];
-export const EYES_FRONT: readonly [number, number] = [9, 10];
+/** The top-left of its eyes (a 5 × 3 sprite) with the face unmoved, above its smile. */
+export const EYES_SIDE: readonly [number, number] = [13, 12];
+export const EYES_FRONT: readonly [number, number] = [9, 12];
 
-/** Where a held thing hangs (its centre), per pose, from the sprite's top-left: in a paw out of its fur. */
+/** Where a held thing hangs (its centre), per pose, from the sprite's top-left: in the fork of a twig arm. */
 export const HAND: Readonly<Record<PoseTag, readonly [number, number]>> = {
-  stand: [21, 17],
-  walk: [21, 17],
-  sit: [21, 20],
-  jump: [21, 15],
-  wave: [21, 17],
-  dig: [21, 21],
+  stand: [22, 14],
+  walk: [22, 14],
+  sit: [22, 16],
+  jump: [22, 10],
+  wave: [22, 14],
+  dig: [21, 20],
   eat: [21, 21],
-  front: [12, 20],
-  frontwave: [12, 20],
+  front: [22, 13],
+  frontwave: [1, 13],
   curl: [21, 22],
 };
-export const LANTERN: readonly [number, number] = [21, 19];
+export const LANTERN: readonly [number, number] = [22, 15];
 
 /**
  * The great tree (tools/art/sprites/hollow.ts): its foot `w` × `h` with the trunk `trunk` wide at its top, the

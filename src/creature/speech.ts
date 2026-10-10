@@ -20,7 +20,7 @@ export const LINES = {
   petted: ['...', 'That is... all right.', 'Again. If you want.', 'Your hands are warm, {user}.'],
   pettedLove: ['Stay a little.', '♥', 'It is easier when you are here.'],
   pettedShy: ['Oh. ...all right.', '...hello.', '!'],
-  tooMuch: ['Enough.', 'I need a little room.', 'You are squashing my fur.'],
+  tooMuch: ['Enough.', 'I need a little room.', 'You are squashing my moss.'],
   woken: ['Mm... what is it?', 'I was dreaming about {item}.', 'A little longer.'],
   wokenGrumpy: ["It's the middle of the night.", 'Hmph.', 'No.'],
   sleepTalk: ['mm... the fish were singing...', '...no, the other moon...', 'zz... {user}... zz', '...more {forage}...'],
@@ -161,11 +161,11 @@ export function localReply(
     return { say: `I'm ${context.mood}.${extra}`, do: null, userName: null };
   }
   if (/who are you|what are you|kdo jsi|co jsi/.test(t)) {
-    return reply(["I'm {name}. I live here, behind the glass.", 'Just a small ball of fur with glowing eyes.', "I'm not sure. I was a wisp, once."]);
+    return reply(["I'm {name}. I live here, behind the glass.", 'Just a little spirit of moss, with glowing eyes.', "I'm not sure. I was a wisp, once."]);
   }
   if (/your name|jak se jmenujes/.test(t)) return reply(['{name}. Did you forget already?', "It's {name}."]);
   if (/love you|like you|mam te rad|mam te rada/.test(t)) {
-    return context.bond > 0.5 ? reply(['♥ I know. Me too, {user}.', '...♥'], 'jump') : reply(['...really? Oh.', 'Oh! My fur is warm.'], 'jump');
+    return context.bond > 0.5 ? reply(['♥ I know. Me too, {user}.', '...♥'], 'jump') : reply(['...really? Oh.', 'Oh! My moss is warm.'], 'jump');
   }
   if (/hungry|food|eat|jidlo|hlad|papat/.test(t)) {
     return context.hungry ? reply(['Yes! Something to eat, please.', 'So hungry. Press F, maybe?']) : reply(["I'm not hungry, but thank you.", 'I ate {forage} earlier.']);

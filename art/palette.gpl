@@ -132,36 +132,36 @@ Columns: 8
  17  14  13	boot 0
  34  30  27	boot 1
 205 198 182	cig 0
- 16  13  28	cloak0 0
- 29  24  48	cloak0 1
- 44  37  71	cloak0 2
- 62  53  97	cloak0 3
- 86  73 125	cloak0 4
- 11  20  16	cloak1 0
- 20  35  28	cloak1 1
- 32  56  43	cloak1 2
- 47  79  60	cloak1 3
- 70 107  82	cloak1 4
- 23  13  11	cloak2 0
- 42  22  18	cloak2 1
- 66  33  26	cloak2 2
- 92  48  36	cloak2 3
-122  69  50	cloak2 4
- 13  16  23	cloak3 0
- 22  28  40	cloak3 1
- 35  44  61	cloak3 2
- 51  63  85	cloak3 3
- 74  88 115	cloak3 4
- 20  12  22	cloak4 0
- 36  20  39	cloak4 1
- 56  32  59	cloak4 2
- 78  45  82	cloak4 3
-106  65 109	cloak4 4
- 22  18  11	cloak5 0
- 40  32  19	cloak5 1
- 62  50  30	cloak5 2
- 87  71  43	cloak5 3
-117  97  62	cloak5 4
+ 10  23  20	cloak0 0
+ 18  38  31	cloak0 1
+ 28  58  47	cloak0 2
+ 41  82  65	cloak0 3
+ 59 110  86	cloak0 4
+ 11  21  16	cloak1 0
+ 19  36  26	cloak1 1
+ 31  56  38	cloak1 2
+ 45  80  52	cloak1 3
+ 66 109  71	cloak1 4
+  8  21  26	cloak2 0
+ 15  36  43	cloak2 1
+ 24  56  63	cloak2 2
+ 35  80  86	cloak2 3
+ 51 108 112	cloak2 4
+ 10  24  23	cloak3 0
+ 17  42  39	cloak3 1
+ 27  64  58	cloak3 2
+ 40  90  80	cloak3 3
+ 58 119 104	cloak3 4
+ 18  21   9	cloak4 0
+ 32  37  15	cloak4 1
+ 50  57  23	cloak4 2
+ 71  80  34	cloak4 3
+ 98 108  49	cloak4 4
+ 17  15  24	cloak5 0
+ 28  27  41	cloak5 1
+ 42  45  61	cloak5 2
+ 58  69  83	cloak5 3
+ 79  98 104	cloak5 4
 255 210 123	mood 0
 255 240 160	mood 1
 240 216 160	mood 2

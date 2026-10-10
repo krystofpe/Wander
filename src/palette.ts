@@ -255,13 +255,14 @@ const BASE: Colours = {
   stick: ['#281e14', '#463524'],
   boot: ['#110e0d', '#221e1b'],
   cig: ['#cdc6b6'],
-  // Indigo, moss, rust, slate, plum, ochre: the terminal creature's six cloaks, darkened into this world.
-  cloak0: ['#100d1c', '#1d1830', '#2c2547', '#3e3561', '#56497d'],
-  cloak1: ['#0b1410', '#14231c', '#20382b', '#2f4f3c', '#466b52'],
-  cloak2: ['#170d0b', '#2a1612', '#42211a', '#5c3024', '#7a4532'],
-  cloak3: ['#0d1017', '#161c28', '#232c3d', '#333f55', '#4a5873'],
-  cloak4: ['#140c16', '#241427', '#38203b', '#4e2d52', '#6a416d'],
-  cloak5: ['#16120b', '#282013', '#3e321e', '#57472b', '#75613e'],
+  // Six mosses for the creature, in the hollow's colours: teal, deep green, blue-green, sea-green, olive, and a dusk
+  // moss with violet in it (the terminal creature's six cloaks, by their order).
+  cloak0: ['#0a1714', '#12261f', '#1c3a2f', '#295241', '#3b6e56'],
+  cloak1: ['#0b1510', '#13241a', '#1f3826', '#2d5034', '#426d47'],
+  cloak2: ['#08151a', '#0f242b', '#18383f', '#235056', '#336c70'],
+  cloak3: ['#0a1817', '#112a27', '#1b403a', '#285a50', '#3a7768'],
+  cloak4: ['#121509', '#20250f', '#323917', '#475022', '#626c31'],
+  cloak5: ['#110f18', '#1c1b29', '#2a2d3d', '#3a4553', '#4f6268'],
   // Content, joyful, calm, curious, sleepy, hungry, bored, lonely, grumpy, scared, love, sad (src/creature/look.ts).
   mood: ['#ffd27a', '#fff0a0', '#f0d8a0', '#9ff0ff', '#a08850', '#ffb060', '#c8c0a0', '#9cb8ff', '#ff7050', '#ffffff', '#ff8fc8', '#7fb2ff'],
   shroom: ['#1f6f73', '#4fc4bf', '#b5fff2'],

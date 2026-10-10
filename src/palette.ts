@@ -82,6 +82,10 @@ const FAMILIES: readonly Family[] = [
   { name: 'note', steps: 1, glow: true },
   { name: 'spark', steps: 1, glow: true },
   { name: 'wing', steps: 3 },
+  // The deep's growth after the Underdark (src/paint/deep.ts): violet crystal, amber torch-caps, coral shelves.
+  { name: 'amethyst', steps: 3, glow: true },
+  { name: 'amber', steps: 3, glow: true },
+  { name: 'coral', steps: 4 },
 ];
 
 export type RoleInfo = {
@@ -267,6 +271,9 @@ const BASE: Colours = {
   note: ['#ffe08a'],
   spark: ['#fff4c0'],
   wing: ['#5a4e66', '#9a8ba6', '#d9cfd9'],
+  amethyst: ['#3b1f6e', '#8a4fd6', '#d9b8ff'],
+  amber: ['#4a220e', '#a8602e', '#e8a872'],
+  coral: ['#22090f', '#4a1a22', '#7a2e30', '#a5504a'],
 };
 
 /** What each biome changes from the base. */
@@ -357,16 +364,17 @@ const BIOME_COLOURS: Readonly<Record<BiomeId, Colours>> = {
   // darks never neutral, moss and stone in deep teals, dark caps on pale stems, black water, violet for accents; the
   // fungus glows cyan (shroom) and the old lamp is the only warmth.
   deep: {
-    land: ['#020f12', '#051d22', '#0a2c33', '#123f47', '#20616a'],
-    rock: ['#04181c', '#0a2c32', '#134048', '#1d5a62', '#2f7c84'],
-    soil: ['#03100f', '#071c1c', '#0c2a2a', '#123a3a'],
-    grass: ['#041816', '#082824', '#0f3a34', '#185048', '#256a5e'],
-    leaf: ['#020f14', '#061c26', '#0b2c3a', '#14404f', '#205a6b'],
-    needle: ['#03121a', '#08222c', '#10343e', '#1c4c55'],
-    bark: ['#03100f', '#081d1f', '#0f2c2e', '#183e40'],
-    birch: ['#0e2a30', '#3d6f75', '#7fb0b0', '#b8dcd6'],
-    stone: ['#061c20', '#0f3036', '#1b464c', '#2e6066'],
-    water: ['#02101a', '#05222e', '#0b3a46', '#1a6a72'],
+    land: ['#020812', '#04101c', '#08182a', '#0e2538', '#18384e'],
+    rock: ['#030b16', '#071626', '#0d2236', '#16324a', '#264a66'],
+    soil: ['#02070e', '#050f1a', '#0a1826', '#102234'],
+    grass: ['#030c14', '#061724', '#0a2232', '#113044', '#1a4258'],
+    leaf: ['#030a16', '#071428', '#0d2140', '#16335a', '#244a78'],
+    needle: ['#030a14', '#071426', '#0d2036', '#163048'],
+    bark: ['#02080e', '#06121c', '#0b1c2a', '#142a3c'],
+    birch: ['#16283a', '#4a7090', '#8fb4d0', '#c8def0'],
+    stone: ['#0a121e', '#16202e', '#263244', '#3c4a5e'],
+    water: ['#020c18', '#071c32', '#0e3050', '#5aa0d8'],
+    shroom: ['#1a5a8a', '#3fa8e0', '#b8ecff'],
     flower: ['#2a2a5a', '#4a4a8a', '#8a82c4'],
     bone: ['#76847f', '#aebcb3', '#dfe8d6'],
     smoke: ['#3f6a70', '#7ea6a6', '#bfe0da'],
@@ -458,11 +466,11 @@ const MORNING: readonly Key[] = EVENING.map((k) => {
 // The deep's keys: its sky is a roof of stone, near black, the mist in it teal by day and indigo by night; its light
 // is the fungus's cold cyan; the glow lobe is the old lamp's warm halo, small and steady (the stage hangs it there).
 const DEEP: readonly Key[] = [
-  { e: -90, lift: 0.02, gain: 0.55, boost: 0, light: '#5a6ac0', warm: 0.05, ambient: '#1c1a4a', cool: 0.5, sat: 0.85, zenith: '#020208', horizon: '#11113a', glow: '#ffcf70', glowStrength: 0.1, glowWidth: 0.08, fog: '#1c1a48', haze: 0.9 },
-  { e: -12, lift: 0.02, gain: 0.57, boost: 0, light: '#5a6ac0', warm: 0.05, ambient: '#1c1d4c', cool: 0.5, sat: 0.85, zenith: '#020309', horizon: '#121540', glow: '#ffcf70', glowStrength: 0.11, glowWidth: 0.08, fog: '#1d1f4c', haze: 0.9 },
-  { e: -4, lift: 0.015, gain: 0.64, boost: 0.01, light: '#6f9cc8', warm: 0.08, ambient: '#142a4c', cool: 0.48, sat: 0.9, zenith: '#02060c', horizon: '#0e2440', glow: '#ffd27a', glowStrength: 0.15, glowWidth: 0.08, fog: '#14344c', haze: 0.95 },
-  { e: 6, lift: 0.01, gain: 0.7, boost: 0.02, light: '#86d8da', warm: 0.12, ambient: '#0e3646', cool: 0.46, sat: 0.95, zenith: '#010b0e', horizon: '#0a2e36', glow: '#ffd27a', glowStrength: 0.18, glowWidth: 0.08, fog: '#0f4650', haze: 1 },
-  { e: 90, lift: 0.01, gain: 0.74, boost: 0.03, light: '#8fe6e0', warm: 0.15, ambient: '#0c3a44', cool: 0.45, sat: 1, zenith: '#010d10', horizon: '#0a3238', glow: '#ffd27a', glowStrength: 0.2, glowWidth: 0.08, fog: '#104c55', haze: 1 },
+  { e: -90, lift: 0.015, gain: 0.5, boost: 0, light: '#5a6ac0', warm: 0.05, ambient: '#1a1846', cool: 0.5, sat: 0.85, zenith: '#020208', horizon: '#0e0e30', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#16143e', haze: 0.9 },
+  { e: -12, lift: 0.015, gain: 0.52, boost: 0, light: '#5a6ac0', warm: 0.05, ambient: '#1a1a48', cool: 0.5, sat: 0.85, zenith: '#020309', horizon: '#0f1236', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#171a42', haze: 0.9 },
+  { e: -4, lift: 0.012, gain: 0.58, boost: 0.01, light: '#6f9cc8', warm: 0.08, ambient: '#122444', cool: 0.48, sat: 0.9, zenith: '#02050c', horizon: '#0b1c34', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#102a42', haze: 0.95 },
+  { e: 6, lift: 0.01, gain: 0.64, boost: 0.02, light: '#7fc4e0', warm: 0.1, ambient: '#0c2c42', cool: 0.46, sat: 0.95, zenith: '#01060c', horizon: '#081e2e', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#0b2e42', haze: 1 },
+  { e: 90, lift: 0.01, gain: 0.68, boost: 0.03, light: '#86d0ea', warm: 0.12, ambient: '#0a2e44', cool: 0.45, sat: 1, zenith: '#01070d', horizon: '#082232', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#0c3246', haze: 1 },
 ];
 
 type KeyLab = {

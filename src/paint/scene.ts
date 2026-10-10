@@ -17,7 +17,7 @@ import { HORIZON } from './land.ts';
 import { BRIDGE, levelling, marksOn } from './landmarks.ts';
 import type { Placed as Mark } from './landmarks.ts';
 import { birch, broadleaf, bush, cactus, cached, conifer, deadTree, reeds, rock, tuft } from './plants.ts';
-import { bigCap, crystals, glowCaps, stalagmite } from './deep.ts';
+import { bigCap, bulbs, coralFrond, crystals, glowCaps, paleCap, pillar, shelves, stalagmite, torchCap, tubes, urn } from './deep.ts';
 import { baseline } from '../layers.ts';
 
 /** What the ground is made of in a biome: its surface family, and whether that surface is snowy. */
@@ -60,7 +60,7 @@ const BANK: Readonly<Record<BiomeId, number>> = {
   stones: 0,
   ruins: 0.5,
   rail: 0,
-  deep: 1,
+  deep: 0.35,
 };
 
 /** Things that stand on the ground: a stamp for each placed thing, at its layer's scale. */
@@ -115,6 +115,24 @@ export function stampFor(p: Placed, z: number): Stamp {
       return post(p.seed % 8, p.size);
     case 'cap':
       return bigCap(p.seed % 40, p.size);
+    case 'palecap':
+      return paleCap(p.seed % 40, p.size);
+    case 'torch':
+      return torchCap(p.seed % 32, p.size);
+    case 'shelf':
+      return shelves(p.seed % 32, p.size);
+    case 'bulbs':
+      return bulbs(p.seed % 24, p.size);
+    case 'tubes':
+      return tubes(p.seed % 24, p.size);
+    case 'coral':
+      return coralFrond(p.seed % 24, p.size);
+    case 'amethyst':
+      return crystals(p.seed % 24, p.size, true);
+    case 'pillar':
+      return pillar(p.seed % 24, p.size);
+    case 'urn':
+      return urn(p.seed % 16, p.size);
     case 'stalag':
       return stalagmite(p.seed % 32, p.size);
     case 'crystal':

@@ -258,8 +258,8 @@ export class Stage {
     v.rainColor[2] = Math.min(1, v.fogColor[2] * 0.6 + 0.45);
 
     if (deep) {
-      // Under stone: no sun, moon, stars, Milky Way or aurora; the old lamp hangs where the sun's glow is drawn, high
-      // in the roof; the fungus's cold light rims what stands in it; everything that glows blooms.
+      // Under stone: no sun, moon, stars, Milky Way or aurora (the sun's place is kept out of the way, up in the roof);
+      // the fungus's cold light rims what stands in it; everything that glows blooms.
       v.sunX = Math.round(W * 0.64);
       v.sunY = extra + 58;
       v.sunUp = 0;

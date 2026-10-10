@@ -213,17 +213,13 @@ float hang(float x, float rank, float base) {
 }
 
 // The deep's sky: a roof of stone, near black overhead and lit from below by the mist; mottled rock; two ranks of
-// stalactites, the far one hazed into the mist and the near one dark; sparse glowing specks; threads of light
-// hanging from the roof; a fall of glowing water; and the old lamp's halo (the lamp itself is a sprite, in front of
-// the farthest rock: web/creature/hollow.ts).
+// stalactites, the far one hazed into the mist and the near one dark and huge; sparse dim specks; a fall of glowing
+// water far off.
 vec3 cave(vec2 f, vec2 n) {
   float t = clamp(f.y / u_horizonRow, 0.0, 1.0);
   vec3 c = mix(u_zenith, u_horizon, pow(t, 1.25));
   float mott = smoothNoise(n / vec2(19.0, 8.0) + u_seed) * 0.6 + smoothNoise(n / vec2(6.0, 4.0) + 5.0) * 0.4;
   c *= 0.8 + 0.4 * mott * (1.0 - t * 0.7);
-  // The old lamp's halo.
-  vec2 d = (f - u_sun) / vec2(u_view.x * u_glowWidth, u_view.x * u_glowWidth * 0.6);
-  c = mix(c, u_glow, clamp(exp(-dot(d, d) * 2.0) * u_glowStrength, 0.0, 1.0));
   // A fall of glowing water from a cleft in the roof, far off, flowing.
   float fx = floor(u_view.x * 0.17 + 40.0 * (hash(vec2(u_seed, 2.0)) - 0.5));
   if (abs(n.x - fx) <= 1.0 && f.y < u_horizonRow * 1.1) {
@@ -236,18 +232,13 @@ vec3 cave(vec2 f, vec2 n) {
   if (h < 0.004 * (1.0 - t)) {
     float b = hash(n + 9.1);
     float br = 0.35 + 0.35 * b + 0.2 * sin(u_time * (0.3 + 0.5 * b) + h * 700.0);
-    c = mix(c, b < 0.7 ? vec3(0.3, 0.75, 0.85) : vec3(0.55, 0.5, 0.9), clamp(br, 0.0, 0.9));
+    c = mix(c, b < 0.7 ? vec3(0.3, 0.6, 0.85) : vec3(0.55, 0.45, 0.9), clamp(br * 0.6, 0.0, 0.6));
   }
-  // The far rank of stalactites, hazed toward the mist; threads of light hanging from it.
+  // The far rank of stalactites, hazed toward the mist.
   float farHang = hang(n.x, 0.0, 34.0);
   if (n.y < farHang) c = mix(u_zenith, u_horizon, 0.28) * (0.85 + 0.25 * mott);
-  if (hash(vec2(n.x, 13.0)) < 0.018) {
-    float len = 24.0 + 70.0 * hash(vec2(n.x, 17.0));
-    float below = n.y - farHang;
-    if (below >= 0.0 && below < len && mod(below, 1.0 + floor(below / (len * 0.6))) < 1.0) c = mix(c, vec3(0.3, 0.8, 0.85), 0.55 * (1.0 - below / len));
-  }
   // The near rank, dark, its tips catching a glint of the light below.
-  float nearHang = hang(n.x, 1.0, 6.0);
+  float nearHang = hang(n.x, 1.0, 10.0) + 34.0 * pow(max(0.0, 1.0 - abs(smoothNoise(vec2(n.x / 13.0, u_seed + 41.0)) * 2.0 - 1.0) * 1.8), 2.5);
   if (n.y < nearHang) {
     c = u_zenith * 0.55;
     if (n.y >= nearHang - 1.0) c = mix(c, u_horizon, 0.45);

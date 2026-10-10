@@ -26,8 +26,6 @@ import type { Stage } from '../stage.ts';
 
 const NEAR = GROUND - 1;
 const MID = GROUND - 2;
-/** The layer the deep's lamp hangs in: the ridge, in front of the farthest rock. */
-const LAMP_LAYER = 3;
 /** In the deep, how far from its door (native px, on the open side) he sits when he comes down through it. */
 const SEAT_PX = DEEP_SEAT_PX;
 const COAT = role('coat', 0);
@@ -271,21 +269,6 @@ export class Hollow {
         const fade = Math.min(1, visit.progress * 8, (1 - visit.progress) * 8);
         r.batches[MID].add(Math.round(vx - f[2] / 2), Math.round(base - f[3]), f, ma, mb, mk, visit.dir < 0, 0.85 * fade);
       }
-    }
-
-    // The deep's old lamp, hanging on its chain from the roof far off, in front of the farthest rock (the sky draws its
-    // halo where the stage hangs it): the only warm thing down here but its own eyes and lantern.
-    if (game.place === 'deep') {
-      const li = LAMP_LAYER;
-      const [la, lb, lk] = rows(li);
-      const orb = frameOf('lamp', 'orb');
-      const link = sheets.chain.link[0];
-      const cx = Math.round(v.sunX);
-      const top = Math.round(v.sunY - orb[3] / 2);
-      for (let y = top - link[3]; y > -link[3]; y -= link[3]) r.batches[li].add(cx, y, link, la, lb, lk);
-      r.batches[li].add(cx - (orb[2] >> 1), top, orb, la, lb, lk);
-      // Its light on the rock round it, breathing slowly.
-      addLight(cx, Math.round(v.sunY), 52, 0.55 + 0.08 * Math.sin(time * 0.6));
     }
 
     // At night under the canopy: the owl on the great tree, and now and then a pair of eyes watching from the trees.

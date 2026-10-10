@@ -25,7 +25,7 @@ type Puff = { x: number; y: number; vx: number; vy: number; age: number; life: n
  * Where the camera stands for the sky and the air: a place on the road (metres), the world clock (hours, for the
  * aurora's nights), his share of the screen width, and the moon's phase when it is not the road's own.
  */
-export type Place = { readonly seed: number; readonly at: number; readonly clock: number; readonly framing: number; readonly moon?: number };
+export type Place = { readonly seed: number; readonly at: number; readonly clock: number; readonly framing: number; readonly moon?: number; readonly lift?: number };
 
 /** Quake's "flicker" light style: base brightness, popping upward now and then, read at 10 Hz (research: Light §6). */
 const FLICKER = 'mmnmmommommnonmmonqnmmo';
@@ -151,7 +151,8 @@ export class Stage {
 
     const want = l.framing;
     this.framing = still ? want : this.framing + (want - this.framing) * Math.min(1, dt / 5);
-    const groundY = groundHeight(l.seed, l.at) * PX_PER_M;
+    // The hollow lowers its gaze a little (`lift` pixels): more of the ground before it, less of the sky.
+    const groundY = groundHeight(l.seed, l.at) * PX_PER_M - (l.lift ?? 0);
     if (Number.isNaN(this.camY) || still) this.camY = groundY;
     else this.camY += (groundY - this.camY) * Math.min(1, dt * 0.8);
     v.camX = l.at * PX_PER_M - this.framing * W;

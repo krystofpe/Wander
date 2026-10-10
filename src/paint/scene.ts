@@ -398,6 +398,13 @@ function bankHeight(seed: number, layer: LayerDef, li: number, u: number): numbe
   return Math.max(1, 3 + 16 * (0.5 + 0.7 * n) * (1.6 / layer.z));
 }
 
+/**
+ * How the playfield is painted: with his road or without (the creature's hollow, web/creature, has none), and how
+ * deep its ground plane keeps its lighter bands and strokes before it darkens to the front (1 for him; the hollow,
+ * looking lower at the ground before the glass, keeps them deeper).
+ */
+export const PLAYFIELD = { road: true, floor: 1 };
+
 /** The ground's top row in the playfield texture at a column. */
 export function groundTop(seed: number, layer: LayerDef, u: number): number {
   return layer.top + WALK_Y - Math.round(groundHeight(seed, u / PX_PER_M) * PX_PER_M);
@@ -425,14 +432,14 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
       continue;
     }
     // A trodden path runs where the path noise is high (not on bare salt, sand, rock or snow).
-    const pathy = n === 'grass' && noise1(d / 260, seed ^ 0x9a7) > -0.1;
+    const pathy = PLAYFIELD.road && n === 'grass' && noise1(d / 260, seed ^ 0x9a7) > -0.1;
     // Band edges below the surface wander a pixel or two, so they read as drawn, not ruled.
     const j1 = Math.round(noise1(u / 9, seed ^ 0x31) * 1.5);
     const j2 = Math.round(noise1(u / 13, seed ^ 0x32) * 2);
     const j3 = Math.round(noise1(u / 17, seed ^ 0x33) * 3);
     const b1 = 3 + j1;
-    const b2 = 11 + j2;
-    const b3 = 26 + j3;
+    const b2 = Math.round(11 * PLAYFIELD.floor) + j2;
+    const b3 = Math.round(26 * PLAYFIELD.floor) + j3;
     // Still pools in the swamp, below the bank he walks on: a bright line of sky on the water, glints, then dark.
     const swamp = share(blend, 'swamp');
     const poolN = swamp > 0.3 ? noise1(d / 16, seed ^ 0x5009) * 0.75 + noise1(d / 5, seed ^ 0x500a) * 0.25 : -1;
@@ -457,9 +464,9 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
       c.set(u, y, r, k < 2 ? FLAG.RIM : 0);
     }
     // Strokes on the ground plane: short horizontal dashes of the next lighter shade, sparser toward the front.
-    for (let k = 2; k < 40; k += 2) {
+    for (let k = 2; k < 40 * PLAYFIELD.floor; k += 2) {
       const cell = Math.floor((u + k * 7) / 5);
-      if (unit(cell * 64 + k, seed ^ 0x77) > 0.32 - k * 0.006) continue;
+      if (unit(cell * 64 + k, seed ^ 0x77) > 0.32 - (k * 0.006) / PLAYFIELD.floor) continue;
       const len = 2 + Math.floor(unit(cell * 31 + k, seed ^ 0x78) * 4);
       if ((u + k * 7) % 5 >= len) continue;
       const yy = top + k + (unit(cell, seed ^ k) < 0.5 ? 1 : 0);

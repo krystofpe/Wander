@@ -33,7 +33,8 @@ export function awayAt(seed: number, from: number, sec: number): { at: number; s
   if (walked >= AWAY.capMetres) return { at, sitting: false };
   // Past a hollow's door, he sat there a while: as far behind as he would have walked meanwhile.
   const pause = AWAY.hollowSec * AWAY.pace;
-  for (const m of landmarksBetween(seed, from, at + 1)) {
+  // (A door just behind him still has its seat ahead.)
+  for (const m of landmarksBetween(seed, from - HOLLOW.seat, at + 1)) {
     const seat = m.at + HOLLOW.seat;
     if (m.kind !== 'hollow' || seat < from || at < seat) continue;
     if (at < seat + pause) return { at: seat, sitting: true };

@@ -331,7 +331,7 @@ export class Game implements Ctx {
 
   travellerSat(): void {
     // Off wandering beyond the edge of the world, it was not there to see him.
-    if (this.life.away) return;
+    if (this.life.away || this.brain.current === 'wander') return;
     const how = this.life.asleep ? 'asleep' : this.body.inside ? 'night' : 'day';
     travellerCame(this.life, this.worldMs, how);
   }

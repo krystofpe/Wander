@@ -55,7 +55,7 @@ export function satBetween(journey: Saved, from: number, to: number): number | n
   const pause = AWAY.hollowSec * AWAY.pace;
   let last: number | null = null;
   let passed = 0;
-  for (const m of landmarksBetween(journey.seed, journey.at, journey.at + AWAY.capMetres)) {
+  for (const m of landmarksBetween(journey.seed, journey.at - HOLLOW.seat, journey.at + AWAY.capMetres)) {
     const seat = m.at + HOLLOW.seat;
     if (m.kind !== 'hollow' || seat < journey.at) continue;
     const walked = seat - journey.at + passed * pause;

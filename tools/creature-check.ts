@@ -7,6 +7,9 @@
 //     ANTHROPIC_BASE_URL): the bar says `mind: claude`, what you type reaches it, its words and its wishes come back,
 //     and what it learns about you is kept.
 //  5. A failing API and a refused key: its own voice answers at once; a refused key leaves it local.
+//  6. One world, two lives: with his journey beside it, its hollow stands on his road; he sits at its door and it
+//     keeps the visit; Tab opens the road (he is where the hollow saw him) and Tab again the hollow, and the server
+//     remembers which was open last.
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { createServer } from 'node:http';
@@ -18,6 +21,9 @@ import { chromium } from 'playwright-core';
 import type { Browser, Page } from 'playwright-core';
 import { HEADLESS_FLAGS, findChromium } from '../server/browser.ts';
 import { ROOT } from '../server/root.ts';
+import { HOLLOW } from '../src/biomes.ts';
+import { AWAY, newJourney } from '../src/journal.ts';
+import { landmarksBetween } from '../src/world.ts';
 
 type Mode = 'ok' | 'fail' | 'auth';
 const MOCK = { say: 'The glass is warm where your hand was.', do: 'dance', remember: 'likes tea' };
@@ -208,6 +214,48 @@ try {
     await new Promise((r) => setTimeout(r, 800));
   }
   void mode;
+
+  // ── 6: one world, two lives ──────────────────────────────────────────────────────────────────────────────────────
+  {
+    const sub = join(dir, 'both');
+    mkdirSync(sub, { recursive: true });
+    const save = join(sub, 'creature.json');
+    // His road beside it, saved a few seconds before he reached a hollow's door: by the time the page is open he sits.
+    const j = newJourney('moss', Date.now() - 3600_000, 0.3);
+    const hollow = landmarksBetween(j.life.seed, 0, 400_000).find((m) => m.kind === 'hollow');
+    if (hollow === undefined) throw new Error('no hollow on the road');
+    j.life.at = hollow.at + HOLLOW.seat - 4 * AWAY.pace;
+    j.savedAt = Date.now();
+    writeFileSync(join(sub, 'journey.json'), JSON.stringify(j));
+    const s = await startCreature(save, {}, ['--seed', 'moss', '--user', 'Krystof']);
+    const page = await openPage(browser, s.url);
+    type R = { seed: number; home: number | null; passer: { d: number; sitting: boolean } | null };
+    const road = (): Promise<R> => page.evaluate(() => (window as unknown as { __creature: { road(): R } }).__creature.road());
+    ok((await road()).seed === j.life.seed, `with his journey beside it, its hollow stands on his road, at ${(await road()).home?.toFixed(0)} m`);
+    const sat = await until(page, () => (window as unknown as { __creature: { road(): R } }).__creature.road().passer?.sitting === true, 20_000);
+    const l = await life(page);
+    const line = l.diary.at(-1)?.text ?? '';
+    ok(sat && /traveller|my door|ash/.test(line), `he sits at its door, and it keeps the visit: “${line}”`);
+    await page.evaluate(() => (window as unknown as { __creature: { save(): void } }).__creature.save());
+    await page.waitForTimeout(500);
+    const kept = JSON.parse(readFileSync(save, 'utf8')) as { traveller?: { times: number } };
+    ok(kept.traveller?.times === 1, `in its file: ${kept.traveller?.times ?? 0} visit`);
+    await page.waitForTimeout(400);
+    await page.keyboard.press('Tab');
+    await page.waitForURL((u) => !u.pathname.includes('creature'), { timeout: 10_000 });
+    await page.waitForFunction(() => (window as unknown as { __wander?: { ready: boolean } }).__wander?.ready === true, undefined, { timeout: 60_000 });
+    const at = await page.evaluate(() => (window as unknown as { __wander: { life: { at: number } } }).__wander.life.at);
+    const modeNow = readFileSync(join(sub, 'mode'), 'utf8').trim();
+    ok(modeNow === 'wander' && Math.abs(at - (hollow.at + HOLLOW.seat)) < 10, `Tab opens the road, him at the hollow's door (${(at - hollow.at).toFixed(1)} m past it); the server remembers: ${modeNow}`);
+    await page.waitForTimeout(1000);
+    await page.keyboard.press('Tab');
+    await page.waitForURL((u) => u.pathname.includes('creature'), { timeout: 10_000 });
+    await page.waitForFunction(() => (window as unknown as { __creature?: { ready: boolean } }).__creature?.ready === true, undefined, { timeout: 60_000 });
+    ok(readFileSync(join(sub, 'mode'), 'utf8').trim() === 'creature', 'and Tab again the hollow; the server remembers: creature');
+    await page.close();
+    s.proc.kill('SIGTERM');
+    await new Promise((r) => setTimeout(r, 800));
+  }
 } finally {
   await browser.close();
 }

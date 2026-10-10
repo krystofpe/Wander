@@ -116,7 +116,7 @@ export function layoutScene(seed: number, biome: PlaceName): Layout {
   let home: Prop;
   let homeX: number;
   if (def.nest === true) {
-    // In the deep it sleeps in a nest of moss under a giant mushroom, the mushroom on the side of the view's edge.
+    // In the hollow it sleeps in a nest of moss under a giant toadstool, the toadstool on the side of the view's edge.
     const sprite = FOOTPRINTS.nest;
     homeX = place(sprite.w / 2, NEST_Z, homeLeft ? 0.12 : 0.62, homeLeft ? 0.38 : 0.88, true);
     home = { kind: 'home', x: homeX, z: NEST_Z, variant: homeLeft ? 1 : 0, sprite, nest: true };

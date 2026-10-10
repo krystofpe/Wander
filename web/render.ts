@@ -69,7 +69,7 @@ export type View = {
   /** The Milky Way's strength and the aurora's, 0..1. */
   milky: number;
   aurora: number;
-  /** 1 under a roof of stone (the deep beyond the hollow): the sky shader draws the cave instead of a sky. */
+  /** 1 in the hollow, the creature's wood: the sky shader draws its misty light and far canopy, and the near canopy goes over everything. */
   cave: number;
   /** The rim's colour (rgb 0..1): the sun's light by day, a cold sky light at night. */
   rim: Float32Array;
@@ -407,7 +407,7 @@ export class Renderer {
       // Offsets wrapped in double precision at the pattern's own period (see RAIN_FS), so they never jump.
       const cell = v.snow ? p.snowCell : p.cell;
       gl.uniform1f(this.rain.u('u_offset'), (v.camX / p.z) % (4096 * cell[0]));
-      // In the deep the "snow" is motes drifting down through the dark, slow.
+      // In the hollow the "snow" is motes drifting down through the mist, slow.
       const slow = v.cave > 0.5 ? 0.22 : 1;
       gl.uniform1f(this.rain.u('u_fall'), ((v.snow ? p.snowSpeed : p.speed) * slow * v.time) % (1024 * cell[1]));
       gl.uniform3fv(this.rain.u('u_color'), v.rainColor);

@@ -157,7 +157,7 @@ export class Stage {
     m.side = Math.max(-1, Math.min(1, ax * 2 - 1));
     v.moonPhase = l.moon ?? roadMoon(l.clock, this.moonStart);
     m.moonlight = 1 - Math.abs(v.moonPhase - 0.5) * 2;
-    // The deep, where the creature lives (a realm, world.ts): its own keys, no weather but its mist, a roof of stone.
+    // The hollow, where the creature lives (a realm, world.ts): its own keys, no weather but its mist, a canopy.
     const deep = isRealm(l.seed);
     m.flash = !deep && flashAt(time, l.seed, w) ? 1 : 0;
     v.flash = m.flash;

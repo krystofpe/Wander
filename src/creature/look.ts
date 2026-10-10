@@ -78,9 +78,9 @@ export const LANTERN: readonly [number, number] = [22, 15];
 export const TREE = { w: 150, h: 100, trunk: 92, door: { x: 68, w: 21, h: 30 }, peg: [86, 79] as const, tile: 128 } as const;
 
 /**
- * The nest in the deep (tools/art/sprites/nest.ts): its sprite `w` × `h` standing on its last row, the bowl it curls
+ * The nest in the hollow (tools/art/sprites/nest.ts): its sprite `w` × `h` standing on its last row, the bowl it curls
  * up in (its centre from the left, its width and how high it shows), the giant mushroom's stem (its column at the
- * root), and where on the cap's rim its lantern hangs. Drawn with the mushroom on the right.
+ * root), and where on the cap's rim its lantern hangs. Drawn with the toadstool on the right.
  */
 export const NEST = { w: 64, h: 60, door: { x: 24, w: 24, h: 10 }, stem: 46, peg: [10, 24] as const } as const;
 

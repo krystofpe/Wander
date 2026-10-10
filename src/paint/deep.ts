@@ -1,8 +1,8 @@
-// What grows and stands in the deep beyond the hollow, as pixel-art stamps made from a seed and cached (as plants.ts
-// makes trees). After Blackreach (giant mushrooms like jellyfish, their dark caps glowing underneath and trailing
-// threads of light; stalagmites; crystal) and the Underdark (tall pale-stemmed caps, torch-caps glowing amber, coral
-// shelves stacked up a stalk, glowing bulbs, tube fungi, violet crystal, purple coral, the broken pillars and urns of
-// a people who are gone; docs/research/blackreach-research.md). Pure.
+// What grows and stands in the hollow, the creature's wood, as pixel-art stamps made from a seed and cached (as
+// plants.ts makes trees): its old trees, its glowing toadstools, ferns and flowers (oldTree, toadstool, glowFern,
+// blooms, glowCaps). The rest are from when it was a cavern after Blackreach and the Underdark (giant mushrooms like
+// jellyfish, stalagmites, crystal, pale-stemmed caps, torch-caps, coral, bulbs, tubes, pillars and urns;
+// docs/research/blackreach-research.md), no longer placed anywhere but kept with their tests. Pure.
 import { rng } from '../noise.ts';
 import { role } from '../palette.ts';
 import { FLAG, newStamp, put } from './chunk.ts';

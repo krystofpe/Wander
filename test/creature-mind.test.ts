@@ -14,7 +14,7 @@ test('the system prompt says who it is', () => {
   const p = systemPrompt(life);
   assert.match(p, /You are Moss/);
   assert.match(p, /JSON/);
-  assert.match(p, /the deep/);
+  assert.match(p, /the hollow/);
   assert.match(p, /portal/, 'it goes through its portal to him at night');
   assert.match(p, /spirit of moss/);
   assert.match(p, /nest of moss/);

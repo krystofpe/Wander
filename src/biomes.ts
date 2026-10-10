@@ -1,6 +1,6 @@
 // The biomes of the road: what each one is, where it sits in the climate, how its weather leans, the shape of
 // its ground and far land, and what grows and stands in it. Colours live in palette.ts. And one place off the road:
-// the deep where the creature lives, under a sky of stone (web/creature; see `realm` in world.ts).
+// the hollow where the creature lives, an old wood under a canopy (web/creature; see `realm` in world.ts).
 
 export const BIOME_IDS = [
   'pine',
@@ -21,7 +21,7 @@ export const BIOME_IDS = [
 ] as const;
 export type BiomeId = (typeof BIOME_IDS)[number];
 
-/** The biomes his road passes through: all but the deep, where the creature lives, which is never on the road. */
+/** The biomes his road passes through: all but the hollow ('deep'), where the creature lives, never on the road. */
 export const ROAD_BIOMES: readonly BiomeId[] = BIOME_IDS.filter((id) => id !== 'deep');
 
 /** What a step sounds like. */
@@ -185,9 +185,10 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     air: { haze: 0.036, mist: 0.4 },
     cold: false,
   },
-  // Where the creature lives: a cavern under a sky of stone, lit by what grows there; no weather but its mist.
+  // Where the creature lives: the hollow, an old wood under a canopy, lit by the mist far off and what glows there;
+  // no weather but its mist.
   deep: {
-    title: 'the deep',
+    title: 'the hollow',
     climate: [0, 0],
     odd: true,
     weather: { wet: 0, snow: 0, fog: 0.7, storm: 0, cloud: 0, wind: 0 },

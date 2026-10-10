@@ -1,4 +1,4 @@
-// The creature's page: its life loaded (or a new one born), lived through the time it was closed, and set in the deep
+// The creature's page: its life loaded (or a new one born), lived through the time it was closed, and set in the hollow
 // where it lives; the stage's sky and air over it, its home drawn, its sounds; you at the glass with the keys, the
 // mouse and a box to type in; saved every half minute and when the window closes. At night, at the hour of his camp on
 // his road (the live road on the published page, his journey here), it goes through its portal to sit by his fire.
@@ -164,11 +164,11 @@ if (journey !== null && !ephemeral) {
 }
 
 /**
- * It lives in the deep: a place of its own under a sky of stone (a realm, world.ts), the same for this creature every
+ * It lives in the hollow: an old wood of its own under a canopy (a realm, world.ts), the same for this creature every
  * time, painted from this seed.
  */
 const sceneSeed = realm(life.seed);
-/** Where in the deep the view stands (any place is like any other there, but always the same one). */
+/** Where in the hollow the view stands (any place is like any other there, but always the same one). */
 const DEEP_AT = 2400;
 
 // ── Its words from Claude, through the server ───────────────────────────────

@@ -60,7 +60,7 @@ export type VoiceKind = 'visit' | 'thought' | 'gift' | 'return' | 'greet' | 'sta
 /** What activities can see and do; the game provides it. */
 export interface Ctx {
   readonly life: Life;
-  /** Where its scene is set: its biome, or the deep. */
+  /** Where its scene is set: its biome, or the hollow ('deep'). */
   readonly place: PlaceName;
   readonly body: Body;
   readonly scene: Scene;

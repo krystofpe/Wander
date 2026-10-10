@@ -306,7 +306,7 @@ export class Hollow {
       const world = game.worldNow();
       const dark = Math.min(1, (0.3 - game.sky.daylight) * 8);
       // The owl comes on most nights to its place on the trunk.
-      // (No owl in the deep: it keeps to the woods above.)
+      // (No owl in the hollow: eyes look out from its old trees instead.)
       const owl = game.place === 'deep' ? null : owlTonight(seed, world);
       if (home.edge !== undefined && owl !== null) {
         const left = geo.leftOf(home);

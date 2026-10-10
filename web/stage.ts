@@ -13,7 +13,7 @@ import { arcX, flashAt, moonAt, roadMoon, shownHour, sunElevation } from '../src
 import type { Weather } from '../src/sky.ts';
 import { loopFrame, walkFrame } from '../src/walker.ts';
 import { unit } from '../src/noise.ts';
-import { biomeAt, blended, groundHeight, landmarksBetween, stretchAt } from '../src/world.ts';
+import { biomeAt, blended, groundHeight, isRealm, landmarksBetween, stretchAt } from '../src/world.ts';
 import { drawHollow } from './hollowmark.ts';
 import type { Neighbour } from './hollowmark.ts';
 import { ALBEDO_ROW, FOG_AFTER, paletteRow } from './render.ts';
@@ -79,6 +79,7 @@ export class Stage {
       rim: new Float32Array(3),
       milky: 0,
       aurora: 0,
+      cave: 0,
       shine: new Float32Array(3),
       shineX: 0,
       sunUp: 0,
@@ -149,9 +150,12 @@ export class Stage {
     m.side = Math.max(-1, Math.min(1, ax * 2 - 1));
     v.moonPhase = l.moon ?? roadMoon(l.clock, this.moonStart);
     m.moonlight = 1 - Math.abs(v.moonPhase - 0.5) * 2;
-    m.flash = flashAt(time, l.seed, w) ? 1 : 0;
+    // The deep beyond the hollow (a realm, world.ts): its own keys, no weather but its mist, a roof of stone.
+    const deep = isRealm(l.seed);
+    m.flash = !deep && flashAt(time, l.seed, w) ? 1 : 0;
     v.flash = m.flash;
-    gradeOf(m, this.grade);
+    gradeOf(m, this.grade, deep);
+    v.cave = deep ? 1 : 0;
 
     const want = l.framing;
     this.framing = still ? want : this.framing + (want - this.framing) * Math.min(1, dt / 5);
@@ -217,7 +221,7 @@ export class Stage {
     }
 
     // The air: clouds, fog veils and valley mist, rain or snow.
-    v.cover = w.cloud;
+    v.cover = deep ? 0 : w.cloud;
     v.cloudDrift += dt * (1.2 + 5 * w.wind);
     this.drift += dt * (2 + 7 * w.wind);
     // Fog is lit by the sky: a little lighter than the haze, so a veil never darkens the ground it lies on.
@@ -227,7 +231,7 @@ export class Stage {
     v.fogColor[2] = this.bytes[2] / 255;
     const e = m.elevation;
     // Mist gathers after a clear night, is thickest just after sunrise, burns off by mid-morning (research: Depth §13).
-    const mistTime = m.morning ? Math.max(0.12, Math.min(1, (e + 14) / 12) * (1 - Math.min(1, Math.max(0, (e - 8) / 20)))) : 0.1 + 0.25 * this.grade.night;
+    const mistTime = deep ? 0.75 : m.morning ? Math.max(0.12, Math.min(1, (e + 14) / 12) * (1 - Math.min(1, Math.max(0, (e - 8) / 20)))) : 0.1 + 0.25 * this.grade.night;
     const mist = blended(biomeAt(l.seed, l.at), (id) => BIOMES[id].air.mist);
     const yh = v.horizon;
     for (let i = 0; i < FOG_AFTER.length; i++) {
@@ -244,9 +248,32 @@ export class Stage {
     v.rainColor[1] = Math.min(1, v.fogColor[1] * 0.6 + 0.38);
     v.rainColor[2] = Math.min(1, v.fogColor[2] * 0.6 + 0.45);
 
+    if (deep) {
+      // Under stone: no sun, moon, stars, Milky Way or aurora; the old lamp hangs where the sun's glow is drawn, high
+      // in the roof; the fungus's cold light rims what stands in it; everything that glows blooms.
+      v.sunX = Math.round(W * 0.64);
+      v.sunY = extra + 58;
+      v.sunUp = 0;
+      v.moonUp = 0;
+      v.milky = 0;
+      v.aurora = 0;
+      v.clear = 0;
+      v.shine.fill(0);
+      v.rimSide = 0;
+      v.rimStrength = 0.35;
+      v.rim[0] = 0.45;
+      v.rim[1] = 0.85;
+      v.rim[2] = 0.88;
+      // Motes of light drifting down through the dark (the rain pass, as slow snow: web/render.ts).
+      v.rain = 0.07;
+      v.snow = true;
+      v.rainColor[0] = 0.5;
+      v.rainColor[1] = 0.92;
+      v.rainColor[2] = 0.95;
+    }
     for (const b of r.batches) b.clear();
     v.light.count = 0;
-    v.bloom = 0.35 + 0.55 * this.grade.night;
+    v.bloom = deep ? 0.75 : 0.35 + 0.55 * this.grade.night;
   }
 
   /** The screen row of the ground's top at a distance on the road (native px), with the camera as it is. */

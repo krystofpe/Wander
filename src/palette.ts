@@ -353,6 +353,25 @@ const BIOME_COLOURS: Readonly<Record<BiomeId, Colours>> = {
     grass: ['#29291e', '#413f2c', '#5e5a3b', '#807a50', '#a39c6c'],
     path: ['#38332e', '#544c43', '#716759'],
   },
+  // Beyond the hollow, after Blackreach measured (docs/research/blackreach-research.md): nearly one hue, teal-black
+  // darks never neutral, moss and stone in deep teals, dark caps on pale stems, black water, violet for accents; the
+  // fungus glows cyan (shroom) and the old lamp is the only warmth.
+  deep: {
+    land: ['#020f12', '#051d22', '#0a2c33', '#123f47', '#20616a'],
+    rock: ['#04181c', '#0a2c32', '#134048', '#1d5a62', '#2f7c84'],
+    soil: ['#03100f', '#071c1c', '#0c2a2a', '#123a3a'],
+    grass: ['#041816', '#082824', '#0f3a34', '#185048', '#256a5e'],
+    leaf: ['#020f14', '#061c26', '#0b2c3a', '#14404f', '#205a6b'],
+    needle: ['#03121a', '#08222c', '#10343e', '#1c4c55'],
+    bark: ['#03100f', '#081d1f', '#0f2c2e', '#183e40'],
+    birch: ['#0e2a30', '#3d6f75', '#7fb0b0', '#b8dcd6'],
+    stone: ['#061c20', '#0f3036', '#1b464c', '#2e6066'],
+    water: ['#02101a', '#05222e', '#0b3a46', '#1a6a72'],
+    flower: ['#2a2a5a', '#4a4a8a', '#8a82c4'],
+    bone: ['#76847f', '#aebcb3', '#dfe8d6'],
+    smoke: ['#3f6a70', '#7ea6a6', '#bfe0da'],
+    dry: ['#0a2226', '#14363a', '#204c50', '#2e6266'],
+  },
 };
 
 /** Daylight colours of every role in a biome, as Oklab triples (index × 3). */
@@ -436,6 +455,16 @@ const MORNING: readonly Key[] = EVENING.map((k) => {
   return { ...k, ...(swap[k.e] ?? {}) };
 });
 
+// The deep's keys: its sky is a roof of stone, near black, the mist in it teal by day and indigo by night; its light
+// is the fungus's cold cyan; the glow lobe is the old lamp's warm halo, small and steady (the stage hangs it there).
+const DEEP: readonly Key[] = [
+  { e: -90, lift: 0.02, gain: 0.55, boost: 0, light: '#5a6ac0', warm: 0.05, ambient: '#1c1a4a', cool: 0.5, sat: 0.85, zenith: '#020208', horizon: '#11113a', glow: '#ffcf70', glowStrength: 0.1, glowWidth: 0.08, fog: '#1c1a48', haze: 0.9 },
+  { e: -12, lift: 0.02, gain: 0.57, boost: 0, light: '#5a6ac0', warm: 0.05, ambient: '#1c1d4c', cool: 0.5, sat: 0.85, zenith: '#020309', horizon: '#121540', glow: '#ffcf70', glowStrength: 0.11, glowWidth: 0.08, fog: '#1d1f4c', haze: 0.9 },
+  { e: -4, lift: 0.015, gain: 0.64, boost: 0.01, light: '#6f9cc8', warm: 0.08, ambient: '#142a4c', cool: 0.48, sat: 0.9, zenith: '#02060c', horizon: '#0e2440', glow: '#ffd27a', glowStrength: 0.15, glowWidth: 0.08, fog: '#14344c', haze: 0.95 },
+  { e: 6, lift: 0.01, gain: 0.7, boost: 0.02, light: '#86d8da', warm: 0.12, ambient: '#0e3646', cool: 0.46, sat: 0.95, zenith: '#010b0e', horizon: '#0a2e36', glow: '#ffd27a', glowStrength: 0.18, glowWidth: 0.08, fog: '#0f4650', haze: 1 },
+  { e: 90, lift: 0.01, gain: 0.74, boost: 0.03, light: '#8fe6e0', warm: 0.15, ambient: '#0c3a44', cool: 0.45, sat: 1, zenith: '#010d10', horizon: '#0a3238', glow: '#ffd27a', glowStrength: 0.2, glowWidth: 0.08, fog: '#104c55', haze: 1 },
+];
+
 type KeyLab = {
   e: number;
   lift: number;
@@ -466,6 +495,7 @@ const toLabKey = (k: Key): KeyLab => ({
 });
 const EVENING_LAB = EVENING.map(toLabKey);
 const MORNING_LAB = MORNING.map(toLabKey);
+const DEEP_LAB = DEEP.map(toLabKey);
 
 /** Everything the palette and the sky need about one moment. Plain numbers, reused without allocation. */
 export type Moment = {
@@ -529,9 +559,12 @@ const OVERCAST_SKY = hexToLab('#9aa3a8');
 const STORM_SKY = hexToLab('#5d656f');
 const FOG_DAY = hexToLab('#a7adb0');
 
-/** Fills `g` with the grade of a moment: keys interpolated by elevation, then the weather. No allocation. */
-export function gradeOf(m: Moment, g: Grade): Grade {
-  const keys = m.morning ? MORNING_LAB : EVENING_LAB;
+/**
+ * Fills `g` with the grade of a moment: keys interpolated by elevation, then the weather. No allocation. In the deep
+ * (`deep`) its own keys follow the sun above, and it has no weather but its mist.
+ */
+export function gradeOf(m: Moment, g: Grade, deep = false): Grade {
+  const keys = deep ? DEEP_LAB : m.morning ? MORNING_LAB : EVENING_LAB;
   let i = 1;
   while (i < keys.length - 1 && keys[i].e < m.elevation) i++;
   const a = keys[i - 1];
@@ -555,6 +588,12 @@ export function gradeOf(m: Moment, g: Grade): Grade {
   lerpLab(g.fog, a.fog, b.fog, k);
   g.night = Math.min(1, Math.max(0, (-m.elevation - 2) / 12));
   g.side = m.side * (1 - g.night);
+  if (deep) {
+    // Under stone: no sun's side, no cloud, rain or moon; the mist only thickens the haze.
+    g.side = 0;
+    g.haze *= 1 + 0.8 * m.fog;
+    return g;
+  }
 
   // Weather: cloud flattens the light and greys the sky; fog thickens the haze; storms darken.
   const day = Math.min(1, Math.max(0, (m.elevation + 6) / 18));

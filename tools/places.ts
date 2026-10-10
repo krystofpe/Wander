@@ -1,6 +1,6 @@
 // Where things are on a road: the middle of each biome's first stretch, the borders between them, landmarks.
 // Pure (it only asks the world), so the tour and the tests can use it.
-import { BIOME_IDS } from '../src/biomes.ts';
+import { ROAD_BIOMES } from '../src/biomes.ts';
 import type { BiomeId, LandmarkKind } from '../src/biomes.ts';
 import { shownHour, sunElevation } from '../src/sky.ts';
 import { landmarksBetween, stretchesBetween } from '../src/world.ts';
@@ -9,7 +9,7 @@ import { landmarksBetween, stretchesBetween } from '../src/world.ts';
 export function biomeCentres(seed: number, limit = 3e6): Map<BiomeId, number> {
   const out = new Map<BiomeId, number>();
   const step = 200000;
-  for (let from = 0; from < limit && out.size < BIOME_IDS.length; from += step) {
+  for (let from = 0; from < limit && out.size < ROAD_BIOMES.length; from += step) {
     for (const s of stretchesBetween(seed, from, from + step)) {
       if (!out.has(s.biome) && s.start >= from) out.set(s.biome, (s.start + s.end) / 2);
     }

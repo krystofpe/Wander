@@ -1,7 +1,7 @@
 // The road, as pure functions of the seed and the distance along it (metres): which biome, how they blend,
 // how high the ground lies, and where the landmarks stand. The same seed and distance always give the same
 // place, and any distance can be looked up directly, without walking there from the start.
-import { BIOMES, BIOME_IDS, HOLLOW, LANDMARK_HOMES, LANDMARK_KINDS } from './biomes.ts';
+import { BIOMES, HOLLOW, LANDMARK_HOMES, LANDMARK_KINDS, ROAD_BIOMES } from './biomes.ts';
 import type { BiomeId, LandmarkKind } from './biomes.ts';
 import { fbm1, noise1, unit } from './noise.ts';
 import type { Tendency } from './sky.ts';
@@ -45,6 +45,8 @@ const CENTROIDS: Readonly<Record<BiomeId, readonly [number, number, number, numb
   stones: [-0.35, 0.45, 0.35, 0.3],
   ruins: [0.2, 0.35, -0.2, 0.8],
   rail: [0.0, -0.2, -0.3, 0.8],
+  // Never picked for the road (ROAD_BIOMES); only a realm is the deep.
+  deep: [0, 0, 0, 0],
 };
 
 /** Biomes that never touch: the climate keeps them apart, and this catches the rare case it does not. */
@@ -66,7 +68,7 @@ function climate(seed: number, k: number): [number, number, number, number] {
 /** Biomes ranked for stretch k by how well they fit its climate, each with a weight for a random pick. */
 function ranked(seed: number, k: number): { id: BiomeId; weight: number }[] {
   const c = climate(seed, k);
-  const scored = BIOME_IDS.map((id) => {
+  const scored = ROAD_BIOMES.map((id) => {
     const p = CENTROIDS[id];
     const d2 = (c[0] - p[0]) ** 2 + (c[1] - p[1]) ** 2 + 0.8 * (c[2] - p[2]) ** 2 + 0.8 * (c[3] - p[3]) ** 2;
     return { id, weight: Math.exp(-d2 / 0.3) * (BIOMES[id].odd ? 0.55 : 1) };
@@ -103,13 +105,33 @@ function biomeOfStretch(seed: number, k: number): BiomeId {
   const fits = (id: BiomeId): boolean => id !== before && id !== after && !forbidden(id, before) && !forbidden(id, after);
   if (order.some((o) => fits(o.id))) return pickFrom(order, fits, u);
   // Nothing fits both: anything that at least differs from both and may sit next to them.
-  for (const id of BIOME_IDS) if (fits(id)) return id;
+  for (const id of ROAD_BIOMES) if (fits(id)) return id;
   return order.find((o) => o.id !== before && o.id !== after)?.id ?? order[0].id;
 }
 
 const stretchCache = new Map<string, BiomeId>();
 
+/** Seeds that are not roads but places of their own, every stretch the same biome: the deep beyond the hollow. */
+const REALMS = new Map<number, BiomeId>();
+
+/**
+ * A realm: a world that is one place all the way along (the deep beyond the creature's hollow), with no landmarks,
+ * painted and graded by the same engine as his road. Returns the seed to paint it with, made from `seed`.
+ */
+export function realm(seed: number, biome: BiomeId = 'deep'): number {
+  const s = (Math.imul(seed ^ 0x0dee9, 0x9e3779b1) ^ 0x5eedd) >>> 0;
+  REALMS.set(s, biome);
+  return s;
+}
+
+/** Whether a seed is a realm (and so has no road, no landmarks, one biome). */
+export function isRealm(seed: number): boolean {
+  return REALMS.has(seed);
+}
+
 function stretchBiome(seed: number, k: number): BiomeId {
+  const place = REALMS.get(seed);
+  if (place !== undefined) return place;
   const key = `${seed}:${k}`;
   let id = stretchCache.get(key);
   if (id === undefined) {

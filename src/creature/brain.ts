@@ -2,6 +2,7 @@
 // a weighted random pick. Each activity is a little script (a generator) stepped once per frame. From the terminal
 // creature (feat/creature src/brain.ts) as it was, walking in native pixels and leaving sprites instead of glyphs.
 import { BIOMES, BRAIN, COOLDOWN_SEC, DEPTH_PX, IDLE_KNOCK_SEC, MOON_FINDS, PRESENT_SEC, SELF_FEED_CAP, SELF_PLAY_CAP } from './config.ts';
+import type { PlaceName } from './config.ts';
 import { MAX_CAIRN, clamp01, isNightFor, warm } from './life.ts';
 import type { Feelings, Life, Mood } from './life.ts';
 import { CREATURE } from './look.ts';
@@ -52,6 +53,8 @@ export type VoiceKind = 'visit' | 'thought' | 'gift' | 'return' | 'greet' | 'sta
 /** What activities can see and do; the game provides it. */
 export interface Ctx {
   readonly life: Life;
+  /** Where its scene is set: its biome, or the deep beyond the hollow. */
+  readonly place: PlaceName;
   readonly body: Body;
   readonly scene: Scene;
   readonly geo: Geometry;
@@ -241,7 +244,7 @@ const darkMoon = (c: Ctx): boolean => c.sky.moon < 0.05 || c.sky.moon > 0.95;
 
 /** Something it finds: by the full or the new moon at night, sometimes a stranger thing than the biome holds. */
 function pickFind(c: Ctx): string {
-  const list = c.sky.daylight < 0.25 && c.random() < 0.5 && fullMoon(c) ? MOON_FINDS.full : c.sky.daylight < 0.25 && c.random() < 0.5 && darkMoon(c) ? MOON_FINDS.dark : BIOMES[c.life.biome].finds;
+  const list = c.sky.daylight < 0.25 && c.random() < 0.5 && fullMoon(c) ? MOON_FINDS.full : c.sky.daylight < 0.25 && c.random() < 0.5 && darkMoon(c) ? MOON_FINDS.dark : BIOMES[c.place].finds;
   return list[Math.floor(c.random() * list.length)];
 }
 
@@ -650,14 +653,14 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
   // eyes wide, without a sound; afterwards a word, and a line in its diary.
   watch: {
     cooldown: 300,
-    score: (c) => (!c.life.asleep && !c.body.inside && visitAt(c.now(), c.life.seed, c.life.biome, c.sky.daylight) !== null ? 3 : 0),
+    score: (c) => (!c.life.asleep && !c.body.inside && visitAt(c.now(), c.life.seed, c.place, c.sky.daylight) !== null ? 3 : 0),
     *run(c) {
       c.body.pose = 'stand';
       c.body.eyes = 'o o';
       yield* wait(1.5);
       let seen = 0;
-      while (visitAt(c.now(), c.life.seed, c.life.biome, c.sky.daylight) !== null && seen < 150) {
-        const visit = visitAt(c.now(), c.life.seed, c.life.biome, c.sky.daylight);
+      while (visitAt(c.now(), c.life.seed, c.place, c.sky.daylight) !== null && seen < 150) {
+        const visit = visitAt(c.now(), c.life.seed, c.place, c.sky.daylight);
         // Its gaze follows it across: it walks from one side of the glow to the other.
         const focus = forestFocus(c.scene.layout.home.x < 0.5);
         const at = visit === null ? focus : focus + visit.dir * (visit.progress - 0.5) * 0.72;
@@ -896,7 +899,7 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       c.body.visible = true;
       yield* walkTo(c, left ? 0.15 : 0.85, c.body.z, false, 40);
       c.voice('return', 'wanderBack', { item });
-      c.diary(`Walked to the edge of the ${BIOMES[c.life.biome].title.toLowerCase()} and back. Found ${item}.`);
+      c.diary(`Walked to the edge of the ${BIOMES[c.place].title.toLowerCase()} and back. Found ${item}.`);
       c.life.needs.fun = clamp01(c.life.needs.fun + 0.3);
       yield* hush(c, 10);
     },

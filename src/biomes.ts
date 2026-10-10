@@ -1,5 +1,6 @@
 // The biomes of the road: what each one is, where it sits in the climate, how its weather leans, the shape of
-// its ground and far land, and what grows and stands in it. Colours live in palette.ts.
+// its ground and far land, and what grows and stands in it. Colours live in palette.ts. And one place off the road:
+// the deep beyond the creature's hollow, under a sky of stone (web/creature; see `realm` in world.ts).
 
 export const BIOME_IDS = [
   'pine',
@@ -16,8 +17,12 @@ export const BIOME_IDS = [
   'stones',
   'ruins',
   'rail',
+  'deep',
 ] as const;
 export type BiomeId = (typeof BIOME_IDS)[number];
+
+/** The biomes his road passes through: all but the deep, which lies beyond the hollow and is never on the road. */
+export const ROAD_BIOMES: readonly BiomeId[] = BIOME_IDS.filter((id) => id !== 'deep');
 
 /** What a step sounds like. */
 export type Ground = 'grass' | 'gravel' | 'snow' | 'sand' | 'wood' | 'mud' | 'leaves' | 'salt';
@@ -178,6 +183,17 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     ground: { amp: 1.5, wave: 260, step: 'gravel' },
     far: { height: 45, rough: 0.3, mesa: 0, ridged: 0 },
     air: { haze: 0.036, mist: 0.4 },
+    cold: false,
+  },
+  // Beyond the hollow: a cavern under a sky of stone, lit by its fungus and one old lamp; no weather but its mist.
+  deep: {
+    title: 'the deep',
+    climate: [0, 0],
+    odd: true,
+    weather: { wet: 0, snow: 0, fog: 0.7, storm: 0, cloud: 0, wind: 0 },
+    ground: { amp: 1.2, wave: 90, step: 'gravel' },
+    far: { height: 120, rough: 0.6, mesa: 0, ridged: 1 },
+    air: { haze: 0.075, mist: 1 },
     cold: false,
   },
 };

@@ -64,6 +64,8 @@ export const HEARD: Readonly<Record<BiomeId, Heard>> = {
   stones: h(0.1, 0, 0.5, 0.5, 0.5, 0.3, 0, 0, 0, 12, OPEN),
   ruins: h(0.3, 0.3, 0.7, 0.6, 0.5, 0.6, 0, 0, 0, 16, DORIAN),
   rail: h(0.4, 0.2, 0.5, 0.7, 0.6, 0.3, 0, 0, 1, 17, DORIAN),
+  // Under stone: no trees, birds or crickets; a hollow wind, far water, music in the strange mode.
+  deep: h(0, 0, 0.3, 0, 0, 0, 0, 0.6, 0, 8, PHRYGIAN),
 };
 
 /** What the page tells the sound, a few times a second. */

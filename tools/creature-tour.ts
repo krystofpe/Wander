@@ -6,7 +6,7 @@
 // quality 90, with a contact sheet of each group.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { Page } from 'playwright-core';
 import { LIVE } from '../src/live.ts';
 import { seedOf } from '../src/options.ts';
@@ -17,7 +17,7 @@ import { ROOT, flags, session } from './headless.ts';
 
 const f = flags(process.argv.slice(2));
 const word = f.get('seed') ?? 'moss';
-const out = join(ROOT, f.get('out') ?? 'docs/creature');
+const out = resolve(ROOT, f.get('out') ?? 'docs/creature');
 const only = f.get('only')?.split(',') ?? null;
 const [W, H] = (f.get('size') ?? '1920x1080').split('x').map(Number);
 void LIVE;

@@ -126,6 +126,12 @@ export const BIOME_NAMES = ['forest', 'meadow', 'tundra', 'swamp'] as const;
 /** Biomes there once were; a creature saved in one moves to another. */
 export const FORMER_BIOMES: Readonly<Record<string, string>> = { shore: 'Shore', desert: 'Desert' };
 export type BiomeName = (typeof BIOME_NAMES)[number];
+/**
+ * Where a creature's scene is set: one of the biomes, or the deep beyond the hollow, where they all live now (the
+ * page sets it there; its biome still says which land its door opens onto on his road). The deep is not a biome a
+ * creature can be of.
+ */
+export type PlaceName = BiomeName | 'deep';
 
 export type PropKind = 'bush' | 'fern' | 'shrooms' | 'mushrooms' | 'rock' | 'stump' | 'drift' | 'reeds' | 'pond' | 'home';
 export type CritterKind = 'butterfly' | 'bird' | 'firefly' | 'frog' | 'moth' | 'hare' | 'deer' | 'bat';
@@ -155,7 +161,7 @@ export type BiomeDef = {
   readonly forageFood: string;
 };
 
-export const BIOMES: Readonly<Record<BiomeName, BiomeDef>> = {
+export const BIOMES: Readonly<Record<PlaceName, BiomeDef>> = {
   forest: {
     title: 'Forest',
     world: 'pine',
@@ -212,6 +218,22 @@ export const BIOMES: Readonly<Record<BiomeName, BiomeDef>> = {
     nightCritters: ['firefly', 'firefly', 'frog', 'moth'],
     finds: ['a frog-shaped stone', 'glowing moss', 'a lily seed', 'a bent spoon', 'a tooth of something', 'a bubble that will not pop'],
     forageFood: 'mushrooms',
+  },
+  // Beyond the hollow, under a sky of stone: it lives in the hollow among the roots of the great tree, giant glowing
+  // mushrooms in ranks into the mist; no weather but the mist; moths, bats, a pale frog, and wisps of light at night.
+  deep: {
+    title: 'Deep',
+    world: 'deep',
+    rain: 0,
+    cold: false,
+    canopy: true,
+    props: [['shrooms', 7], ['rock', 2]],
+    forage: 'shrooms',
+    water: 'pond',
+    dayCritters: ['moth', 'moth', 'frog', 'bat'],
+    nightCritters: ['firefly', 'firefly', 'firefly', 'moth', 'bat'],
+    finds: ['a pale crystal that hums', 'a moth wing thin as breath', 'a cold spark that will not go out', 'a coin of the people who left', 'a key of black glass', 'a seed that glows', 'a pebble from the world above'],
+    forageFood: 'pale caps',
   },
 };
 

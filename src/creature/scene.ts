@@ -3,7 +3,7 @@
 // view's width (0 left … 1 right), z a depth in the band in front of the walk line (0 at the walk line … 1 at the
 // front, "the glass"); heights and speeds are pixels and pixels per second.
 import { BIOMES, DEPTH_PX, FOODS, PLAN_W } from './config.ts';
-import type { BiomeName, CritterKind, FoodKind, PropKind } from './config.ts';
+import type { CritterKind, FoodKind, PlaceName, PropKind } from './config.ts';
 import { rng } from '../noise.ts';
 import { TREE } from './look.ts';
 import type { Sky } from './sky.ts';
@@ -68,7 +68,7 @@ const TREE_Z = 0.22;
 const CAIRN_Z = 0.3;
 
 /** The same layout for the same seed and biome, whatever the view's width. */
-export function layoutScene(seed: number, biome: BiomeName): Layout {
+export function layoutScene(seed: number, biome: PlaceName): Layout {
   const def = BIOMES[biome];
   const r = rng(seed ^ 0x5ce4e);
   /** What is placed: `keep` marks the home, the water and the cairn, which nothing may stand in front of. */
@@ -242,7 +242,7 @@ const TOY_LIFE = 45;
 /** The moving things in the scene. */
 export class Scene {
   readonly layout: Layout;
-  readonly biome: BiomeName;
+  readonly biome: PlaceName;
   foods: Food[] = [];
   toy: Toy | null = null;
   critters: Critter[] = [];
@@ -250,7 +250,7 @@ export class Scene {
   private nextFood = 0;
   private readonly random: () => number;
 
-  constructor(seed: number, biome: BiomeName, random: () => number) {
+  constructor(seed: number, biome: PlaceName, random: () => number) {
     this.biome = biome;
     this.layout = layoutScene(seed, biome);
     this.random = random;

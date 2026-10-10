@@ -3,7 +3,7 @@
 // comes from the wanderer's grading with the natural sun. The weather is in the wanderer's own shape, so the
 // renderer, the sound and the lightning read it as they read his. Pure.
 import { BIOMES, DAYLIGHT_KEYS, WEATHER } from './config.ts';
-import type { BiomeName } from './config.ts';
+import type { PlaceName } from './config.ts';
 import { hash2, makeNoise } from '../noise.ts';
 import type { Noise2D } from '../noise.ts';
 import { localHour, moonPhase, seasonOf, smoothstep } from '../sky.ts';
@@ -51,7 +51,7 @@ export function daylightAt(hour: number): number {
 
 type Slot = { cloud: number; precip: number; storm: boolean };
 
-function slotWeather(slot: number, seed: number, biome: BiomeName, season: Season): Slot {
+function slotWeather(slot: number, seed: number, biome: PlaceName, season: Season): Slot {
   const u = (k: number): number => hash2(slot, k, seed ^ 0x3a7e) / 4294967296;
   const chance = BIOMES[biome].rain * (season === 'winter' || season === 'autumn' ? 1.25 : 1);
   if (u(1) < chance) {
@@ -61,7 +61,7 @@ function slotWeather(slot: number, seed: number, biome: BiomeName, season: Seaso
 }
 
 /** Whether rain falls as snow here and now. */
-export function snows(biome: BiomeName, season: Season): boolean {
+export function snows(biome: PlaceName, season: Season): boolean {
   return BIOMES[biome].cold || season === 'winter';
 }
 
@@ -79,7 +79,7 @@ function windAt(ms: number, seed: number, storm: boolean, precip: number): numbe
 }
 
 /** The weather at a world time: slots of WEATHER.slotMinutes, fading into the next. Pure. */
-export function weatherAt(ms: number, seed: number, biome: BiomeName): Weather {
+export function weatherAt(ms: number, seed: number, biome: PlaceName): Weather {
   const slotMs = WEATHER.slotMinutes * 60000;
   const slot = Math.floor(ms / slotMs);
   const f = (ms - slot * slotMs) / slotMs;
@@ -108,7 +108,7 @@ export function weatherWords(w: Weather): string {
 }
 
 /** The sky at a world time for a creature's seed and biome. Pure. */
-export function skyAt(ms: number, seed: number, biome: BiomeName): Sky {
+export function skyAt(ms: number, seed: number, biome: PlaceName): Sky {
   const hour = localHour(ms);
   const weather = weatherAt(ms, seed, biome);
   const wet = Math.max(weather.precip, weatherAt(ms - 15 * 60000, seed, biome).precip * 0.75, weatherAt(ms - 30 * 60000, seed, biome).precip * 0.45);

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BIOME_IDS } from '../src/biomes.ts';
+import { ROAD_BIOMES } from '../src/biomes.ts';
 import { biomeAt, firstStretchOf, groundHeight, landmarkAt, landmarksBetween, stretchAt, stretchesBetween, tendencyAt } from '../src/world.ts';
 
 test('the same seed and distance always give the same place', () => {
@@ -47,7 +47,7 @@ test('every biome comes up, none dominates', () => {
   const counts: Record<string, number> = {};
   const all = stretchesBetween(11, 0, 3000000);
   for (const s of all) counts[s.biome] = (counts[s.biome] ?? 0) + 1;
-  for (const id of BIOME_IDS) {
+  for (const id of ROAD_BIOMES) {
     const share = (counts[id] ?? 0) / all.length;
     assert.ok(share > 0.025 && share < 0.16, `${id}: ${(share * 100).toFixed(1)}% ${JSON.stringify(counts)}`);
   }

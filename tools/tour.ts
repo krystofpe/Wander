@@ -7,7 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BIOME_IDS, HOLLOW, LANDMARK_KINDS } from '../src/biomes.ts';
+import { HOLLOW, LANDMARK_KINDS, ROAD_BIOMES } from '../src/biomes.ts';
 import { seedOf } from '../src/options.ts';
 import { flags, open, session } from './headless.ts';
 import { TIMES, biomeCentres, borders, firstLandmarks } from './places.ts';
@@ -27,7 +27,7 @@ const add = (group: string, name: string, q: Record<string, string>, size?: [num
 
 const centres = biomeCentres(seed);
 // Every biome at every time of day, in the weather it most often has (clear).
-for (const b of BIOME_IDS) {
+for (const b of ROAD_BIOMES) {
   const at = String(Math.round(centres.get(b) ?? 0));
   for (const [time, hour] of Object.entries(TIMES)) add('biomes', `${b}-${time}`, { at, hour: String(hour), weather: 'clear' });
 }

@@ -1,6 +1,6 @@
 // Options, from the URL in the page and from the command line on the server: the same names in both places
 // (`npm start -- --seed moss --speed 20` opens `?seed=moss&speed=20`).
-import { BIOME_IDS } from './biomes.ts';
+import { ROAD_BIOMES } from './biomes.ts';
 import type { BiomeId } from './biomes.ts';
 
 export type Options = {
@@ -113,7 +113,7 @@ export function parseOptions(get: (name: string) => string | null): Options {
     day: num(get('day'), 1, 24 * 60 * 7) ?? DEFAULTS.day,
     realClock: flag(get('realclock')),
     hour: num(get('hour'), 0, 23.999),
-    biome: biome !== null && (BIOME_IDS as readonly string[]).includes(biome) ? (biome as BiomeId) : null,
+    biome: biome !== null && (ROAD_BIOMES as readonly string[]).includes(biome) ? (biome as BiomeId) : null,
     offline: flag(get('offline')),
     frozen: flag(get('frozen')),
     at: num(get('at'), -1e12, 1e12),

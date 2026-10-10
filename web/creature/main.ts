@@ -24,7 +24,7 @@ import { PLAYFIELD } from '../../src/paint/scene.ts';
 import { rng } from '../../src/noise.ts';
 import { seedOf } from '../../src/options.ts';
 import { namedWeather, shownHour, sunElevation } from '../../src/sky.ts';
-import { biomeAt, firstStretchOf, landmarkNear, stretchAt } from '../../src/world.ts';
+import { biomeAt, realm, stretchAt } from '../../src/world.ts';
 import { Sound, ticker } from '../audio/sound.ts';
 import { Bench } from '../bench.ts';
 import { Renderer } from '../render.ts';
@@ -168,23 +168,15 @@ if (journey !== null && !ephemeral) {
   setInterval(() => void journeyOf().then((j) => (journey = j ?? journey)), 60_000);
 }
 
-/** Without a hollow on his road: the middle of a still stretch of its land, away from his landmarks. */
-function stillOf(seed: number): number {
-  const world = BIOMES[life.biome].world;
-  for (let from = 0; from < 2e6; ) {
-    const s = firstStretchOf(seed, world, from);
-    if (s === null) break;
-    for (const k of [0.5, 0.35, 0.65, 0.25, 0.75]) {
-      const at = s.start + (s.end - s.start) * k;
-      if (s.end - s.start > 320 && landmarkNear(seed, at, 260) === null && stretchAt(seed, at).biome === world) return at;
-    }
-    from = s.end + 1;
-  }
-  return 1000;
-}
-/** The hollow on his road where it lives. */
+/** The hollow on his road it lives beyond: its door, where he sits when he comes by. */
 const home = homeHollow(worldSeed, life.biome);
-const still = home === null ? stillOf(worldSeed) : 0;
+/**
+ * Beyond the hollow lies the deep: a place of its own under a sky of stone (a realm, world.ts), the same for this
+ * creature every time. Its scene is painted from this seed; his road stays his.
+ */
+const sceneSeed = realm(life.seed);
+/** Where in the deep the view stands (any place is like any other there, but always the same one). */
+const DEEP_AT = 2400;
 
 // ── Its words from Claude, through the server ───────────────────────────────
 
@@ -233,12 +225,12 @@ const mind: MindLink | null = b.mind === 'claude' && !opts.offline ? new Link(b.
 PLAYFIELD.road = false;
 PLAYFIELD.floor = 2.6;
 const LIFT = Number(params.get('lift') ?? 64);
-const stage = new Stage(worldSeed, 0.5);
+const stage = new Stage(sceneSeed, 0.5);
 const hollow = new Hollow();
 renderer.atlas = await loadAtlas(renderer.gpu);
 const ui = new CreatureUi();
 /** The walk line's row across the view, from the ground of the world where it lives (the camera never moves). */
-const geoFor = (w: number): Geometry => new Geometry(w, (x) => stage.groundRow(renderer, worldSeed, (x * w + stage.view.camX) / PX_PER_M));
+const geoFor = (w: number): Geometry => new Geometry(w, (x) => stage.groundRow(renderer, sceneSeed, (x * w + stage.view.camX) / PX_PER_M));
 const game = new Game(life, {
   geo: geoFor(renderer.nativeW),
   now: start,
@@ -249,10 +241,9 @@ const game = new Game(life, {
   firstMeeting: b.first,
   ephemeral,
   weather: opts.weather !== null ? namedWeather(opts.weather) : null,
+  place: 'deep',
 });
-/** Where on his road the middle of the view is: its door over the hollow's door. */
-const atFor = (geo: Geometry): number => (home === null ? still : home.at + (0.5 * geo.w - geo.px(geo.door(game.scene.layout.home).x)) / PX_PER_M);
-let at = atFor(game.geo);
+const at = DEEP_AT;
 /** Past its door is into the clearing: he comes from behind its home and goes on across. */
 const dir: 1 | -1 = game.scene.layout.homeLeft ? 1 : -1;
 
@@ -494,15 +485,12 @@ function live(now: number): void {
 
 function step(now: number): void {
   if (!opts.manual) live(now);
-  if (game.geo.w !== renderer.nativeW) {
-    game.geo = geoFor(renderer.nativeW);
-    at = atFor(game.geo);
-  }
+  if (game.geo.w !== renderer.nativeW) game.geo = geoFor(renderer.nativeW);
   const world = game.worldNow();
   const hour = localHour(world);
   const w = fixedWeather ?? game.sky.weather;
-  stage.sky(renderer, { seed: worldSeed, at, clock: world / 3600000, framing: 0.5, moon: game.sky.moon, lift: LIFT }, hour, true, w, anim, opts.manual ? 0.05 : Math.min(0.1, (now - lastFrame) / 1000), status.frames === 0);
-  if (renderer.atlas !== null) hollow.draw(renderer, renderer.atlas, stage, game, worldSeed, at, anim);
+  stage.sky(renderer, { seed: sceneSeed, at, clock: world / 3600000, framing: 0.5, moon: game.sky.moon, lift: LIFT }, hour, true, w, anim, opts.manual ? 0.05 : Math.min(0.1, (now - lastFrame) / 1000), status.frames === 0);
+  if (renderer.atlas !== null) hollow.draw(renderer, renderer.atlas, stage, game, sceneSeed, at, anim);
   // Its words above its head, the bar and the hints, the journal, the box to type in.
   const css = renderer.scale / devicePixelRatio;
   ui.setScale(css);
@@ -524,19 +512,19 @@ function hearing(): Parameters<Sound['tick']>[0] {
   const world = game.worldNow();
   const hour = localHour(world);
   const w = fixedWeather ?? game.sky.weather;
-  const blend = biomeAt(worldSeed, at);
+  const blend = biomeAt(sceneSeed, at);
   const walking = game.body.pose === 'walk' && game.body.visible && !game.body.inside;
   return {
-    seed: worldSeed,
+    seed: sceneSeed,
     time: anim,
     blend,
-    place: stretchAt(worldSeed, at).k,
+    place: stretchAt(sceneSeed, at).k,
     hour: shownHour(hour, true),
     sun: sunElevation(hour, true),
     weather: w,
     stage: walking ? 'walk' : 'stand',
     walked: (game.body.walked / PX_PER_M) * 1.6,
-    ground: w.kind === 'snow' && w.precip > 0.4 ? 'snow' : WORLD_BIOMES[BIOMES[life.biome].world].ground.step,
+    ground: WORLD_BIOMES[BIOMES[game.place].world].ground.step,
     fire: 0,
     fireX: 0.5,
     himX: game.body.x,

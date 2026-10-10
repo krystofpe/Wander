@@ -45,9 +45,10 @@ export const HORIZON: Readonly<Record<BiomeId, number>> = {
   stones: 190,
   ruins: 186,
   rail: 192,
+  deep: 174,
 };
 
-type Style = 'round' | 'ridged' | 'mesa' | 'dune' | 'sea';
+type Style = 'round' | 'ridged' | 'mesa' | 'dune' | 'sea' | 'spires';
 type Cover = 'none' | 'conifer' | 'broad' | 'birch' | 'dead' | 'stones' | 'ruins' | 'poles' | 'reeds';
 /** One land layer of one biome: amplitude (px at that layer), feature width (layer px), style and what crowns it. */
 type Form = readonly [number, number, Style, Cover];
@@ -68,6 +69,8 @@ const FORMS: Readonly<Record<BiomeId, readonly [Form, Form, Form, Form, Form]>> 
   stones: [[46, 260, 'round', 'none'], [36, 200, 'round', 'none'], [28, 150, 'round', 'stones'], [22, 120, 'round', 'none'], [18, 100, 'round', 'stones']],
   ruins: [[40, 260, 'round', 'none'], [30, 200, 'round', 'ruins'], [26, 150, 'round', 'ruins'], [22, 110, 'round', 'broad'], [18, 90, 'round', 'ruins']],
   rail: [[46, 260, 'round', 'none'], [32, 200, 'round', 'none'], [26, 150, 'round', 'broad'], [20, 120, 'round', 'poles'], [16, 100, 'round', 'none']],
+  // Columns and stalagmites in ranks into the mist, the far ones tall enough to meet the roof; low mounds near.
+  deep: [[150, 120, 'ridged', 'none'], [170, 95, 'spires', 'none'], [80, 110, 'ridged', 'none'], [60, 70, 'spires', 'none'], [24, 90, 'round', 'none']],
 };
 
 /** Which of the five land layers a layer is (by depth), or −1. */
@@ -105,6 +108,12 @@ function shapeHeight(seed: number, form: Form, salt: number, u: number): number 
     case 'dune':
       n = fbm1(x, s, 2, 0.35) * 0.8 + 0.2 * Math.abs(noise1(x * 2.1, s ^ 9));
       break;
+    case 'spires': {
+      // Narrow peaks off a low floor: 1 − |noise|, sharpened hard, so most of the line is low and a few rise high.
+      const r = 1 - Math.abs(fbm1(x, s ^ 0x77, 3, 0.55) * 2.2);
+      n = 0.12 * fbm1(x * 0.3, s, 2, 0.5) + 1.25 * Math.pow(Math.max(0, r), 3.2) - 0.42;
+      break;
+    }
     default:
       n = fbm1(x, s, 3, 0.42);
   }
@@ -277,7 +286,7 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
           // few strata drawn across it so a big face reads as drawn.
           r = R.shade;
           const cell = Math.floor((u + (below >> 1) * 7) / 5);
-          const rocky = blended(blend, (id) => (FORMS[id][k][2] === 'mesa' || FORMS[id][k][2] === 'ridged' ? 1 : 0));
+          const rocky = blended(blend, (id) => (FORMS[id][k][2] === 'mesa' || FORMS[id][k][2] === 'ridged' || FORMS[id][k][2] === 'spires' ? 1 : 0));
           const strata = Math.floor((u + below * 11) / 9);
           if (rocky > 0.5 && below > faceDepth + 3 && below % 5 === 0 && unit(strata * 31 + below, seed ^ (li * 977)) < 0.18) r = R.deep;
           void cell;

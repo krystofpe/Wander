@@ -17,6 +17,7 @@ import { HORIZON } from './land.ts';
 import { BRIDGE, levelling, marksOn } from './landmarks.ts';
 import type { Placed as Mark } from './landmarks.ts';
 import { birch, broadleaf, bush, cactus, cached, conifer, deadTree, reeds, rock, tuft } from './plants.ts';
+import { bigCap, crystals, glowCaps, stalagmite } from './deep.ts';
 import { baseline } from '../layers.ts';
 
 /** What the ground is made of in a biome: its surface family, and whether that surface is snowy. */
@@ -35,6 +36,7 @@ const SURFACE: Readonly<Record<BiomeId, string>> = {
   stones: 'grass',
   ruins: 'grass',
   rail: 'grass',
+  deep: 'grass',
 };
 
 const SNOWY: ReadonlySet<BiomeId> = new Set(['tundra']);
@@ -58,6 +60,7 @@ const BANK: Readonly<Record<BiomeId, number>> = {
   stones: 0,
   ruins: 0.5,
   rail: 0,
+  deep: 1,
 };
 
 /** Things that stand on the ground: a stamp for each placed thing, at its layer's scale. */
@@ -110,6 +113,14 @@ export function stampFor(p: Placed, z: number): Stamp {
       return wall(p.seed % 24, p.size, z);
     case 'post':
       return post(p.seed % 8, p.size);
+    case 'cap':
+      return bigCap(p.seed % 40, p.size);
+    case 'stalag':
+      return stalagmite(p.seed % 32, p.size);
+    case 'crystal':
+      return crystals(p.seed % 24, p.size);
+    case 'glowcap':
+      return glowCaps(p.seed % 24, p.size);
   }
 }
 

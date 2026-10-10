@@ -32,7 +32,12 @@ export type Species =
   | 'drift'
   | 'pole'
   | 'wall'
-  | 'post';
+  | 'post'
+  // The deep's (src/paint/deep.ts).
+  | 'cap'
+  | 'stalag'
+  | 'crystal'
+  | 'glowcap';
 
 /** A class of things on one layer of one biome: how dense (per 100 layer px), how big (px), clumped in groves. */
 type Flora = {
@@ -154,6 +159,18 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
     f('drytuft', ['ground', 'fore'], 8, [3, 7], 0.2),
     f('birch', ['mid', 'near'], 1.0, [50, 90], 0.7),
   ],
+  // Giant glowing mushrooms in ranks into the mist, stalagmites among them, crystal and small glowing caps in the moss.
+  deep: [
+    f('cap', ['hills'], 1.8, [50, 110], 0.6),
+    f('cap', ['mid'], 1.3, [70, 150], 0.7),
+    f('cap', ['near'], 0.8, [90, 180], 0.75),
+    f('stalag', ['hills', 'mid', 'near'], 1.2, [24, 80], 0.5),
+    f('cap', ['ground'], 0.22, [110, 170], 0.85),
+    f('stalag', ['ground'], 0.3, [14, 40], 0.5),
+    f('crystal', ['near', 'ground'], 0.7, [6, 14], 0.6),
+    f('glowcap', ['ground', 'fore'], 3.5, [4, 9], 0.6),
+    f('rock', ['ground'], 0.5, [8, 18], 0.3),
+  ],
 };
 
 /** Minimum spacing in layer px for a species (the jittered grid's cell). */
@@ -181,6 +198,10 @@ const SPACING: Readonly<Record<Species, number>> = {
   pole: 110,
   wall: 60,
   post: 22,
+  cap: 26,
+  stalag: 14,
+  crystal: 14,
+  glowcap: 7,
 };
 
 export type Placed = {

@@ -4,7 +4,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BIOME_IDS } from '../src/biomes.ts';
+import { ROAD_BIOMES } from '../src/biomes.ts';
 import { seedOf } from '../src/options.ts';
 import { flags, open, session } from './headless.ts';
 import { biomeCentres } from './places.ts';
@@ -16,7 +16,7 @@ const out = f.get('out') ?? 'sheet.png';
 const dir = join(out.replace(/\.png$/, ''), '');
 mkdirSync(dir, { recursive: true });
 const centres = biomeCentres(seed);
-const biomes = (f.get('biomes') ?? BIOME_IDS.join(',')).split(',');
+const biomes = (f.get('biomes') ?? ROAD_BIOMES.join(',')).split(',');
 const hours = (f.get('hours') ?? '12').split(',').map(Number);
 const atList = f.get('at')?.split(',').map(Number);
 const weather = f.get('weather');

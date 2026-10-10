@@ -25,6 +25,8 @@ import type { Stage } from '../stage.ts';
 
 const NEAR = GROUND - 1;
 const MID = GROUND - 2;
+/** The layer the deep's lamp hangs in: the ridge, in front of the farthest rock. */
+const LAMP_LAYER = 3;
 const COAT = role('coat', 0);
 const EYE = role('eye', 0);
 
@@ -69,11 +71,12 @@ type Growth = { readonly x: number; readonly z: number; readonly sheet: string; 
  * stays open where it plays; never in its doorway, the pond or on the cairn.
  */
 function undergrowth(game: Game): Growth[] {
-  const def = BIOMES[game.life.biome];
+  const def = BIOMES[game.place];
   const kinds: readonly (readonly [string, string])[] =
-    game.life.biome === 'forest' ? [['fern', 'a'], ['fern', 'b'], ['fern', 'a'], ['shrooms', 'a']]
-    : game.life.biome === 'swamp' ? [['reeds', 'a'], ['mushrooms', 'a'], ['fern', 'b']]
-    : game.life.biome === 'meadow' ? [['fern', 'a'], ['fern', 'b']]
+    game.place === 'deep' ? [['shrooms', 'a'], ['shrooms', 'b']]
+    : game.place === 'forest' ? [['fern', 'a'], ['fern', 'b'], ['fern', 'a'], ['shrooms', 'a']]
+    : game.place === 'swamp' ? [['reeds', 'a'], ['mushrooms', 'a'], ['fern', 'b']]
+    : game.place === 'meadow' ? [['fern', 'a'], ['fern', 'b']]
     : [];
   if (kinds.length === 0) return [];
   const layout = game.scene.layout;
@@ -102,6 +105,10 @@ export class Hollow {
   headY = 0;
   private readonly items: Item[] = [];
   private growth: Growth[] | null = null;
+  /** His smoke drifting in at its door (the deep), and when the next puff comes; the last frame's time. */
+  private puffs: { x: number; y: number; age: number; vx: number; life: number }[] = [];
+  private smokeIn = 0;
+  private lastTime = 0;
 
   /** Draws it all for the view at road distance `at` on his road (`worldSeed`); `time` real seconds. */
   draw(r: Renderer, atlas: Atlas, stage: Stage, game: Game, worldSeed: number, at: number, time: number): void {
@@ -241,7 +248,7 @@ export class Hollow {
 
     // Under the canopy, from dusk on, a pale glow far off between the trees at the end of the path; and now and then,
     // in the dark, the tall one walks through it.
-    if (BIOMES[life.biome].canopy) {
+    if (BIOMES[game.place].canopy) {
       const [ma, mb, mk] = rows(MID);
       const focus = geo.px(forestFocus(game.scene.layout.homeLeft));
       const base = geo.footY(0.5, 0) - 30;
@@ -250,7 +257,7 @@ export class Hollow {
         const g = sheets.glow.a[0];
         r.batches[MID].add(Math.round(focus - g[2] / 2), Math.round(base - g[3] + 6), g, ma, mb, mk, false, 0.55 * dusk);
       }
-      const visit = visitAt(game.worldNow(), seed, life.biome, game.sky.daylight);
+      const visit = visitAt(game.worldNow(), seed, game.place, game.sky.daylight);
       if (visit !== null) {
         const vx = focus + visit.dir * (visit.progress - 0.5) * 70;
         const f = frameOf('visitor', 'walk');
@@ -259,12 +266,28 @@ export class Hollow {
       }
     }
 
+    // The deep's old lamp, hanging on its chain from the roof far off, in front of the farthest rock (the sky draws its
+    // halo where the stage hangs it): the only warm thing down here but its own eyes and lantern.
+    if (game.place === 'deep') {
+      const li = LAMP_LAYER;
+      const [la, lb, lk] = rows(li);
+      const orb = frameOf('lamp', 'orb');
+      const link = sheets.chain.link[0];
+      const cx = Math.round(v.sunX);
+      const top = Math.round(v.sunY - orb[3] / 2);
+      for (let y = top - link[3]; y > -link[3]; y -= link[3]) r.batches[li].add(cx, y, link, la, lb, lk);
+      r.batches[li].add(cx - (orb[2] >> 1), top, orb, la, lb, lk);
+      // Its light on the rock round it, breathing slowly.
+      addLight(cx, Math.round(v.sunY), 52, 0.55 + 0.08 * Math.sin(time * 0.6));
+    }
+
     // At night under the canopy: the owl on the great tree, and now and then a pair of eyes watching from the trees.
-    if (BIOMES[life.biome].canopy && game.sky.daylight < 0.3) {
+    if (BIOMES[game.place].canopy && game.sky.daylight < 0.3) {
       const world = game.worldNow();
       const dark = Math.min(1, (0.3 - game.sky.daylight) * 8);
       // The owl comes on most nights to its place on the trunk.
-      const owl = owlTonight(seed, world);
+      // (No owl in the deep: it keeps to the woods above.)
+      const owl = game.place === 'deep' ? null : owlTonight(seed, world);
       if (home.edge !== undefined && owl !== null) {
         const left = geo.leftOf(home);
         const flip = home.edge > 0;
@@ -285,10 +308,33 @@ export class Hollow {
       }
     }
 
-    // The traveller, when his road comes by: walking past at the back of the clearing, out from behind its home and
-    // on across, or sitting on the ground by its door with his cigarette, its ember in the dark.
+    // The traveller, when his road comes by. In the deep he is beyond its door, on his road above: the doorway fills
+    // with the light of his world as he comes near, and while he sits there his ember glows on the threshold and his
+    // smoke drifts in. Elsewhere he walks past at the back of the clearing, out from behind its home and on across, or
+    // sits on the ground by its door with his cigarette, its ember in the dark.
     const passer = game.passer;
-    if (passer !== null) {
+    const dt = Math.min(0.2, Math.max(0, time - this.lastTime));
+    this.lastTime = time;
+    if (passer !== null && game.place === 'deep') {
+      const door = geo.door(home);
+      const dx = Math.round(geo.px(door.x));
+      const foot = Math.round(geo.footY(door.x, door.z));
+      const near = passer.sitting ? 1 : Math.max(0, 1 - Math.abs(passer.d) / 34);
+      const lightOf = frameOf('doorlight', night > 0.5 ? 'night' : 'day');
+      const breathe = 0.9 + 0.1 * Math.sin(time * 0.8);
+      later(home.z + 0.0004, () => put(ground, dx - (lightOf[2] >> 1), foot - lightOf[3], lightOf, false, Math.min(1, 0.25 + 0.6 * near) * breathe));
+      addLight(dx, foot - 10, 18 + 22 * near, (0.2 + 0.5 * near) * breathe);
+      if (passer.sitting) {
+        // His ember on the threshold, brighter on the drag; his smoke drifting in now and then.
+        const drag = time % 23 < 1.4;
+        addLight(dx + 3, foot - 4, drag ? 8 : 5, drag ? 0.8 : 0.4);
+        this.smokeIn -= dt;
+        if (this.smokeIn <= 0) {
+          this.smokeIn = 1.6 + Math.random() * 1.6;
+          this.puffs.push({ x: dx + 2, y: foot - 8, age: 0, vx: (Math.random() - 0.3) * 4, life: 3.5 + Math.random() });
+        }
+      }
+    } else if (passer !== null) {
       const door = geo.door(home);
       const hx = Math.round(geo.px(door.x) + passer.dir * passer.d * PX_PER_M);
       const hy = Math.round(geo.footY(geo.x(hx), 0));
@@ -304,6 +350,18 @@ export class Hollow {
         if (passer.sitting) addLight(flip ? left + frame[2] - 22 : left + 22, hy - 35 + 25, drag ? 9 : 6, (drag ? 0.9 : 0.45) * (0.4 + 0.6 * night));
       }
     }
+
+    // His smoke, drifting in from the doorway and fading.
+    const puffFrames = sheets.fire.puff;
+    for (const p of this.puffs) {
+      p.age += dt;
+      p.x += p.vx * dt;
+      p.y -= 3 * dt;
+      const k = p.age / p.life;
+      const f = puffFrames[Math.min(puffFrames.length - 1, Math.floor(k * puffFrames.length))];
+      later(home.z + 0.0006, () => put(ground, p.x - (f[2] >> 1), p.y, f, false, Math.max(0, 0.7 * (1 - k))));
+    }
+    this.puffs = this.puffs.filter((p) => p.age < p.life);
 
     // The creature.
     this.creature(r, atlas, game, put, frameOf, time, addLight, later);

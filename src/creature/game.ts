@@ -3,6 +3,7 @@
 // the page shows (its eyes, the bubble, the bar, the hints, the journal). From the terminal creature (feat/creature
 // src/game.ts) as it was, with the terminal taken out: the page draws, listens and types.
 import { AI, BIOMES, BOND } from './config.ts';
+import type { PlaceName } from './config.ts';
 import { Brain, dry, headOf, newBody } from './brain.ts';
 import type { Body, Ctx, DoName, Gaze, VoiceKind } from './brain.ts';
 import { addDiary, ageDays, clamp01, drain, duration, isNightFor, moodEyes, moodOf, prettyName, remember, traitWords, warm } from './life.ts';
@@ -53,6 +54,8 @@ export type GameSetup = {
   readonly ephemeral?: boolean;
   /** A fixed weather instead of its biome's own (pictures, checks). */
   readonly weather?: Weather | null;
+  /** Where its scene is set: the deep beyond the hollow (the page), or its own biome (the default). */
+  readonly place?: PlaceName;
 };
 
 export type Mode = 'live' | 'talk' | 'name' | 'journal';
@@ -137,6 +140,8 @@ export class Game implements Ctx {
    * other way).
    */
   passer: { readonly d: number; readonly sitting: boolean; readonly walking: boolean; readonly dir: 1 | -1 } | null = null;
+  /** Where its scene is set (see GameSetup.place). */
+  readonly place: PlaceName;
   private worldMs: number;
   private readonly speed: number;
   private readonly rand: () => number;
@@ -176,7 +181,8 @@ export class Game implements Ctx {
     this.away = setup.away ?? null;
     this.geo = setup.geo;
     this.fixedWeather = setup.weather ?? null;
-    this.scene = new Scene(life.seed, life.biome, this.rand);
+    this.place = setup.place ?? life.biome;
+    this.scene = new Scene(life.seed, this.place, this.rand);
     this.sky = this.skyNow();
     this.wasWet = this.sky.weather.precip > 0.25;
     this.mood = moodOf(life.needs, this.feelings, life.traits, life.asleep);
@@ -326,6 +332,8 @@ export class Game implements Ctx {
     const p = this.passer;
     if (p === null) return null;
     const door = this.geo.door(this.scene.layout.home);
+    // In the deep he is beyond its door, up on his road: it watches the doorway, and goes to sit at the threshold.
+    if (this.place === 'deep') return { x: door.x + (this.scene.layout.homeLeft ? 0.035 : -0.035), sitting: p.sitting };
     return { x: door.x + (p.dir * p.d * PX_PER_M) / this.geo.w, sitting: p.sitting };
   }
 
@@ -366,7 +374,7 @@ export class Game implements Ctx {
 
   /** The sky now: its biome's own, or with the fixed weather. */
   private skyNow(): Sky {
-    const sky = skyAt(this.worldMs, this.life.seed, this.life.biome);
+    const sky = skyAt(this.worldMs, this.life.seed, this.place);
     return this.fixedWeather === null ? sky : { ...sky, weather: this.fixedWeather, wet: this.fixedWeather.precip };
   }
 
@@ -736,7 +744,7 @@ export class Game implements Ctx {
       weather: weatherWords(this.sky.weather),
       season: this.sky.season,
       moon: moonWords(this.sky.moon),
-      forage: BIOMES[life.biome].forageFood,
+      forage: BIOMES[this.place].forageFood,
       biome: BIOMES[life.biome].title.toLowerCase(),
       away: duration(this.away?.ms ?? 0),
       item: life.found[life.found.length - 1] ?? 'a smooth stone',

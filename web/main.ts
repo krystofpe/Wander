@@ -116,6 +116,9 @@ const remember = (l: Life, text: string): void => {
   if (l.thoughts.length > 8) l.thoughts.shift();
 };
 
+/** The live road's step the page's life was lived up to (it goes on from there, whatever the clock says by then). */
+let liveFrom = 0;
+
 /**
  * The road: the saved one (caught up on the time away), or a new one. `keep` says whether this run may write over
  * the saved road: not when it only looks at another seed's road, nor when the save could not be read.
@@ -123,7 +126,8 @@ const remember = (l: Life, text: string): void => {
 async function road(): Promise<{ journey: Journey; mind: string; keep: boolean }> {
   if (shared) {
     // The hour's camp, lived up to now; the thoughts he had on the way are thought too, so the next ones come alike.
-    const life = liveAt(LIVE_SEED, stepAt(liveMs(performance.now())), env, (l, evs, n) => {
+    liveFrom = stepAt(liveMs(performance.now()));
+    const life = liveAt(LIVE_SEED, liveFrom, env, (l, evs, n) => {
       for (const e of evs) if (e.type === 'thought') remember(l, liveThought(l, n));
     });
     return { journey: { version: 2, word: LIVE.word, moonStart: LIVE.moon, startedAt: LIVE.epoch, savedAt: Date.now(), life }, mind: 'local', keep: false };
@@ -175,7 +179,7 @@ let mind = started.mind;
 /** The life that is stepped. On the live road it steps in fixed half seconds, and `life`, what is drawn and heard, is
  * a copy of it in between the last two steps; elsewhere they are one and the same. */
 let sim = journey.life;
-let simStep = shared ? stepAt(liveMs(performance.now())) : 0;
+let simStep = shared ? liveFrom : 0;
 const life: Life = shared ? { ...sim } : sim;
 journey.life = life;
 status.life = life;

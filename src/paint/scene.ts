@@ -4,11 +4,13 @@ import { BIOME_IDS } from '../biomes.ts';
 import type { BiomeId } from '../biomes.ts';
 import { columnDistance, PX_PER_M, WALK_Y } from '../layers.ts';
 import type { LayerDef } from '../layers.ts';
-import { fbm1, noise1, rng, unit } from '../noise.ts';
-import { role } from '../palette.ts';
+import { fbm1, makeNoise, noise1, rng, unit } from '../noise.ts';
+import type { Noise2D } from '../noise.ts';
+import { ROLES, role } from '../palette.ts';
 import { placeBetween } from '../place.ts';
 import type { Placed } from '../place.ts';
 import { biomeAt, blended, groundHeight, share } from '../world.ts';
+import type { Blend } from '../world.ts';
 import { Chunk, FLAG, newStamp, put, stamp } from './chunk.ts';
 import type { Stamp } from './chunk.ts';
 import { HORIZON } from './land.ts';
@@ -276,6 +278,39 @@ function surfaceAt(seed: number, d: number): string {
   return SURFACE[b.k < 0.5 ? b.a : b.b];
 }
 
+/**
+ * The ground's family at a column and depth inside a blend: the two grounds interleave in lenses, more of the next
+ * one as the blend goes on, so no line marks where one ends and the other begins.
+ */
+function surfacePick(seed: number, b: Blend, u: number, row: number): string {
+  const fa = SURFACE[b.a];
+  const fb = SURFACE[b.b];
+  if (fa === fb || b.k <= 0.001) return fa;
+  if (b.k >= 0.999) return fb;
+  // Wide, flat patches, like ground seen low from the side; their edges a little ragged.
+  const noise = patchNoise(seed);
+  const n = 0.5 + 0.75 * (noise(u / 40, row / 6) * 0.75 + noise(u / 9, row / 3) * 0.25);
+  return n < b.k ? fb : fa;
+}
+
+let patchSeed = Number.NaN;
+let patchFn: Noise2D = () => 0;
+
+/** The 2D noise the ground patches use (one per road, kept while the road is the same). */
+function patchNoise(seed: number): Noise2D {
+  if (seed !== patchSeed) {
+    patchSeed = seed;
+    patchFn = makeNoise(seed ^ 0x5fa);
+  }
+  return patchFn;
+}
+
+/** A ground family as a surface family with its number of shades. */
+function ground(fam: string): [string, number] {
+  const n = fam === 'rock' || fam === 'snow' || fam === 'sand' || fam === 'salt' ? fam : 'grass';
+  return [n, n === 'salt' ? 3 : n === 'snow' || n === 'sand' ? 4 : 5];
+}
+
 /** Paints a chunk of a tree layer (mid, near): a low bank of the biome's ground, its plants and props. */
 export function paintTrees(c: Chunk, seed: number, layer: LayerDef, li: number, u0: number): void {
   c.clear(u0);
@@ -302,13 +337,11 @@ export function paintTrees(c: Chunk, seed: number, layer: LayerDef, li: number, 
     const k = Math.min(1, Math.max(0, (bank - 0.15) / 0.7));
     const top = Math.round(hidden + (base - bankH - hidden) * k * k * (3 - 2 * k));
     if (top >= hidden) continue;
-    const fam = surfaceAt(seed, d);
-    const n = fam === 'rock' || fam === 'snow' || fam === 'sand' || fam === 'salt' ? fam : 'grass';
-    const steps = n === 'salt' ? 3 : n === 'snow' || n === 'sand' ? 4 : 5;
     // A bank in the shades of its ground, darker than the playfield's lit surface, with no light rim of its own:
     // it reads as the forest floor beyond, not as a terrace.
     for (let y = top; y < c.h; y++) {
       const k = y - top;
+      const [n, steps] = ground(surfacePick(seed, blend, u, k));
       let r = k < 2 ? role(n, Math.max(0, steps - 3)) : k < 10 ? role(n, Math.max(0, steps - 4)) : role(n, 0);
       // Short strokes of the next lighter shade, like the playfield's ground: a bank reads as ground, not a wall.
       if (k > 2 && k % 3 === 0) {
@@ -385,8 +418,7 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
     c.setColumnBiome(u, BIOME_IDS.indexOf(blend.a), BIOME_IDS.indexOf(blend.b), blend.k);
     const top = groundTop(seed, layer, u);
     tops[x] = top;
-    const n = surfaceAt(seed, d);
-    const steps = n === 'salt' ? 3 : n === 'snow' || n === 'sand' ? 4 : 5;
+    const [n, steps] = ground(surfaceAt(seed, d));
     const bridge = marks.find((m) => m.mark.kind === 'bridge' && Math.abs(u - m.u) <= m.half + 2);
     if (bridge !== undefined) {
       bridgeColumn(c, u, top, bridge, n, steps);
@@ -415,12 +447,13 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
         c.set(u, y, kk === 0 || glint ? role('water', 3) : kk < 3 ? role('water', 2) : role('water', 1), FLAG.WATER);
         continue;
       }
-      if (pathy && k < 3) r = k === 0 ? role('path', 2) : role('path', 1);
-      else if (k === 0) r = role(n, steps - 1);
-      else if (k < b1) r = role(n, steps - 2);
-      else if (k < b2) r = role(n, Math.max(1, steps - 3));
-      else if (k < b3) r = role(n, Math.max(0, steps - 4));
-      else r = role(n, 0);
+      const [g, gs] = ground(surfacePick(seed, blend, u, k));
+      if (pathy && k < 3 && g === 'grass') r = k === 0 ? role('path', 2) : role('path', 1);
+      else if (k === 0) r = role(g, gs - 1);
+      else if (k < b1) r = role(g, gs - 2);
+      else if (k < b2) r = role(g, Math.max(1, gs - 3));
+      else if (k < b3) r = role(g, Math.max(0, gs - 4));
+      else r = role(g, 0);
       c.set(u, y, r, k < 2 ? FLAG.RIM : 0);
     }
     // Strokes on the ground plane: short horizontal dashes of the next lighter shade, sparser toward the front.
@@ -431,9 +464,10 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
       if ((u + k * 7) % 5 >= len) continue;
       const yy = top + k + (unit(cell, seed ^ k) < 0.5 ? 1 : 0);
       const cur = c.role(u, yy);
-      if (cur === 0) continue;
-      const here = k < b1 ? steps - 2 : k < b2 ? Math.max(1, steps - 3) : k < b3 ? Math.max(0, steps - 4) : 0;
-      c.set(u, yy, role(n, Math.min(steps - 1, here + 1)), 0);
+      if (cur === 0 || ROLES[cur].family === 'water') continue;
+      const [g, gs] = ground(surfacePick(seed, blend, u, yy - top));
+      const here = k < b1 ? gs - 2 : k < b2 ? Math.max(1, gs - 3) : k < b3 ? Math.max(0, gs - 4) : 0;
+      c.set(u, yy, role(g, Math.min(gs - 1, here + 1)), 0);
     }
   }
   placeBetween(seed, layer.name, li, layer.z, u0 - 90, u0 + c.w + 90, placed);

@@ -3,3 +3,5 @@ node_modules/
 *.log
 *.cpuprofile
 tour-png/
+dist/
+site-check/

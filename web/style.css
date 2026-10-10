@@ -19,7 +19,7 @@ html, body {
   font-family: 'Alegreya';
   font-style: italic;
   font-weight: 400 900;
-  src: url('/web/fonts/Alegreya-Italic.ttf') format('truetype');
+  src: url('fonts/Alegreya-Italic.ttf') format('truetype');
 }
 
 :root {
@@ -60,9 +60,10 @@ html, body {
   opacity: 0.92;
 }
 
-/* The bar (H) and the log (L): small, dim, out of the way. */
+/* The bar (H), the log (L) and the published page's hint: small, dim, out of the way. */
 #bar,
-#log {
+#log,
+#hint {
   position: fixed;
   font-family: var(--thought-font);
   font-style: italic;
@@ -89,7 +90,14 @@ html, body {
   white-space: pre-line;
 }
 
+#hint {
+  right: calc(var(--px, 3px) * 8);
+  bottom: calc(var(--px, 3px) * 5);
+  letter-spacing: 0.03em;
+}
+
 #bar.shown,
-#log.shown {
+#log.shown,
+#hint.shown {
   opacity: 1;
 }

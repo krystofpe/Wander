@@ -112,6 +112,11 @@ export class Sound {
     }
   }
 
+  /** Whether it is meant to play but the browser holds it until the page is first touched (a web page). */
+  get waiting(): boolean {
+    return this.on && this.engine !== null && this.engine.ctx.state !== 'running';
+  }
+
   /** Louder or softer by 2 dB, between −30 and +6. */
   volume(step: number): void {
     this.saved.volume = Math.max(-30, Math.min(6, this.saved.volume + 2 * step));

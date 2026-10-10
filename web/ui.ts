@@ -14,6 +14,7 @@ export class Ui {
   private readonly thought = document.getElementById('thought') as HTMLDivElement;
   private readonly bar = document.getElementById('bar') as HTMLDivElement;
   private readonly log = document.getElementById('log') as HTMLDivElement;
+  private readonly hint = document.getElementById('hint') as HTMLDivElement | null;
   private hideAt = 0;
   private lastPx = 0;
   private lastBar = '';
@@ -55,6 +56,13 @@ export class Ui {
       this.lastBar = text;
     }
     this.bar.classList.toggle('shown', this.barOn);
+  }
+
+  /** The published page's hint (how to hear it, what the keys do), or null to let it fade. */
+  showHint(text: string | null): void {
+    if (this.hint === null) return;
+    if (text !== null && text !== this.hint.textContent) this.hint.textContent = text;
+    this.hint.classList.toggle('shown', text !== null);
   }
 
   showLog(lines: readonly string[]): void {

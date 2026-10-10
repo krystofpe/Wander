@@ -16,7 +16,7 @@ export type Atlas = {
 };
 
 export async function loadAtlas(gpu: Gpu): Promise<Atlas> {
-  const [png, meta] = await Promise.all([fetch('/assets/atlas.png').then((r) => r.arrayBuffer()), fetch('/assets/atlas.json').then((r) => r.json())]);
+  const [png, meta] = await Promise.all([fetch(new URL('../assets/atlas.png', import.meta.url)).then((r) => r.arrayBuffer()), fetch(new URL('../assets/atlas.json', import.meta.url)).then((r) => r.json())]);
   const img = await decodeIndexedPng(png);
   const gl = gpu.gl;
   const tex = gpu.texture({ width: img.w, height: img.h, internal: gl.R8, format: gl.RED, type: gl.UNSIGNED_BYTE, bytes: 1 }, img.indices);

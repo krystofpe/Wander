@@ -4,8 +4,8 @@
 // it in Node. Everything random comes from the RNG state kept in the save, so a restored journey goes on exactly.
 import { BIOMES } from './biomes.ts';
 import type { BiomeId } from './biomes.ts';
-import { ACTS, choose, freshMemory } from './brain.ts';
-import type { Act, Memory, Until } from './brain.ts';
+import { ACTS, BRAIN, choose, freshMemory } from './brain.ts';
+import type { Act, Choice, Memory, Spot, Until } from './brain.ts';
 import { spotsBetween } from './place.ts';
 import type { SpotAt } from './place.ts';
 import { dayOf, dayPhase, hourOfDay, shownHour, sunElevation, weatherAt } from './sky.ts';
@@ -77,6 +77,12 @@ export type LifeEvent =
   | { type: 'exhale' }
   | { type: 'fire'; lit: boolean };
 
+/**
+ * A day's plan on the live road (live.ts): where he sleeps tonight, and the world clock by which he means to be there.
+ * He never walks past the camp; early, he waits by it until dusk; late, he stops for nothing.
+ */
+export type Plan = { readonly camp: number; readonly what: string; readonly aim: number };
+
 /** What the step needs to know about the moment that the life does not own. */
 export type Env = {
   /** Hour of the day for this clock (the warped day, or the local clock in real-clock mode). */
@@ -84,6 +90,8 @@ export type Env = {
   natural: boolean;
   /** Fixed weather (frozen shots, tests), or null for the world's own. */
   weather: Weather | null;
+  /** The live road's plan for a clock; absent on a road of his own, where he camps where the evening finds him. */
+  plan?: (clock: number) => Plan;
 };
 
 export const LIFE = {
@@ -102,6 +110,11 @@ export const LIFE = {
   /** The fire: seconds to burn up and to die. */
   catchSec: 12,
   dieSec: 25,
+  /** With a plan: the pace (m/s) the rest of the way needs before he stops for nothing, and before he will not wait
+   * out the rain; how low the evening sun is when he makes camp. */
+  rush: 0.85,
+  shelterBelow: 0.5,
+  dusk: -2,
 } as const;
 
 // ── Randomness kept in the save ────────────────────────────────────────────
@@ -195,24 +208,7 @@ export function groundAt(l: Life, w: Weather): string {
   return BIOMES[id].ground.step;
 }
 
-function decide(l: Life, env: Env, w: Weather, events: LifeEvent[]): void {
-  const hour = env.hourAt(l.clock);
-  const c = choose(
-    {
-      hour: shownHour(hour, env.natural),
-      sunElevation: sunElevation(hour, env.natural),
-      precip: w.precip,
-      storm: w.storm,
-      snow: w.kind === 'snow',
-      at: l.at,
-      walking: l.walking,
-      since: l.since,
-      spots: spotsAhead(l.seed, l.at, LIFE.ahead),
-      slept: l.slept,
-      nightOwl: l.nightOwl,
-    },
-    () => next(l),
-  );
+function begin(l: Life, c: Choice, events: LifeEvent[]): void {
   l.act = c.act;
   l.target = c.spot?.at ?? null;
   l.what = c.spot?.what ?? '';
@@ -223,6 +219,64 @@ function decide(l: Life, env: Env, w: Weather, events: LifeEvent[]): void {
   l.actTime = 0;
   events.push({ type: 'act', act: c.act, what: l.what });
   if (c.act === 'walk') l.nextLook = c.seconds;
+}
+
+/**
+ * The plan's say before the brain's: camp at dusk once the camp is in reach; wait by it when early; walk on without
+ * stopping when the way left needs it. Returns null once it has decided, or how hurried he is (the pace the rest of
+ * the way needs, m/s) when the brain may choose, among the spots short of the camp.
+ */
+function planned(l: Life, p: Plan, hour: number, dayLength: number, env: Env, events: LifeEvent[]): { hurry: number } | null {
+  const left = p.camp - l.at;
+  const evening = shownHour(hour, env.natural) >= 12;
+  if (evening && sunElevation(hour, env.natural) < LIFE.dusk && left <= BRAIN.reach.camp) {
+    begin(l, { act: 'camp', spot: { kind: 'camp', at: p.camp, what: p.what, quality: 1 }, seconds: 1, until: 'dawn', smoke: true }, events);
+    return null;
+  }
+  if (left <= 0.01) {
+    // Early: he waits by the place he will sleep, sitting on the ground or standing to look, until the light goes.
+    const r1 = next(l);
+    const r2 = next(l);
+    const here = { kind: 'seat' as const, at: l.at, what: 'ground', quality: 0.5, height: 0, u: 0 };
+    if (r1 < 0.7) begin(l, { act: 'sit', spot: here, seconds: 110 + 120 * r2, until: 'time', smoke: r2 < 0.6 }, events);
+    else begin(l, { act: 'look', spot: { ...here, kind: 'view' }, seconds: 14 + 24 * r2, until: 'time', smoke: false }, events);
+    return null;
+  }
+  const seconds = ((p.aim - l.clock) * dayLength) / 24;
+  const hurry = left / Math.max(1, seconds);
+  if (hurry > LIFE.rush) {
+    begin(l, { act: 'walk', spot: null, seconds: 25 + 50 * next(l), until: 'time', smoke: false }, events);
+    return null;
+  }
+  return { hurry };
+}
+
+function decide(l: Life, env: Env, w: Weather, dayLength: number, events: LifeEvent[]): void {
+  const hour = env.hourAt(l.clock);
+  let spots: readonly Spot[] = spotsAhead(l.seed, l.at, LIFE.ahead);
+  const p = env.plan?.(l.clock);
+  if (p !== undefined) {
+    const free = planned(l, p, hour, dayLength, env, events);
+    if (free === null) return;
+    spots = spots.filter((s) => s.at <= p.camp && s.kind !== 'camp' && (s.kind !== 'shelter' || free.hurry < LIFE.shelterBelow));
+  }
+  const c = choose(
+    {
+      hour: shownHour(hour, env.natural),
+      sunElevation: sunElevation(hour, env.natural),
+      precip: w.precip,
+      storm: w.storm,
+      snow: w.kind === 'snow',
+      at: l.at,
+      walking: l.walking,
+      since: l.since,
+      spots,
+      slept: l.slept,
+      nightOwl: l.nightOwl,
+    },
+    () => next(l),
+  );
+  begin(l, c, events);
 }
 
 function startSmoking(l: Life, events: LifeEvent[]): void {
@@ -331,16 +385,26 @@ function tick(l: Life, dt: number, dayLength: number, env: Env, events: LifeEven
     l.pace += (want - l.pace) * Math.min(1, dt * 0.5);
     let step = l.pace * dt;
     if (l.target !== null && l.act !== 'walk') step = Math.min(step, Math.max(0, l.target - l.at));
+    // On the live road he never walks past tonight's camp.
+    const p = env.plan?.(l.clock);
+    if (p !== undefined) step = Math.min(step, Math.max(0, p.camp - l.at));
     l.at += step;
     l.walked += step;
     l.walking += dt;
     notePlaces(l, env, events);
     if (l.act === 'walk') {
       l.nextLook -= dt;
-      if (l.nextLook <= 0) decide(l, env, w, events);
+      if (l.nextLook <= 0 || (p !== undefined && l.at >= p.camp - 0.01)) decide(l, env, w, dayLength, events);
       return;
     }
-    if (l.target === null || l.at >= l.target - 0.01) arrive(l, events, env);
+    if (l.target === null || l.at >= l.target - 0.01) {
+      // Right on the spot, not a hair short of it (the live road's camp is where its plan says).
+      if (l.target !== null && l.target > l.at) {
+        l.walked += l.target - l.at;
+        l.at = l.target;
+      }
+      arrive(l, events, env);
+    }
     return;
   }
   l.actTime += dt;

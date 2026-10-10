@@ -177,8 +177,8 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
   // The hollow, a wood: old trees in ranks into the mist, the near ones huge and dark; glowing toadstools under
   // them, ferns, violet flowers, mossy stones; no path.
   deep: [
-    f('oldtree', ['hills'], 1, [170, 220], 0.3),
-    f('oldtree', ['mid'], 0.6, [220, 280], 0.4),
+    f('oldtree', ['hills'], 1, [205, 250], 0.3),
+    f('oldtree', ['mid'], 0.6, [260, 320], 0.4),
     f('fern', ['hills', 'mid'], 2, [10, 18], 0.4),
     f('toadstool', ['hills', 'mid'], 0.9, [6, 14], 0.6),
     f('bloom', ['mid'], 1, [6, 12], 0.5),

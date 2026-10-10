@@ -84,6 +84,12 @@ export const TREE = { w: 150, h: 100, trunk: 92, door: { x: 68, w: 21, h: 30 }, 
  */
 export const NEST = { w: 64, h: 60, door: { x: 24, w: 24, h: 10 }, stem: 46, peg: [10, 24] as const } as const;
 
+/**
+ * The old trees framing the hollow at the sides of the view (tools/art/sprites/wood.ts): the trunk's width, its foot
+ * (`footW` × `footH`, roots and all) and the height of its repeating segment. Drawn for the left edge.
+ */
+export const EDGE = { trunk: 64, footW: 150, footH: 96, tile: 112 } as const;
+
 /** Moods in the order of the palette's `mood` family (src/palette.ts). */
 export const MOOD_EYES = ['content', 'joyful', 'calm', 'curious', 'sleepy', 'hungry', 'bored', 'lonely', 'grumpy', 'scared', 'love', 'sad'] as const;
 export type EyeColour = (typeof MOOD_EYES)[number];

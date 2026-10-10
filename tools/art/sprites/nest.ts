@@ -1,7 +1,7 @@
-// The creature's home in the deep: a nest of moss at the foot of a giant mushroom that leans over it. Generated, not
-// drawn by hand: a pale stem flaring at its root, a broad dusky cap lit from the upper left with glowing spots, glowing
-// gills under it and threads of light hanging from its rim, as the deep's caps have; under it a bowl of moss with twigs
-// and small glowing flowers round its rim. `back` is the mushroom and the bowl's far side and inside; `front` is the
+// The creature's home in the hollow: a nest of moss at the foot of a giant toadstool that leans over it. Generated, not
+// drawn by hand: a pale stem flaring at its root, a broad cap glowing cyan with pale spots on it, as the hollow's
+// toadstools have, its underside in shadow; under it a bowl of moss with twigs and small glowing flowers round its
+// rim. `back` is the mushroom and the bowl's far side and inside; `front` is the
 // bowl's near lip, drawn over the creature curled in it. The page hangs its lantern from the cap's rim (NEST.peg).
 import { NEST } from '../../../src/creature/look.ts';
 import { unit } from '../../../src/noise.ts';
@@ -80,7 +80,8 @@ function mushroom(g: string[][]): void {
       g[y][x] = x === cx - half || x === cx + half ? 'h' : u < 0.25 ? 'U' : u < 0.55 ? '/' : 'z';
     }
   }
-  // The cap: a broad dome over the nest; its top dusky violet, lit from the upper left, glowing spots on it.
+  // The cap: a broad dome over the nest glowing cyan, as the hollow's toadstools do: brightest on its crown and upper
+  // left, dimmer toward its rim, pale spots on it; its underside a dark rim and the gills in shadow.
   const ccx = 30;
   const ccy = 19;
   const rx = 28;
@@ -91,24 +92,26 @@ function mushroom(g: string[][]): void {
       const dy = (y - ccy) / ry;
       const r = Math.sqrt(dx * dx + dy * dy);
       if (r > 1) continue;
-      const lit = -0.6 * dx - 0.7 * dy;
-      const n = unit(x * 5 + y * 11, SEED ^ 0x3);
-      g[y][x] = r > 0.93 ? (lit > 0.6 ? ';' : 'h') : lit > 0.95 ? ';' : lit > 0.55 ? (n > 0.8 ? ';' : ':') : n > 0.85 ? ':' : 'h';
-      if (r < 0.88 && n > 0.965) g[y][x] = lit > 0.5 ? 'γ' : 'β';
+      const lit = -0.5 * dx - 0.85 * dy;
+      g[y][x] = r > 0.94 ? (lit > 0.6 ? '@' : '#') : lit > 0.75 ? '$' : lit > 0.3 ? '@' : '#';
     }
-  // Its gills underneath, glowing, darker in towards the stem; and threads of light hanging from its rim.
-  for (let x = ccx - rx + 2; x <= ccx + rx - 2; x++) {
-    const toStem = Math.abs(x - (base - 6)) / rx;
-    for (let k = 1; k <= 3; k++) {
-      if (k === 3 && toStem < 0.3) continue;
-      put(g, x, ccy + k, x % 2 === 0 ? (k === 1 ? '@' : '#') : k === 1 ? '#' : 'P');
+  // Pale spots on it, rounder and bigger toward its middle.
+  for (let k = 0; k < 11; k++) {
+    const sx = Math.round(ccx + (unit(k, SEED ^ 0x5) - 0.5) * rx * 1.6);
+    const sy = Math.round(ccy - ry * (0.2 + 0.65 * unit(k, SEED ^ 0x6)));
+    const dx = (sx - ccx) / rx;
+    const dy = (sy - ccy) / ry;
+    if (dx * dx + dy * dy > 0.72) continue;
+    put(g, sx, sy, 'U');
+    if (unit(k, SEED ^ 0x7) > 0.45) {
+      put(g, sx + 1, sy, 'U');
+      put(g, sx, sy + 1, '/');
     }
   }
-  for (let k = 0; k < 9; k++) {
-    const x = Math.round(ccx - rx + 3 + (k / 8) * (2 * rx - 6));
-    if (Math.abs(x - (base - 6)) < 4 || Math.abs(x - NEST.peg[0]) < 2) continue;
-    const len = 2 + Math.round(unit(k, SEED ^ 0x4) * 5);
-    for (let j = 0; j < len; j++) put(g, x, ccy + 4 + j, j === len - 1 ? '$' : '#');
+  // The underside: a dark rim, the gills in shadow in toward the stem.
+  for (let x = ccx - rx + 1; x <= ccx + rx - 1; x++) {
+    put(g, x, ccy + 1, 'P');
+    if (Math.abs(x - (base - 6)) > 4 && x % 2 === 0) put(g, x, ccy + 2, 'h');
   }
   // The thread its lantern hangs from.
   for (let y = ccy + 1; y < NEST.peg[1]; y++) put(g, NEST.peg[0], y, 'K');

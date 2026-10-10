@@ -5,7 +5,7 @@ import { catchUp, newJourney, reviveJourney, roadWord } from '../src/journal.ts'
 import type { Journey } from '../src/journal.ts';
 import { groundAt, stepLife, thoughtContext, weatherOf } from '../src/life.ts';
 import type { Env, Life, LifeEvent, Stage as LifeStage } from '../src/life.ts';
-import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, msOfStep, stepAt, stepLive } from '../src/live.ts';
+import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, msOfStep, nightStart, stepAt, stepLive } from '../src/live.ts';
 import { rng, squirrel } from '../src/noise.ts';
 import { parseOptions, seedOf } from '../src/options.ts';
 import { PX_PER_M } from '../src/layers.ts';
@@ -24,6 +24,7 @@ import type { Neighbour } from './neighbour.ts';
 import { revive } from '../src/creature/save.ts';
 import { travellerCame } from '../src/creature/traveller.ts';
 import type { Meeting } from '../src/creature/traveller.ts';
+import { VISIT } from '../src/creature/visit.ts';
 
 const params = new URLSearchParams(location.search);
 const opts = parseOptions((k) => params.get(k));
@@ -94,7 +95,7 @@ const env: Env = shared
     };
 const dayLength = shared ? LIVE.day : opts.day * 60;
 /** Runs that bend time or only take pictures are not saved, and nor is the live road. */
-const ephemeral = shared || opts.frozen || opts.manual || opts.speed !== 1 || opts.hour !== null || opts.bench !== null || opts.at !== null;
+const ephemeral = shared || opts.frozen || opts.manual || opts.speed !== 1 || opts.hour !== null || opts.bench !== null || opts.at !== null || opts.visit;
 
 /** The live road's moment for a performance.now() time: now (or `?now`, run at `?speed`). */
 let offset = Date.now() - performance.now();
@@ -145,6 +146,13 @@ async function road(): Promise<{ journey: Journey; mind: string; keep: boolean }
     } catch {
       // No server (opened as a plain file): a road of its own, unsaved.
     }
+  }
+  if (opts.visit) {
+    // ?visit (--visit): a look at a road's second night, him asleep by his fire a little before the creature comes.
+    const j = newJourney(opts.seed ?? roadWord(Math.random()), Date.now(), moonPhase(Date.now()));
+    j.life = nightStart(j.life.seed, 1);
+    j.life.clock = 24 + VISIT.from - 0.2;
+    return { journey: j, mind, keep: false };
   }
   if (saved !== null && !opts.fresh) {
     try {

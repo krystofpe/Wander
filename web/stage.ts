@@ -353,7 +353,7 @@ export class Stage {
         light.lights[o] = gx;
         light.lights[o + 1] = gy - 16;
         light.lights[o + 2] = 30 * opening;
-        light.lights[o + 3] = 0.45 * opening * dim;
+        light.lights[o + 3] = 0.35 * opening * dim;
         light.count++;
       }
       // The creature: through the portal and over to the fire, there a while, back and through again.

@@ -40,6 +40,8 @@ export type Options = {
   readonly live: boolean;
   /** On the live road, the moment to show instead of now (ms since 1970, or a date), for pictures and tests. */
   readonly now: number | null;
+  /** A look at his camp a little before the creature comes through its portal (src/creature/visit.ts), not saved. */
+  readonly visit: boolean;
 };
 
 export const DEFAULTS: Options = {
@@ -62,6 +64,7 @@ export const DEFAULTS: Options = {
   manual: false,
   live: false,
   now: null,
+  visit: false,
 };
 
 /** Option names and whether each takes a value; the command line and the URL share them. */
@@ -85,6 +88,7 @@ export const OPTION_NAMES: Readonly<Record<string, boolean>> = {
   manual: false,
   live: false,
   now: true,
+  visit: false,
 };
 
 const num = (v: string | null, min: number, max: number): number | null => {
@@ -126,6 +130,7 @@ export function parseOptions(get: (name: string) => string | null): Options {
     manual: flag(get('manual')),
     live: flag(get('live')),
     now: moment(get('now')),
+    visit: flag(get('visit')),
   };
 }
 

@@ -1,9 +1,9 @@
 // npm run creature:tour -- [--seed WORD] [--out docs/creature] [--only group,group] [--size 1920x1080]
-// Pictures of the creature in its hollow, from headless Chromium on the GPU, stepped in fixed steps (no frame loop):
-// the deep beyond the hollow at dawn, by day, at dusk and at night; its moments (at the glass, waving, sitting,
-// digging, stacking its cairn, humming, eating, petted, playing); its nights (the lantern, the stars, asleep at home,
-// its eyes in the dark doorway, the visitor); the traveller come by (light in its doorway); and you (talking to it, the
-// journal, a question). JPEG at quality 90, with a contact sheet of each group.
+// Pictures of the creature in the deep, from headless Chromium on the GPU, stepped in fixed steps (no frame loop):
+// the deep at dawn, by day, at dusk and at night; its moments (at the glass, waving, sitting, digging, stacking its
+// cairn, humming, eating, petted, playing); its nights (the lantern, the stars, asleep at home, its eyes in the dark
+// doorway, the visitor); its visit (through its portal to his camp, and back); and you (talking to it, the journal, a
+// question). JPEG at quality 90, with a contact sheet of each group.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -67,7 +67,7 @@ function eyesMoment(seed: number): number {
   return start;
 }
 
-// The deep beyond the hollow through its day: teal while the sun is up above, violet at night.
+// The deep through its day: navy while the sun is up above, violet at night.
 for (const [time, hour] of [['dawn', '6.6'], ['day', '11'], ['dusk', '18.9'], ['night', '23.2']] as const) {
   add('deep', time, { hour, weather: 'clear', act: time === 'night' ? 'stroll' : 'idle' }, 6);
 }
@@ -92,7 +92,8 @@ add('nights', 'visitor', { now: String(visitMoment(seedOf(word))), weather: 'cle
 
 // At the hour of his camp it goes to him: its portal opens, it steps through, a faint shimmer where it went; it comes
 // back the same way before dawn.
-add('visit', 'portal', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 16);
+add('visit', 'going', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 12);
+add('visit', 'portal', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 14.8);
 add('visit', 'gone', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 40);
 add('visit', 'back', { hour: '15', weather: 'clear', visit: '1', act: 'idle', speed: '30' }, 22);
 

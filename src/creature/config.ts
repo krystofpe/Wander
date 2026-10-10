@@ -219,8 +219,9 @@ export const BIOMES: Readonly<Record<PlaceName, BiomeDef>> = {
     finds: ['a frog-shaped stone', 'glowing moss', 'a lily seed', 'a bent spoon', 'a tooth of something', 'a bubble that will not pop'],
     forageFood: 'mushrooms',
   },
-  // Beyond the hollow, under a sky of stone: it lives in the hollow among the roots of the great tree, giant glowing
-  // mushrooms in ranks into the mist; no weather but the mist; moths, bats, a pale frog, and wisps of light at night.
+  // The deep, under a sky of stone: it lives in the hollow among the roots of the great tree, glowing caps, ferns and
+  // flowers all about it, giant mushrooms in ranks into the mist; no weather but the mist; butterflies and wisps of
+  // light, moths, bats, a pale frog.
   deep: {
     title: 'Deep',
     world: 'deep',

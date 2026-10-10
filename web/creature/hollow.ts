@@ -1,9 +1,9 @@
 // The hollow on the screen: what the stage's sky and air leave for the sprites. Its home (the great tree with the
 // hollow at its foot, or a turf shelter), the props, the cairn, food and the toy, the small lives, the little signs,
-// and the creature: its pose, its cloak moved to its own colour, its eyes in the colour of its mood and looking where
+// and the creature: its pose, its fur moved to its own colour, its eyes in the colour of its mood and looking where
 // it looks, what it holds, its lantern at night; and its portal, when it goes to his camp at night. Everything on the ground
 // layer is drawn back to front by depth. And the lights: its lantern, the lantern by the door, the toy, the glowing
-// mushrooms, his cigarette.
+// mushrooms, the portal.
 import { BIOME_IDS } from '../../src/biomes.ts';
 import { BIOMES } from '../../src/creature/config.ts';
 import { PORTAL } from '../../src/creature/brain.ts';
@@ -143,7 +143,7 @@ export class Hollow {
 
     // Its home.
     const home = game.scene.layout.home;
-    // Gone up to his fire, it is not at home: no lantern by the door, its doorway lit by his fire far above.
+    // Its lantern is lit by the door only while it is asleep inside.
     const inside = game.body.inside && game.body.visible;
     const dark = game.sky.daylight < 0.35;
     if (home.edge !== undefined) {
@@ -300,7 +300,7 @@ export class Hollow {
       const frame = open >= 1 ? sheet.loop[Math.floor(time * 7) % sheet.loop.length] : open > 0 ? sheet.open[Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length))] : sheet.open[0];
       const alpha = open > 0 ? 1 : 0.35 + 0.15 * Math.sin(time * 1.3);
       later(PORTAL.z + 0.001, () => put(ground, px - (frame[2] >> 1), foot - frame[3] + 2, frame, false, alpha));
-      addLight(px, foot - 16, 12 + 22 * open, 0.15 + 0.4 * open);
+      addLight(px, foot - 16, 12 + 22 * open, 0.1 + 0.25 * open);
     }
 
     // The creature.

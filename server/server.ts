@@ -40,7 +40,7 @@ export type Api = {
   creatureMind?(): { mind: 'claude' | 'local'; model: string | null };
   /** The mode you are in, so the next start opens it (the pages say when you switch). */
   setMode?(mode: string): Promise<void>;
-  /** The traveller sat by the creature's door (his page says so): its save keeps the visit. */
+  /** It came through its portal and sat by his fire (his page says so): its save keeps the visit. */
   creatureVisit?(request: unknown): Promise<boolean>;
 };
 

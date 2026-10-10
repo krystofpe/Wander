@@ -2,7 +2,7 @@
 // --no-browser`) and a headless page, each run with a save of its own in a temporary folder.
 //  1. Offline, a new creature: it arrives and asks your name; the name is kept; the bar says `mind: local`.
 //  2. Closing saves it; reopening finds the same creature; three days away are lived through when it opens again.
-//  3. A save from the terminal days (version 1, a biome that is no more, a cloak as a colour) moves into the hollow.
+//  3. A save from the terminal days (version 1, a biome that is no more, a cloak as a colour) moves in.
 //  4. With a key, its words come from Claude (a local stand-in for the Messages API, reached by the real SDK through
 //     ANTHROPIC_BASE_URL): the bar says `mind: claude`, what you type reaches it, its words and its wishes come back,
 //     and what it learns about you is kept.

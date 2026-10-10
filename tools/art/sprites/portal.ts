@@ -1,7 +1,7 @@
 // The portal the creature comes through to visit him at night (web/stage.ts) and goes through from the deep
-// (web/creature/hollow.ts): an upright oval, a rim of violet light, blue light swirling in towards a dark heart. It
-// opens from a thin slit of light, turns while it is open, and closes the same way. Made by rule, not by hand: each
-// pixel by its distance from the middle and its angle. Legend in ../legend.ts.
+// (web/creature/hollow.ts): an upright oval, a rim of violet light, arms of blue light swirling over dark water in
+// towards a dark heart. It opens from a thin slit of light, turns while it is open, and closes the same way. Made by
+// rule, not by hand: each pixel by its distance from the middle and its angle. Legend in ../legend.ts.
 import type { Sheet } from '../legend.ts';
 
 const W = 22;
@@ -28,11 +28,11 @@ function portal(size: number, turn: number): string[] {
       const swirl = Math.sin(3 * a + 7 * r - turn);
       let ch: string;
       if (r > 0.86) ch = swirl > 0 ? 'γ' : 'β';
-      else if (r > 0.7) ch = swirl > 0.2 ? 'β' : 'α';
-      else if (r < 0.22) ch = 'h';
-      else if (swirl > 0.45) ch = r < 0.5 ? '^' : '$';
-      else if (swirl > -0.15) ch = r < 0.45 ? '~' : '@';
-      else ch = r < 0.4 ? 'h' : 'α';
+      else if (r > 0.72) ch = swirl > 0.2 ? 'β' : 'α';
+      else if (r < 0.2) ch = 'h';
+      else if (swirl > 0.55) ch = r < 0.5 ? '$' : '@';
+      else if (swirl > 0) ch = '#';
+      else ch = r < 0.45 ? 'h' : 'P';
       row += ch;
     }
     rows.push(row);

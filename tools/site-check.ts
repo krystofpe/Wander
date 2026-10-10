@@ -2,7 +2,7 @@
 // Checks the published page as GitHub Pages will serve it: the built files (npm run site) under /Wander/ on a plain
 // static server, nothing else. That it starts with no server behind it and asks for nothing that is not there; that
 // the wanderer it shows is the one live.ts computes for that step (so the same for everyone); that the hour turns
-// without a jump; that the page tells how to hear it. And the hollow beside it: a creature of the visitor's own, kept
+// without a jump; that the page tells how to hear it. And the creature beside it: a creature of the visitor's own, kept
 // in their browser, following the live road, gone through its portal to his camp when the live road camps; Tab from
 // one to the other and back, and the last one opens again. Writes pictures of a few moments to DIR.
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -74,7 +74,7 @@ const liveOf = (page: Page): Promise<Live> => page.evaluate(() => (window as unk
 
 type Road = { visit: { phase: string } | null; portal: number; gone: boolean; site: boolean };
 type C = { ready: boolean; error: string | null; save(): void; road(): Road; game: { life: { name: string; seed: number } } };
-/** Waits for whichever page is there to be drawn: the road (`__wander`) or the hollow (`__creature`). */
+/** Waits for whichever page is there to be drawn: the road (`__wander`) or the creature's (`__creature`). */
 async function drawn(page: Page, which: '__wander' | '__creature'): Promise<boolean> {
   try {
     await page.waitForFunction((k) => {
@@ -143,13 +143,13 @@ try {
     await page.close();
   }
 
-  // 4. The hollow: a visitor's own creature, born in their browser and kept there; on the live road; Tab between them.
+  // 4. The creature: a visitor's own creature, born in their browser and kept there; on the live road; Tab between them.
   {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(`${base}creature/`);
-    check(await drawn(page, '__creature'), `the hollow opens at ${base}creature/ with no server behind it`);
+    check(await drawn(page, '__creature'), `the creature's page opens at ${base}creature/ with no server behind it`);
     await page.waitForTimeout(1500);
     const first = await page.evaluate(() => {
       const c = (window as unknown as { __creature: C }).__creature;
@@ -157,21 +157,21 @@ try {
       return { name: c.game.life.name, road: c.road(), kept: localStorage.getItem('wander.creature') !== null, mode: localStorage.getItem('wander.mode') };
     });
     check(first.road.site, 'it follows the live road');
-    check(first.kept && first.mode === 'creature', `${first.name} is kept in this browser, and the hollow is the mode last open`);
+    check(first.kept && first.mode === 'creature', `${first.name} is kept in this browser, and the creature is the mode last open`);
     writeFileSync(join(out, 'hollow.png'), await page.screenshot());
-    // Tab: to the road and back again; then the road's address opens the hollow, the mode last open.
+    // Tab: to the road and back again; then the road's address opens the creature, the mode last open.
     await page.keyboard.press('Tab');
     await page.waitForURL((u) => !u.pathname.includes('creature'), { timeout: 10000 });
     check(await drawn(page, '__wander') && (await page.evaluate(() => localStorage.getItem('wander.mode'))) === 'wander', `Tab opens the road: ${page.url()}`);
     await page.waitForTimeout(800);
     await page.keyboard.press('Tab');
     await page.waitForURL((u) => u.pathname.includes('creature'), { timeout: 10000 });
-    check(await drawn(page, '__creature'), `and Tab again the hollow: ${page.url()}`);
+    check(await drawn(page, '__creature'), `and Tab again the creature: ${page.url()}`);
     const again = await page.evaluate(() => (window as unknown as { __creature: C }).__creature.game.life.name);
     check(again === first.name, `the same creature, from this browser: ${again}`);
     await page.goto(base);
     await page.waitForURL((u) => u.pathname.includes('creature'), { timeout: 10000 });
-    check(await drawn(page, '__creature'), `opening the road's address again opens the hollow, the mode last open`);
+    check(await drawn(page, '__creature'), `opening the road's address again opens the creature, the mode last open`);
     await ctx.close();
     // When the creature sits with him at his camp on the live road, it is gone through its portal here.
     const ms = visitMoment();

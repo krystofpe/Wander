@@ -1,5 +1,5 @@
-// npm start [-- --seed moss --speed 20 --day 30 --realclock --hour 18 --biome coast --offline --new]
-// npm run creature [-- --biome forest --name Ori --seed moss --speed 20 --hour 21 --visit --offline --new --mute]
+// npm start [-- --seed moss --speed 20 --day 30 --realclock --hour 18 --biome coast --visit --offline --new]
+// npm run creature [-- --name Ori --seed moss --speed 20 --hour 21 --visit --offline --new --mute]
 // Starts the server for both modes, the endless walk and the creature's hollow, then opens one of them (the one used
 // last; the hollow with --creature) in its own Chromium window, full screen, sound allowed. Tab goes from one to the
 // other. Closing the window ends it; if the page stops answering, the window is opened again. Extra flags:

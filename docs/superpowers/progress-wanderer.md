@@ -6,7 +6,7 @@ The brief is `~/wander-ambient-prompt.md`. Read this file first after a restart,
 
 | # | Item | State | Evidence |
 |---|---|---|---|
-| 1 | `main` is the old `feat/creature`; only `main` and `feat/wanderer` exist locally and on origin | partly: main fast-forwarded to cc5acf5 and pushed; branch deletion refused by the permission classifier, left to the owner | see "Branch cleanup" |
+| 1 | `main` is the old `feat/creature`; only `main` and `feat/wanderer` exist locally and on origin | done as the owner chose: main fast-forwarded to cc5acf5 and pushed; the owner deleted feat/real-world, feat/first-version and feat/dark-look and keeps feat/creature | see "Branch cleanup" |
 | 2 | Research doc with real sources; spec shows how they shaped choices | done | docs/research/wanderer-research.md; spec cites R: sections in its choices table |
 | 3 | `npm start` full screen, unattended; 30 min shows 3 biomes blend, sunset, night camp with fire, rain or fog, sit and smoke; sound follows | done | docs/watch/ (README there); docs/soak/npm-start-fullscreen.png |
 | 4 | Tour at 1080p and 4K, every biome/blend/hour/weather beautiful; docs/tour committed; README shows the best | done | docs/tour/ (155 frames, sheets), README gallery; looked at every sheet, fixed coast, swamp, plateau, stones, blends, fog, fox, deer |
@@ -16,7 +16,7 @@ The brief is `~/wander-ambient-prompt.md`. Read this file first after a restart,
 | 8 | Same seed + distance → same place (tested) | done | test/world.test.ts, test/landmarks.test.ts |
 | 9 | Close and reopen continues; time away moves him on | done | `npm run check` (docs/soak/check.txt), test/journal.test.ts |
 | 10 | Offline works (`mind: local`); with a key, Claude thoughts and `mind: claude`; slow API never blocks | done | `npm run check`: local, claude through the real SDK to a stand-in API, slow/500/401 fall back at 60 fps |
-| 11 | Terminal and Tamagotchi code gone; `npm test` green; README rewritten; docs/CREDITS.md | done | 82 tests pass; README.md; docs/CREDITS.md |
+| 11 | Terminal and Tamagotchi code gone; `npm test` green; README rewritten; docs/CREDITS.md | done | 86 tests pass; README.md; docs/CREDITS.md |
 | 12 | Final review of the whole diff against main, findings fixed | done | fresh-eye review, 19 findings, fixed in 437548e |
 | 13 | Draft PR from feat/wanderer into main | done | https://github.com/krystofpe/Wander/pull/1 (draft) |
 
@@ -25,13 +25,8 @@ The brief is `~/wander-ambient-prompt.md`. Read this file first after a restart,
 - Checks passed: tree clean except `.claude/`; `main` and `feat/real-world` are ancestors of `feat/creature`.
 - `git fetch` showed two more remote branches the brief did not mention: `origin/feat/first-version` (an ancestor of main, nothing to lose) and `origin/feat/dark-look` (7 commits found nowhere else: an abandoned "dark look" direction from 2026-10-08). Those commits are kept as the annotated tag `archive/dark-look`, pushed to origin.
 - `main` fast-forwarded to `cc5acf5` (the old `feat/creature`) and pushed. `feat/wanderer` cut from it.
-- Deleting branches (`git branch -d`, `git push origin --delete`) was refused twice by Claude Code's auto-mode permission classifier ("Git Destructive"), even for exactly the two branches the brief names. Per its instructions it is not retried any other way. Left for the owner:
-
-  ```bash
-  git branch -d feat/creature feat/real-world
-  git push origin --delete feat/creature feat/real-world feat/first-version feat/dark-look
-  git fetch --prune && git branch -a
-  ```
+- Deleting branches (`git branch -d`, `git push origin --delete`) was refused twice by Claude Code's auto-mode permission classifier ("Git Destructive"), so it was left to the owner, who deleted `feat/real-world` (local and origin), `feat/first-version` and `feat/dark-look` (origin) on 2026-10-10 and chose to keep `feat/creature` (local at cc5acf5 = main; origin at c08eebd, an ancestor of main).
+- Left: `main`, `feat/wanderer`, `feat/creature`; the tag `archive/dark-look` on origin.
 
 ## Done
 

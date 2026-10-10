@@ -2,7 +2,8 @@
 // Checks the published page as GitHub Pages will serve it: the built files (npm run site) under /Wander/ on a plain
 // static server, nothing else. That it starts with no server behind it and asks for nothing that is not there; that
 // the wanderer it shows is the one live.ts computes for that step (so the same for everyone); that the hour turns
-// without a jump; that the page tells how to hear it. Writes pictures of a few moments to DIR.
+// without a jump; that the page tells how to hear it; that it loads Google Analytics. Writes pictures of a few moments
+// to DIR.
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -56,8 +57,15 @@ const check = (ok: boolean, what: string): void => {
 type Live = { step: number; at: number; stage: string; clock: number; drawnAt: number; waiting: boolean | null };
 type W = { ready: boolean; error: string | null; liveStep(): Live; moment(): Record<string, unknown> };
 const errors: string[] = [];
+// Google Analytics answers with nothing here, so checking the page counts no visits and needs no network.
+const GOOGLE = /^https:\/\/[^/]*(googletagmanager|google-analytics)\.com\//;
+const tags: string[] = [];
 async function openAt(query: string): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
+  await page.route(GOOGLE, (route) => {
+    tags.push(route.request().url());
+    return route.fulfill({ status: 200, contentType: 'application/javascript', body: '' });
+  });
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text());
@@ -136,6 +144,8 @@ try {
     await page.close();
   }
 
+  const ga = tags.find((u) => u.startsWith('https://www.googletagmanager.com/gtag/js?id=G-'));
+  check(ga !== undefined, `the page loads Google Analytics${ga !== undefined ? ` (${new URL(ga).searchParams.get('id')})` : ''}`);
   const strange = asked.filter((r) => !r.startsWith('GET /Wander/'));
   check(strange.length === 0, `asked only for its own files${strange.length > 0 ? `; also: ${[...new Set(strange)].join(', ')}` : ''}`);
   const missing = errors.filter((e) => !/AudioContext was not allowed to start/.test(e));

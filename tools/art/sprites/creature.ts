@@ -1,11 +1,9 @@
-// The creature, drawn by hand in parts and composed into frames: 24 × 26, facing right, floating with its hem on row
-// 25. A shadow of the deep in a mask, after Kaonashi's quiet loneliness more than his look: a rounded shroud of
-// darkness with no hood to it, its hem thinning into nothing so it seems only half there; on its face a pale oval mask
-// with two dark eye holes (the page lays its glowing eyes in them, eyes.ts, where src/creature/look.ts says its head
-// is), a short violet mark above each and a longer one below, like tears, and a small dark mouth. Thin arms of shadow
-// come out of it only to wave, to eat, to dig or to hold something out. The shroud is drawn in the coat's roles (the
-// page moves it to its own colour), the mask in bone, the marks in the violet of flowers, the holes in the hood's
-// darkness. Legend in ../legend.ts.
+// The creature, drawn by hand in parts and composed into frames: 24 × 26, facing right, paws on row 25. A small furry
+// friend of the deep, dark and soft: a round body on stubby legs, a big round head with a darker band across the face
+// where its eyes glow (the page lays them in, eyes.ts, where src/creature/look.ts says its head is), a pale crescent on
+// its brow, long soft ears and a fluffy tail curled up, their tips glowing violet as the deep's crystal does. It trots,
+// sits cat-fashion with its tail round it, pounces, waves a paw, digs, nibbles. The fur is drawn in the coat's roles
+// (the page moves it to its own colour), the crescent in bone, the tips in amethyst. Legend in ../legend.ts.
 import { CREATURE, HEAD } from '../../../src/creature/look.ts';
 import { block, compose } from '../compose.ts';
 import type { Part, Placed } from '../compose.ts';
@@ -13,160 +11,152 @@ import type { Sheet } from '../legend.ts';
 
 const { w: W, h: H } = CREATURE;
 
-// ── The mask ───────────────────────────────────────────────────────────────
+// ── Its head (with its ears): side on, and facing you ────────────────────────
 
-/** Facing you: the eyes go at x 9–13, rows 9–10. */
-const MASK_FRONT: Part = block(6, 4, [
-  '..z///z....',
-  '.z/UUUU/z..',
-  'z/UUUUUUU/z',
-  'z/U•UUU•U/z',
-  'z/U•UUU•U/z',
-  'z/hhhUhhh/z',
-  'z/hhhUhhh/z',
-  'z/U·UUU·U/z',
-  'z/U•UUU•U/z',
-  '.z/•UUU•/z.',
-  '.z/U/hh/U/z',
-  '..z/UUUU/z.',
-  '...zz//zz..',
+const EARS: Part = block(10, 0, [
+  '..β......γ..',
+  '.oβd....dγβ.',
+  '.odβd..odlβo',
+  '.odmo..odlLo',
+  'odmmo..odllo',
+  'odmo..odmllo',
 ]);
-/** Turned to the right, on the front of its dome: the eyes go at x 12–16. */
-const MASK_SIDE: Part = block(9, 4, [
-  '..z///z...',
-  '.z/UUUU/z.',
-  'z/UUUUUUU/',
-  'z/U•UUU•U/',
-  'z/U•UUU•Uz',
-  'z/hhhUhhhz',
-  'z/hhhUhhhz',
-  'z/U·UUU·U/',
-  'z/U•UUU•U/',
-  '.z/•UUU•/.',
-  '.z/U/hh/z.',
-  '..z/UUU/..',
-  '...zz//...',
+/** Side on: the eyes go at x 13–17, rows 9–10. */
+const FACE: Part = block(9, 5, [
+  '...oddddddo...',
+  '..odmmmmmmmdo.',
+  '.odmmmmmUUmmdo',
+  'odmmmmmmmUmmmdo',
+  'odmmdddddddmmdo',
+  'odmddddddddddmo',
+  'odmmdddddddmmlo',
+  '.odmmmmmmmmmlLo',
+  'od.odmmmmmmlLo.',
+  '.o..oddmmmddo..',
+  '......oddddo...',
 ]);
+const HEAD_SIDE: readonly Part[] = [EARS, FACE];
+/** Ears back, flat along its head (pouncing). */
+const EARS_BACK: Part = block(8, 3, ['.γβdo.....', 'βγlddo....', '.oolddo...']);
 
-// ── The shroud ─────────────────────────────────────────────────────────────
+const EARS_FRONT: Part = block(3, 0, [
+  '..γ..........γ..',
+  '.βγd........dγβ.',
+  '.odβd......dβdo.',
+  '.odlLo....oLldo.',
+  'odmllo....ollmdo',
+  'odmlo......olmdo',
+]);
+/** Facing you: the eyes go at x 8–12, rows 9–10. */
+const FACE_FRONT: Part = block(3, 5, [
+  '....odddddddo....',
+  '..oddmmmmmmmddo..',
+  '.odmmmmmUUmmmmdo.',
+  'odmmmmmmUmmmmmmdo',
+  'odmddddddddddddmo',
+  'odddddddddddddddo',
+  'odmddddddddddddmo',
+  'o.odmmmmLLmmmmdo.',
+  '..odmmmmllmmmmdo.',
+  '...ooddmmmmddoo..',
+]);
+const HEAD_FRONT: readonly Part[] = [EARS_FRONT, FACE_FRONT];
 
-/** Facing you: a dome, then a long shroud widening a little, a lit fold down its left. */
-const SHROUD_FRONT: Part = block(3, 2, [
-  '......odddo.......',
-  '....oddmmmmddo....',
-  '...odmlmmmmmmdo...',
-  '..odmlmmmmmmmmdo..',
-  '..odmlmmmmmmmmdo..',
-  '.odmlmmmmmmmmmmdo.',
-  '.odmlmmmmmmmmmmdo.',
-  '.odmlmmmmmmmmmmdo.',
-  '.odmlmmmmmmmmmmdo.',
-  '.odmlmmmmmmmmmmdo.',
-  '.odmlmmmmmmmmmmdo.',
-  '.odmlmmmmmmmmmmmdo',
-  'odmmlmmmmmmmdmmmdo',
-  'odmmlmmmmmmmdmmmdo',
-  'odmmlmmmmmmmdmmmdo',
-  'odmmlmmmmmmmdmmmdo',
-  'oddmmlmmmmmmdmmddo',
-  'oddmmlmmmmmmdmmddo',
-  'oddmmmmmmmmmmmmddo',
-]);
-/** Turned to the right: its back rounder, the front falling straight. */
-const SHROUD_SIDE: Part = block(2, 2, [
-  '......odddo.......',
-  '....oddmmmmddo....',
-  '...odmlmmmmmmmdo..',
-  '..odmlmmmmmmmmmdo.',
-  '..odmlmmmmmmmmmdo.',
-  '.odmlmmmmmmmmmmmdo',
-  '.odmlmmmmmmmmmmmdo',
-  '.odmlmmmmmmmmmmmdo',
-  '.odmlmmmmmmmmmmmdo',
-  '.odmlmmmmmmmmmmmdo',
-  'odmlmmmmmmmmmmmmdo',
-  'odmlmmmmmmmmmmmmdo',
-  'odmmlmmmmmdmmmmdo.',
-  'odmmlmmmmmdmmmmdo.',
-  'odmmlmmmmmdmmmmdo.',
-  'oddmmlmmmmdmmmmdo.',
-  'oddmmlmmmmdmmmddo.',
-  'oddmmlmmmmmmmmddo.',
-  'oddmmmmmmmmmmmddo.',
-]);
-/** Settled low, its shroud spread on the ground. */
-const SHROUD_SIT: Part = block(2, 6, [
-  '.......odddo........',
-  '.....oddmmmmddo.....',
-  '....odmlmmmmmmmdo...',
-  '...odmlmmmmmmmmmdo..',
-  '...odmlmmmmmmmmmdo..',
-  '..odmlmmmmmmmmmmmdo.',
-  '..odmlmmmmmmmmmmmdo.',
-  '..odmlmmmmmmmmmmmdo.',
-  '.odmmlmmmmmmmmmmmmdo',
-  '.odmmlmmmmmmmmmmmmdo',
-  '.odmmlmmmmmmmdmmmmdo',
-  'oddmmlmmmmmmmdmmmmdo',
-  'oddmmlmmmmmmmdmmmddo',
-  'oddmmmmmmmmmmmmmmddo',
-  'ooddddddddddddddddoo',
-]);
+// ── Its body ───────────────────────────────────────────────────────────────
 
-/** Its hem thinning into nothing: the shapes take turns as it floats (two faces of it, for each way it is drawn). */
-const hem = (x0: number, rows: readonly string[]): Part => block(x0, 21, rows);
-const HEMS_FRONT: readonly Part[] = [
-  hem(3, ['o.dmm.mmmm.mmm.d.o', '.d.m.m.m.mm.m.m.d.', '..m...m...m...m...', '.m...m.....m....m.']),
-  hem(3, ['o.dm.mmmm.mmm.md.o', '..dm.m.m.m.m.m.d..', '.m...m...m...m....', '...m....m...m...m.']),
+/** Its tail curled up behind it, the tip glowing; two shapes as it sways. */
+const TAILS: readonly Part[] = [
+  block(0, 6, ['.γγ....', 'βγβl...', 'lLLLl..', 'dlLLm..', 'odmLm..', '.odmm..', '..odm..', '..odmm.', '...odmm', '....odm']),
+  block(1, 6, ['.γγ...', 'βγβl..', 'lLLLl.', 'dlLLm.', 'odmLm.', 'odmm..', '.odm..', '.odmm.', '..odmm', '...odm']),
 ];
-const HEMS_SIDE: readonly Part[] = [
-  hem(2, ['o.dmm.mmmm.mmd.o..', '.d.m.m.m.mm.m.d...', 'm...m...m...m.....', '..m...m.....m.....']),
-  hem(2, ['o.dm.mmmm.mmmd.o..', '..dm.m.m.m.m.d....', '.m...m...m...m....', 'm....m.....m......']),
-];
+const BODY: Part = block(3, 14, [
+  '..o.oddmmmmd.o..',
+  '.oddmmmmmmmmmdo.',
+  'oddmmllmmmmmmmdo',
+  'oddmlLlmmmmmmmmo',
+  'oddmmlmmmmmmmmdo',
+  'oddmmmmmmmmmmmdo',
+  '.oddmmmmmmmmmdo.',
+  '..o.ddddddddd.o.',
+]);
+/** Its four stubby legs: back, back, front, front, at these columns; each leg lifted by `up` rows. */
+const legs = (cols: readonly number[], up: readonly number[] = [0, 0, 0, 0]): Part => {
+  const out: Record<number, (readonly [number, string])[]> = {};
+  cols.forEach((x, i) => {
+    const lift = up[i];
+    for (let k = 0; k < 3 - lift; k++) {
+      const y = 22 + k;
+      out[y] ??= [];
+      out[y].push([x, k === 2 - lift ? 'lLl' : 'odd']);
+    }
+  });
+  return out;
+};
+const STANDING = [6, 10, 15, 18];
 
-// ── Its arms of shadow ─────────────────────────────────────────────────────
+/** Sitting side on: haunch round at the back, front legs straight, tail along the ground. */
+const BODY_SIT: Part = block(4, 13, [
+  '....oddmmd.o....',
+  '..oddmmmmmmmdo..',
+  '.oddmmllmmmmmdo.',
+  '.oddmlLlmmmmmdo.',
+  'oddmmmlmmmmmmmdo',
+  'oddmmmmmmmmmmmdo',
+  'oddmmmmmmmmodd..',
+  'oddmmmmmmmo.od..',
+  '.oddmmmmmdo.od..',
+  '..oddddddo..lLl.',
+  '...lLl.lLl......',
+]);
+const TAIL_SIT: Part = block(0, 20, ['γβ......', 'βlLLlod.', '.odddo..']);
 
-/** An arm raised from its side, waving: up and out to a small hand. */
-const armUp = (x: number, y: number, out: 1 | -1): Part => ({
-  [y]: [[x, 'lL']],
-  [y + 1]: [[x - out, 'ml']],
-  [y + 2]: [[x - out, 'dl']],
-  [y + 3]: [[x - 2 * out, 'dm']],
-  [y + 4]: [[x - 2 * out, 'om']],
-});
-/** Both hands at its mouth (eating). */
-const HANDS_MOUTH: Part = { 16: [[13, 'lL']], 17: [[15, 'ml']], 18: [[15, 'dm']] };
-/** Hands down at the ground (digging), scratching. */
-const handsDown = (y: number): Part => ({ [y]: [[19, 'ml']], [y + 1]: [[20, 'lL']] });
-/** A hand held out in front (for what it holds). */
-const HAND_OUT: Part = { 18: [[17, 'dm']], 19: [[18, 'lL']] };
+/** Facing you, sitting: the chest's pale fluff, paws together, tail round its side. */
+const BODY_FRONT: Part = block(4, 14, [
+  '..o.oLlLLlLo.o..',
+  '..odmlLLLLLlmdo.',
+  '.odmmlLLLLLlmmdo',
+  '.odmmmlLLLlmmmdo',
+  'odmmmmmlllmmmmdo',
+  'odmmmmmmmmmmmmdo',
+  'odmmmmmmmmmmmmdo',
+  '.odlLlmmmmlLldo.',
+  '..oddddddddddo..',
+]);
+const TAIL_FRONT: Part = block(17, 14, ['....γ', '...βγ', '..lLβ', '.lLl.', 'odm..', 'odm..', 'dm...', 'm....']);
+/** A front paw raised (waving): side on, and facing you. */
+const PAW_UP = (y: number): Part => ({ [y]: [[20, 'lL']], [y + 1]: [[19, 'dl']], [y + 2]: [[19, 'od']] });
+const PAW_UP_FRONT = (y: number): Part => ({ [y]: [[17, 'lL']], [y + 1]: [[17, 'dl']], [y + 2]: [[16, 'od']], [y + 3]: [[16, 'od']] });
 
 // ── Frames ─────────────────────────────────────────────────────────────────
 
 const at = (part: Part, dx: number, dy: number): Placed => ({ part, dx, dy });
+const all = (parts: readonly Part[], dx: number, dy: number): Placed[] => parts.map((p) => at(p, dx, dy));
 
-/** A frame: the body parts, then the mask moved as src/creature/look.ts says for this pose and frame. */
-function frame(tag: keyof typeof HEAD, i: number, mask: Part, body: readonly (Part | Placed)[]): string[] {
+/** A frame: the body parts, then the head moved as src/creature/look.ts says for this pose and frame. */
+function frame(tag: keyof typeof HEAD, i: number, head: readonly Part[], body: readonly (Part | Placed)[]): string[] {
   const [dx, dy] = HEAD[tag][i];
-  return compose(W, H, [...body, at(mask, dx, dy)]);
+  return compose(W, H, [...body, ...all(head, dx, dy)]);
 }
 
-// Breathing: it rises and sinks a pixel, its hem shifting.
-const STAND = [0, 1].map((i) => frame('stand', i, MASK_SIDE, [at(SHROUD_SIDE, 0, i), HEMS_SIDE[i], at(HAND_OUT, 0, i)]));
-// Drifting: a bob, its hem trailing.
+// Breathing, its tail swaying.
+const STAND = [0, 1].map((i) => frame('stand', i, HEAD_SIDE, [TAILS[i], BODY, legs(STANDING)]));
+// A trot: diagonal legs together, a bob on the passing steps, the tail bouncing.
 const WALK = [0, 1, 2, 3].map((i) => {
-  const dy = i === 1 || i === 2 ? -1 : 0;
-  return frame('walk', i, MASK_SIDE, [at(SHROUD_SIDE, 0, dy), at(HEMS_SIDE[i % 2], i % 2 === 0 ? 0 : -1, dy)]);
+  const up = i === 0 ? [1, 0, 0, 1] : i === 2 ? [0, 1, 1, 0] : [0, 0, 0, 0];
+  const dy = i === 1 || i === 3 ? -1 : 0;
+  return frame('walk', i, HEAD_SIDE, [at(TAILS[i % 2], 0, dy), at(BODY, 0, dy), legs(STANDING, up)]);
 });
-const SIT = [0, 1].map((i) => frame('sit', i, MASK_SIDE, [at(SHROUD_SIT, 0, i === 1 ? 0 : 0)]));
-const JUMP = [frame('jump', 0, MASK_SIDE, [at(SHROUD_SIDE, 0, -2), at(HEMS_SIDE[1], 0, -2)])];
-// Waving: a thin arm of shadow comes out and waves.
-const WAVE = [0, 1].map((i) => frame('wave', i, MASK_SIDE, [SHROUD_SIDE, HEMS_SIDE[i], armUp(18 + i, 8 + i, -1)]));
-// Bent to dig: the mask low, its hands scratching at the ground.
-const DIG = [0, 1].map((i) => frame('dig', i, MASK_SIDE, [at(SHROUD_SIDE, 1, 3), at(HEMS_SIDE[i], 1, 1), handsDown(22 + i)]));
-const EAT = [0, 1].map((i) => frame('eat', i, MASK_SIDE, [SHROUD_SIDE, HEMS_SIDE[i], at(HANDS_MOUTH, 0, i)]));
-const FRONT = [0, 1].map((i) => frame('front', i, MASK_FRONT, [at(SHROUD_FRONT, 0, i), HEMS_FRONT[i]]));
-const FRONT_WAVE = [0, 1].map((i) => frame('frontwave', i, MASK_FRONT, [SHROUD_FRONT, HEMS_FRONT[i], armUp(19 + i, 7 + i, -1)]));
+const SIT = [0, 1].map((i) => frame('sit', i, HEAD_SIDE, [TAIL_SIT, at(BODY_SIT, 0, i === 1 ? 0 : 0)]));
+// Pouncing: stretched, legs tucked, ears flat back.
+const JUMP = [frame('jump', 0, [EARS_BACK, FACE], [at(TAILS[1], 0, -2), at(BODY, 0, -2), at(legs(STANDING, [1, 1, 1, 1]), 0, -2)])];
+// Waving a front paw.
+const WAVE = [0, 1].map((i) => frame('wave', i, HEAD_SIDE, [TAILS[i], BODY, legs([6, 10, 15]), PAW_UP(15 + i)]));
+// Digging: its head down, its front paws scrabbling.
+const DIG = [0, 1].map((i) => frame('dig', i, HEAD_SIDE, [TAILS[0], at(BODY, 0, 1), legs(STANDING, i === 0 ? [0, 0, 1, 0] : [0, 0, 0, 1])]));
+// Nibbling: its head down at the ground.
+const EAT = [0, 1].map((i) => frame('eat', i, HEAD_SIDE, [TAILS[i], BODY, legs(STANDING)]));
+const FRONT = [0, 1].map((i) => frame('front', i, HEAD_FRONT, [i === 0 ? TAIL_FRONT : at(TAIL_FRONT, -1, 0), BODY_FRONT]));
+const FRONT_WAVE = [0, 1].map((i) => frame('frontwave', i, HEAD_FRONT, [TAIL_FRONT, BODY_FRONT, PAW_UP_FRONT(13 + i)]));
 
 export const SHEET: Sheet = {
   name: 'creature',
@@ -174,13 +164,13 @@ export const SHEET: Sheet = {
   h: H,
   tags: [
     { name: 'stand', ms: [1300, 1100], frames: STAND },
-    { name: 'walk', ms: 190, frames: WALK },
+    { name: 'walk', ms: 130, frames: WALK },
     { name: 'sit', ms: [1500, 1300], frames: SIT },
     { name: 'jump', ms: 1000, frames: JUMP },
-    { name: 'wave', ms: 280, frames: WAVE },
-    { name: 'dig', ms: 220, frames: DIG },
-    { name: 'eat', ms: 320, frames: EAT },
+    { name: 'wave', ms: 260, frames: WAVE },
+    { name: 'dig', ms: 160, frames: DIG },
+    { name: 'eat', ms: 300, frames: EAT },
     { name: 'front', ms: [1300, 1100], frames: FRONT },
-    { name: 'frontwave', ms: 280, frames: FRONT_WAVE },
+    { name: 'frontwave', ms: 260, frames: FRONT_WAVE },
   ],
 };

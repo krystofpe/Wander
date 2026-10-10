@@ -13,10 +13,10 @@ const reply = (o: unknown, stop = 'end_turn'): ApiMessage => ({ content: [{ type
 test('the system prompt says who it is', () => {
   const p = systemPrompt(life);
   assert.match(p, /You are Moss/);
-  assert.match(p, /swamp/);
   assert.match(p, /JSON/);
   assert.match(p, /the deep/);
-  assert.match(systemPrompt(newLife(4, 0, { biome: 'forest' })), /foot of a great tree/, 'it lives in the hollow at the foot of the great tree');
+  assert.match(p, /portal/, 'it goes through its portal to him at night');
+  assert.match(p, /furry/);
 });
 
 test('the situation carries the moment and the state of things', () => {

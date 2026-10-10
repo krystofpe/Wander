@@ -2,27 +2,27 @@
 // its head is in each frame (so the eyes, drawn apart, sit in its face), where its hands hold things, and which
 // glowing colour its eyes take for each mood. Pure.
 
-/** The sheet's canvas: 24 × 26, facing right, its hem on the last row; `tall` from there to the top of its dome. */
-export const CREATURE = { w: 24, h: 26, foot: 25, tall: 23 } as const;
+/** The sheet's canvas: 24 × 26, facing right, its paws on the last row; `tall` from there to its ear tips. */
+export const CREATURE = { w: 24, h: 26, foot: 25, tall: 25 } as const;
 
 export const POSE_TAGS = ['stand', 'walk', 'sit', 'jump', 'wave', 'dig', 'eat', 'front', 'frontwave'] as const;
 export type PoseTag = (typeof POSE_TAGS)[number];
 
-/** Where its mask is, frame by frame, from the standing mask (dx, dy): the eyes move with it. */
+/** Where its head (with its ears) is, frame by frame, from the standing head (dx, dy): the eyes move with it. */
 export const HEAD: Readonly<Record<PoseTag, readonly (readonly [number, number])[]>> = {
   stand: [
     [0, 0],
-    [0, 1],
+    [0, 0],
   ],
   walk: [
     [0, 0],
     [0, -1],
-    [0, -1],
     [0, 0],
+    [0, -1],
   ],
   sit: [
-    [0, 4],
-    [0, 4],
+    [-1, 0],
+    [-1, 1],
   ],
   jump: [[0, -2]],
   wave: [
@@ -30,12 +30,12 @@ export const HEAD: Readonly<Record<PoseTag, readonly (readonly [number, number])
     [0, 0],
   ],
   dig: [
-    [2, 4],
-    [2, 5],
+    [2, 6],
+    [2, 7],
   ],
   eat: [
-    [0, 0],
-    [0, 1],
+    [2, 5],
+    [2, 6],
   ],
   front: [
     [0, 0],
@@ -47,23 +47,23 @@ export const HEAD: Readonly<Record<PoseTag, readonly (readonly [number, number])
   ],
 };
 
-/** The top-left of its eyes (a 5 × 3 sprite) with the mask unmoved, in its eye holes: side on, and facing you. */
-export const EYES_SIDE: readonly [number, number] = [12, 9];
-export const EYES_FRONT: readonly [number, number] = [9, 9];
+/** The top-left of its eyes (a 5 × 3 sprite) with the head unmoved, in the dark band across its face. */
+export const EYES_SIDE: readonly [number, number] = [13, 9];
+export const EYES_FRONT: readonly [number, number] = [8, 9];
 
-/** Where a held thing hangs (its centre), per pose, from the sprite's top-left: in its hand of shadow; the lantern lower. */
+/** Where a held thing hangs (its centre), per pose, from the sprite's top-left: in its mouth, or in its front paws. */
 export const HAND: Readonly<Record<PoseTag, readonly [number, number]>> = {
-  stand: [19, 19],
-  walk: [19, 19],
-  sit: [19, 21],
-  jump: [19, 17],
-  wave: [19, 19],
-  dig: [21, 23],
-  eat: [15, 16],
-  front: [12, 20],
-  frontwave: [12, 20],
+  stand: [22, 14],
+  walk: [22, 14],
+  sit: [21, 14],
+  jump: [22, 12],
+  wave: [22, 14],
+  dig: [22, 21],
+  eat: [22, 19],
+  front: [12, 21],
+  frontwave: [12, 21],
 };
-export const LANTERN: readonly [number, number] = [19, 22];
+export const LANTERN: readonly [number, number] = [22, 20];
 
 /**
  * The great tree (tools/art/sprites/hollow.ts): its foot `w` × `h` with the trunk `trunk` wide at its top, the

@@ -83,6 +83,10 @@ export function revive(data: unknown, path = 'the save file'): Life {
       finds: num(stats.finds, 0),
     },
     asked: strings(o.asked),
+    traveller: {
+      times: Math.max(0, Math.floor(num((o.traveller as { times?: unknown } | undefined)?.times, 0))),
+      last: num((o.traveller as { last?: unknown } | undefined)?.last, 0),
+    },
   };
   if (former !== undefined) addDiary(life, life.lastSeen, `Left the ${former.toLowerCase()}, which is no more, for the ${BIOMES[biome].title.toLowerCase()}.`);
   return life;

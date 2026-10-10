@@ -40,6 +40,8 @@ export type Api = {
   creatureMind?(): { mind: 'claude' | 'local'; model: string | null };
   /** The mode you are in, so the next start opens it (the pages say when you switch). */
   setMode?(mode: string): Promise<void>;
+  /** The traveller sat by the creature's door (his page says so): its save keeps the visit. */
+  creatureVisit?(request: unknown): Promise<boolean>;
 };
 
 export type Running = {
@@ -124,6 +126,9 @@ export function startServer(root: string, api: Api, port = 0): Promise<Running> 
       if ((route === 'PUT /api/creature' || route === 'POST /api/creature') && api.saveCreature !== undefined) {
         await api.saveCreature(JSON.parse(await body(req)));
         return json(res, 200, { ok: true });
+      }
+      if (route === 'POST /api/creature/visit' && api.creatureVisit !== undefined) {
+        return json(res, 200, { kept: await api.creatureVisit(JSON.parse(await body(req))) });
       }
       if (route === 'POST /api/creature/say' && api.creatureSay !== undefined) {
         const reply = await api.creatureSay(JSON.parse(await body(req)));

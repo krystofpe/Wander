@@ -625,7 +625,8 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       yield* wait(3);
       c.body.icon = null;
       const season = c.sky.season;
-      if (c.random() < 0.25) c.say(season);
+      if (c.life.traveller.times > 0 && c.random() < 0.2) c.say('traveller');
+      else if (c.random() < 0.25) c.say(season);
       else c.voice('thought', 'ponder');
       yield* hush(c);
       yield* wait(2 + c.random() * 3);

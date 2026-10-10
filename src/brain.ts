@@ -94,7 +94,9 @@ export function scores(s: Situation): Partial<Record<Act, { score: number; spot:
 
   const seat = nearest(s, 'seat');
   if (seat !== null && s.since.sit >= BRAIN.cooldown.sit && s.precip < 0.45) {
-    out.sit = { score: 0.4 * seat.quality + 1.7 * tired + 0.5 * clamp01(s.since.sit / 1200) + 0.3 * golden - 0.3 * s.precip, spot: seat };
+    // At the creature's hollow he nearly always sits a while by its door: company.
+    const company = seat.what === 'hollow' ? 1.6 : 0;
+    out.sit = { score: 0.4 * seat.quality + 1.7 * tired + 0.5 * clamp01(s.since.sit / 1200) + 0.3 * golden - 0.3 * s.precip + company, spot: seat };
   }
 
   if (s.since.smoke >= BRAIN.cooldown.smoke && s.precip < 0.3) {

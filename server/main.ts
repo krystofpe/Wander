@@ -15,6 +15,8 @@ import { startServer } from './server.ts';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Api } from './server.ts';
+import { revive } from '../src/creature/save.ts';
+import { travellerCame } from '../src/creature/traveller.ts';
 import { ROOT } from './root.ts';
 
 const argv = process.argv.slice(2);
@@ -86,6 +88,15 @@ const api: Api = {
   },
   creatureSay: async (r) => (mind === null ? null : mind.ask(r as Record<string, unknown>)),
   creatureMind: () => ({ mind: mind?.status() ?? 'local', model: mind?.model ?? null }),
+  creatureVisit: async (r) => {
+    const data = creatures.load();
+    if (data === null) return false;
+    const life = revive(data);
+    const how = (r as { how?: unknown }).how;
+    const kept = travellerCame(life, Date.now(), how === 'night' || how === 'asleep' ? how : 'day');
+    if (kept) creatures.save(life);
+    return kept;
+  },
   setMode: async (m) => {
     mkdirSync(saveDir, { recursive: true });
     writeFileSync(modeFile(saveDir), m === 'creature' ? 'creature\n' : 'wander\n');

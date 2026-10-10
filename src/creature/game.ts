@@ -10,6 +10,7 @@ import type { Feelings, Life, Mood } from './life.ts';
 import { CREATURE } from './look.ts';
 import type { EyeColour } from './look.ts';
 import { situationText } from './mind.ts';
+import { cameWhileAway } from './traveller.ts';
 import type { Reply, Situation } from './mind.ts';
 import { rng } from '../noise.ts';
 import type { Away } from './save.ts';
@@ -207,6 +208,11 @@ export class Game implements Ctx {
     else if (hour >= 5 && hour < 10 && ms > 4 * 3600000) this.greetTopic = 'morning';
     else this.greetTopic = 'backSoon';
     this.greetMoment = ms > 60000 ? `They just came back after being away for ${duration(ms)}. Greet them.` : 'They opened your window again. Greet them.';
+    // The traveller came by while you were away: it tells you first.
+    if (cameWhileAway(life, this.worldMs - ms)) {
+      this.greetTopic = 'travellerBack';
+      this.greetMoment = 'While they were away, the traveller in the long coat, the one who walks the endless road, came by and sat at your door a while. Greet them, and tell them.';
+    }
     this.brain.run('greet');
   }
 

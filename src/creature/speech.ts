@@ -81,6 +81,10 @@ export const LINES = {
   spring: ['Something is growing. I can hear it.', 'It smells green.'],
   summer: ['The air is thick.', 'Even the shadows are warm today.'],
   listening: ['...', '?', 'I am listening.'],
+  // The traveller: the one who walks the endless road and now and then sits at its door.
+  travellerBack: ['The traveller came while you were gone. He sat at my door.', 'He came by again, the one who walks. You missed him.', 'There was a man in a long coat here. He smoked. I think he is lonely too.'],
+  traveller: ['I think about the one who walks. Where does he sleep?', 'The traveller never says where he is going. Maybe he does not know.', 'He leaves a little ash and a little quiet. I keep both.', 'If he comes again, I will show him the cairn.'],
+  travellerHere: ['...it is him.', 'The one who walks.', 'Shh. He is resting.'],
 } as const;
 
 export type Topic = keyof typeof LINES;

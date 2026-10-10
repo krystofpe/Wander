@@ -182,7 +182,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
   },
 };
 
-export const LANDMARK_KINDS = ['house', 'chapel', 'lighthouse', 'mast', 'car', 'bridge', 'train', 'circle', 'shrine', 'skeleton', 'camp'] as const;
+export const LANDMARK_KINDS = ['house', 'chapel', 'lighthouse', 'mast', 'car', 'bridge', 'train', 'circle', 'shrine', 'skeleton', 'camp', 'hollow'] as const;
 export type LandmarkKind = (typeof LANDMARK_KINDS)[number];
 
 /** Where each landmark may stand, with a weight per biome. */
@@ -198,4 +198,13 @@ export const LANDMARK_HOMES: Readonly<Record<LandmarkKind, Partial<Record<BiomeI
   shrine: { pass: 3, pine: 2, birch: 1, autumn: 1, swamp: 1 },
   skeleton: { desert: 4, saltflat: 3, tundra: 2, plateau: 1 },
   camp: { pine: 2, birch: 2, meadow: 1, autumn: 1, pass: 1, coast: 1, desert: 1, swamp: 1, tundra: 1 },
+  // The creature's hollow is not one of the weighted picks: it takes a few of the landmark places of its lands on its
+  // own (HOLLOW), so the other landmarks stay where they were.
+  hollow: {},
 };
+
+/**
+ * The creature's hollow on his road (web/creature): the great tree in the forests, a turf shelter in the open lands.
+ * Whatever hollow he comes to, it is the creature's: one world, two lives. A share of the landmark places in these lands.
+ */
+export const HOLLOW = { homes: new Set<BiomeId>(['pine', 'birch', 'meadow', 'tundra', 'swamp']), chance: 0.14 } as const;

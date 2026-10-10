@@ -300,10 +300,10 @@ export function spotsBetween(seed: number, d0: number, d1: number): SpotAt[] {
       out.push({ kind: 'view', at: d, what: 'rise', quality: Math.min(1, 0.4 + (h - around) / 6), height: 0, u: Math.round(d * PX_PER_M) });
     }
   }
-  // Landmarks are worth stopping for.
+  // Landmarks are worth stopping for; at the creature's hollow, a place to sit by its door.
   for (const m of landmarksBetween(seed, d0 - 40, d1 + 40)) {
-    const at = m.at - 25;
-    if (at >= d0 && at < d1) out.push({ kind: 'view', at, what: m.kind, quality: 0.95, height: 0, u: Math.round(at * PX_PER_M) });
+    const at = m.kind === 'hollow' ? m.at + 3.5 : m.at - 25;
+    if (at >= d0 && at < d1) out.push({ kind: m.kind === 'hollow' ? 'seat' : 'view', at, what: m.kind, quality: m.kind === 'hollow' ? 1 : 0.95, height: 0, u: Math.round(at * PX_PER_M) });
   }
   // Camps: flat, dry ground every 20 m, better near trees.
   for (let d = Math.ceil(d0 / 20) * 20; d < d1; d += 20) {

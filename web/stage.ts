@@ -13,7 +13,9 @@ import { arcX, flashAt, moonAt, roadMoon, shownHour, sunElevation } from '../src
 import type { Weather } from '../src/sky.ts';
 import { loopFrame, walkFrame } from '../src/walker.ts';
 import { unit } from '../src/noise.ts';
-import { biomeAt, blended, groundHeight } from '../src/world.ts';
+import { biomeAt, blended, groundHeight, landmarksBetween, stretchAt } from '../src/world.ts';
+import { drawHollow } from './hollowmark.ts';
+import type { Neighbour } from './hollowmark.ts';
 import { ALBEDO_ROW, FOG_AFTER, paletteRow } from './render.ts';
 import type { Renderer, View } from './render.ts';
 import type { Atlas } from './sprites.ts';
@@ -48,6 +50,8 @@ export class Stage {
   private readonly bytes = new Uint8Array(3);
   readonly moonStart: number;
   readonly around = new Around();
+  /** Who lives in the hollows on his road: the creature, as its save says (null: a stranger's look). */
+  neighbour: Neighbour | null = null;
   /** Where his head is on the native view this frame (for his thoughts). */
   headX = 0;
   headY = 0;
@@ -292,6 +296,15 @@ export class Stage {
 
     // The life around him and what moves at the landmarks (behind him on the playfield).
     this.around.update(r, atlas, v, l, { sun: m.elevation, night: this.grade.night, weather: w, time, dt, extra, camY: this.camY, himX: colOf(l.at) });
+
+    // The creature's hollow, when his road passes one: drawn before him, so he walks in front of its tree.
+    for (const mark of landmarksBetween(l.seed, (v.camX - 120) / PX_PER_M, (v.camX + W + 120) / PX_PER_M)) {
+      if (mark.kind !== 'hollow') continue;
+      const hb = biomeAt(l.seed, mark.at);
+      const rows: [number, number, number] = [paletteRow(GROUND, BIOME_IDS.indexOf(hb.a)), paletteRow(GROUND, BIOME_IDS.indexOf(hb.b)), hb.k];
+      const sitting = (l.stage === 'sit' || l.stage === 'sitdown' || l.stage === 'standup') && l.what === 'hollow' && Math.abs(l.at - mark.at - 3.5) < 2;
+      drawHollow(r, atlas, v, colOf(mark.at), groundRow(mark.at), stretchAt(l.seed, mark.at).biome, rows, this.neighbour, { d: l.at - mark.at, sitting }, this.grade.night, time);
+    }
 
     // Him.
     const sheet = atlas.sheets.wanderer;

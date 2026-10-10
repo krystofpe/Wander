@@ -50,6 +50,8 @@ export type Life = {
   stats: Stats;
   /** Ids of questions already asked. */
   asked: string[];
+  /** The traveller who comes by its hollow now and then (src/creature/traveller.ts): how many times, the last time. */
+  traveller: { times: number; last: number };
 };
 
 /** Short-lived feelings, 0..1, that fade within minutes. Not saved. */
@@ -115,6 +117,7 @@ export function newLife(seed: number, now: number, options: { biome?: BiomeName;
     cairn: 0,
     stats: { visits: 0, fed: 0, played: 0, petted: 0, talks: 0, gifts: 0, finds: 0 },
     asked: [],
+    traveller: { times: 0, last: 0 },
   };
 }
 

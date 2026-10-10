@@ -20,6 +20,10 @@ import { Renderer } from './render.ts';
 import { loadAtlas } from './sprites.ts';
 import { Stage } from './stage.ts';
 import { lastMode, modes } from './modes.ts';
+import { meetingOf } from './hollowmark.ts';
+import type { Neighbour } from './hollowmark.ts';
+import { revive } from '../src/creature/save.ts';
+import { travellerCame } from '../src/creature/traveller.ts';
 
 const params = new URLSearchParams(location.search);
 const opts = parseOptions((k) => params.get(k));
@@ -175,6 +179,47 @@ journey.life = life;
 status.life = life;
 (status as unknown as { mind: string }).mind = mind;
 const stage = new Stage(life.seed, journey.moonStart);
+// Who lives in the hollows on his road: your creature, from its save (its file here, this browser on the published
+// page), or a stranger's look when there is none yet.
+async function neighbourOf(): Promise<Neighbour | null> {
+  let data: unknown = null;
+  if (site) {
+    try {
+      data = JSON.parse(localStorage.getItem('wander.creature') ?? 'null') as unknown;
+    } catch {
+      data = null;
+    }
+  } else if (!tool) {
+    try {
+      const res = await fetch('/api/creature');
+      if (res.ok) data = ((await res.json()) as { life?: unknown }).life ?? null;
+    } catch {
+      data = null;
+    }
+  }
+  if (data === null) return null;
+  try {
+    const c = revive(data);
+    return { name: c.name, cloak: c.cloak, away: c.away, nightOwl: c.traits.nightOwl };
+  } catch {
+    return null;
+  }
+}
+stage.neighbour = await neighbourOf();
+
+/** He sat down by the hollow's door: the creature keeps the visit (in its file, or in this browser). */
+function visitHollow(): void {
+  const how = meetingOf(stage.grade.night, stage.neighbour);
+  if (how === null || stage.neighbour === null) return;
+  if (site) {
+    try {
+      const c = revive(JSON.parse(localStorage.getItem('wander.creature') ?? 'null') as unknown);
+      if (travellerCame(c, Date.now(), how)) localStorage.setItem('wander.creature', JSON.stringify(c));
+    } catch {
+      // No creature in this browser, or no storage: nothing to keep.
+    }
+  } else if (!ephemeral) void fetch('/api/creature/visit', { method: 'POST', body: JSON.stringify({ how }) }).catch(() => {});
+}
 // Still pictures may ask for life to be put in the frame (?show=deer,flock).
 if (opts.frozen && params.get('show') !== null) stage.around.show = new Set((params.get('show') ?? '').split(','));
 renderer.atlas = await loadAtlas(renderer.gpu);
@@ -234,6 +279,8 @@ if (opts.frozen && opts.pose !== null) {
   life.stage = map[pose] ?? (pose as LifeStage);
   life.seat = life.stage === 'sit' ? 6 : 0;
   if (pose === 'smoke' || pose === 'sitsmoke' || pose === 'camp') life.smoking = 3;
+  // Sitting by a hollow's door: he sits there with the creature.
+  if (life.stage === 'sit' && landmarkNear(life.seed, life.at, 6)?.kind === 'hollow') life.what = 'hollow';
   if (['kneel', 'campsit', 'lie', 'sleep', 'wake', 'pack'].includes(life.stage)) {
     life.act = 'camp';
     life.fire = { at: life.at + 0.9, heat: life.stage === 'kneel' ? 0.3 : life.stage === 'pack' ? 0.1 : 1 };
@@ -389,6 +436,7 @@ const before = { at: 0, walked: 0, clock: 0, smoking: -1, heat: 0 };
 const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
 
 function note(e: LifeEvent): void {
+  if (e.type === 'stage' && e.stage === 'sit' && sim.what === 'hollow') visitHollow();
   if (status.events.length < 400 && e.type !== 'drag' && e.type !== 'exhale') {
     const what = e.type === 'stage' ? e.stage : e.type === 'act' ? e.act : e.type === 'biome' ? e.id : e.type === 'landmark' ? e.kind : '';
     status.events.push(`${sim.clock.toFixed(2)} ${e.type}:${what}`);

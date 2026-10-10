@@ -4,7 +4,9 @@ A lone hooded wanderer walks forever through pixel-art lands made up as he goes.
 
 Nobody plays it. It is something to look at, or to leave running for hours full screen on a second monitor.
 
-**Live: [krystofpe.github.io/Wander](https://krystofpe.github.io/Wander/)**: one wanderer for everyone, walking day and night. Whoever opens the page finds him in the same place at the same moment. Or run your own road from this repository ([Run](#run)).
+It has a second mode, a world away and the same world: [the creature](#the-creature), a small hooded thing in a hollow on his road that notices you, a tamagotchi of sorts. Tab goes from one to the other. Now and then his road passes its door, and he sits with it a while.
+
+**Live: [krystofpe.github.io/Wander](https://krystofpe.github.io/Wander/)**: one wanderer for everyone, walking day and night. Whoever opens the page finds him in the same place at the same moment; Tab there opens a creature of your own. Or run your own road from this repository ([Run](#run)).
 
 ![Golden hour in the pine forest, at 4K](docs/tour/4k/pine-golden.jpg)
 
@@ -19,10 +21,11 @@ npm install
 npm start
 ```
 
-`npm start` runs a small local server and opens Wander in its own Chromium window, full screen, with sound. Close the window to stop it. The page also works in any modern browser at the address the server prints (`npm start -- --no-browser`).
+`npm start` runs a small local server and opens Wander in its own Chromium window, full screen, with sound, in the mode you were in last (the road the first time; `npm run creature` opens the hollow). Close the window to stop it. The page also works in any modern browser at the address the server prints (`npm start -- --no-browser`).
 
 | Key | Does |
 |---|---|
+| Tab | The other mode: the creature's hollow, and from there back to the road (a dim line in the corner names it; a click on it works too) |
 | H | A small dim bar: day on the road, distance, the place, the time, the weather, `mind: claude` or `mind: local` |
 | L | The log of places passed |
 | M | Sound on or off |
@@ -44,6 +47,7 @@ The same options work on the command line (`npm start -- --seed moss --speed 20`
 | `--biome NAME` | Start a new road in this biome (`pine`, `birch`, `meadow`, `autumn`, `plateau`, `pass`, `coast`, `desert`, `tundra`, `swamp`, `saltflat`, `stones`, `ruins`, `rail`). |
 | `--offline` | Never ask Claude; his own voice only. |
 | `--mute` | Start with the sound off. |
+| `--at M` | A look further along the road, from M metres (not saved). |
 | `--frozen --at M --weather W --pose P` | A still frame for pictures: time stopped at a distance, hour and weather. |
 | `--live` | The live road of the published page instead of your own (below). |
 | `--now TIME --speed X` | On the live road: show another moment (a date, or ms since 1970), running X times faster. |
@@ -63,11 +67,13 @@ The road is saved to `~/.local/share/wander/journey.json` (or under `$XDG_DATA_H
 
 [The published page](https://krystofpe.github.io/Wander/) has no server behind it and saves nothing, yet everyone sees the same wanderer. Each real hour is one of his days. At the top of every hour he lies asleep by the fire at that night's camp, and where each night's camp lies is fixed in advance, so any browser can start from the last camp and live the hour up to now, in the same half-second steps as everyone else's (`src/live.ts`). Through the day a plan brings him to the next camp by nightfall: he never walks past it, waits by it if he is early, and stops for nothing if he is late. Every hour ends exactly where the next begins (`npm run live` checks thousands of them). His thoughts there come from his own voice, picked alike for everyone; a public page cannot hold an API key. Click once for sound (browsers ask for that), double-click or F for full screen.
 
-`npm run site` builds it into `dist/` (the TypeScript with its types stripped, the page marked as the site), and the [Live page workflow](.github/workflows/pages.yml) publishes it on every push to `main`. `npm start -- --live` opens the same road locally.
+Tab there opens [the hollow](https://krystofpe.github.io/Wander/creature/): a creature of your own, born in your browser and kept there, with its own small voice (no Claude on a public page). Its hollow stands on the live road, so when the live road sits him at a hollow's door, he sits at yours. The page remembers which of the two you had open last.
+
+`npm run site` builds both pages into `dist/` (the TypeScript with its types stripped, the pages marked as the site), and the [Live page workflow](.github/workflows/pages.yml) publishes it on every push to `main`. `npm run site -- --serve` then serves the build as GitHub Pages will, to look at locally first; `npm start -- --live` opens the same road with the local server.
 
 ## The creature
 
-`npm run creature` opens the other one: a small hooded creature that lives in a hollow at the foot of a great tree, in a still corner of the same world, drawn in the same art. Its face is darkness; only its eyes glow, in the colour of its mood. Unlike the wanderer, it notices you. It forages berries, digs for small things, stacks stones into a cairn, chases butterflies and the toy you throw, hums, watches the stars, hides from the rain or dances in it, goes inside its tree to sleep at night with its lantern lit by the door, and now and then comes up to the glass: to say hello, to bring you something it found, to ask you a question, or to tap when you have been away too long. Its behaviour is never scripted: a small brain with needs (food, rest, fun, love), a personality fixed at birth and a bond with you picks what it does next. Its clock is yours: night falls when it is night where you are, under today's moon.
+`npm run creature` (or Tab from the road) opens the other mode: a small hooded creature that lives in a hollow at the foot of a great tree (a turf shelter in the open lands), at a hollow on his road, drawn in the same art. Its face is darkness; only its eyes glow, in the colour of its mood. Unlike the wanderer, it notices you. It forages berries, digs for small things, stacks stones into a cairn, chases butterflies and the toy you throw, hums, watches the stars, hides from the rain or dances in it, goes inside its tree to sleep at night with its lantern lit by the door, and now and then comes up to the glass: to say hello, to bring you something it found, to ask you a question, or to tap when you have been away too long. Its behaviour is never scripted: a small brain with needs (food, rest, fun, love), a personality fixed at birth and a bond with you picks what it does next. Its clock is yours: night falls when it is night where you are, under today's moon.
 
 ![The creature by its great tree, at night, its lantern lit](docs/creature/nights/stars.jpg)
 
@@ -82,6 +88,7 @@ The road is saved to `~/.local/share/wander/journey.json` (or under `$XDG_DATA_H
 | H | The bar with its needs, or not |
 | M, + / − | Sound on or off, louder or softer |
 | A click on the ground | It goes to have a look |
+| Tab | Back to the road |
 
 Its eyes follow the pointer. When you come back to the window after a while, it notices.
 
@@ -89,16 +96,24 @@ The first time, a wisp drifts in, becomes the creature, and asks what to call yo
 
 With `ANTHROPIC_API_KEY` set, its words come from Claude (`mind: claude` in the bar): when it greets you, visits, offers a gift, thinks aloud, and whenever you talk to it; Claude can also choose what it does next (ask it to dance) and remembers what you tell it. Without a key, or with `--offline`, its own small voice speaks (`mind: local`). Nothing on screen waits for the API.
 
-Options (`npm run creature -- --biome tundra`): `--biome forest|meadow|tundra|swamp` (an existing creature moves), `--name NAME` and `--seed WORD` (a new one), `--new` (start over; the old one is kept as `creature.json.bak`), `--offline`, `--mute`, `--speed X` and `--hour H` (a look, not saved), `--no-browser`, `--port N`, `--save PATH`.
+### One world, two lives
 
-More: [biomes](docs/creature/biomes-sheet.jpg) · [moments](docs/creature/moments-sheet.jpg) · [nights](docs/creature/nights-sheet.jpg) · [weather](docs/creature/weather-sheet.jpg) · [you](docs/creature/you-sheet.jpg)
+Its hollow stands in his world, at a hollow of his road in its own land; and whatever hollow his road passes, it is the creature's. On the road, he comes to the great tree or the turf shelter now and then, and nearly always sits a while by the door and smokes. By day it comes out, watches him come, waves, and sits beside him; at night only its eyes show in the dark of the doorway; late at night it is asleep and he sits alone; while it is off wandering nobody is home. In the hollow you see it from the other side: when his road comes by, he walks out from behind its home along the back of the clearing, sits on the ground by its door with his cigarette, and goes on across, and it goes to sit with him. Either way it keeps the visit: a line in its diary, and the next time you open the hollow it tells you he came. If he came while the window was closed, it finds the ash on the root by its door.
+
+Where he is, the hollow works out from his road: here his journey moved on since its last save at the pace he keeps while away (the same as his catch-up when you go back to the road, a while at each hollow's door included), so both modes agree on where he is; on the published page, the live road. To see him come by without waiting for his road: `npm run creature -- --passer sit` (or `?passer=12`, metres past its door), a look that is not saved.
+
+![He sits by the creature's door at dusk; it sits with him, its lantern and his ember the only warm lights](docs/creature/traveller/night.jpg)
+
+Options (`npm run creature -- --biome tundra`): `--biome forest|meadow|tundra|swamp` (an existing creature moves), `--name NAME` and `--seed WORD` (a new one), `--new` (start over; the old one is kept as `creature.json.bak`), `--offline`, `--mute`, `--speed X`, `--hour H` and `--passer sit|M` (a look, not saved), `--no-browser`, `--port N`, `--save PATH`.
+
+More: [biomes](docs/creature/biomes-sheet.jpg) · [moments](docs/creature/moments-sheet.jpg) · [nights](docs/creature/nights-sheet.jpg) · [the traveller](docs/creature/traveller-sheet.jpg) · [weather](docs/creature/weather-sheet.jpg) · [you](docs/creature/you-sheet.jpg) · [its hollow on his road](docs/tour/landmarks/hollow-sitting.jpg)
 
 ## What there is
 
 - **The land.** Ten parallax layers at fixed depths, from distant mountains to the grass passing close to the eye, each lighter, bluer and softer the further off it stands. Everything is a pure function of the seed and the distance along the road: no two stretches are alike, and none is ever stored. Biomes blend over minutes of walking: colours, ground, plants, weather, sound.
 - **The light.** Every pixel is a colour role, graded through the hour in Oklab, never darkened toward mud: dawn, golden hour, dusk, blue hour and night each have their own keys. The fire lights him and the ground around the camp; the ember of his cigarette lights the inside of his hood. Bloom, fog veils, valley mist, rain and snow at three depths, lightning, grain and a vignette are drawn at full resolution over crisp pixels.
 - **The sky.** A sun and a moon in its phase, stars that twinkle near the horizon, the Milky Way on clear dark nights, aurora over the cold lands, shooting stars, and clouds that catch the sunset.
-- **Landmarks,** rare: a lone house with one lit window and smoke from its chimney, a chapel, a lighthouse that flashes after dark, a radio mast with a blinking red lamp, a rusted car, a bridge over a river, a distant train with lit windows, a stone circle, a roadside shrine with a candle, a huge skeleton half in the ground, someone else's abandoned camp.
+- **Landmarks,** rare: a lone house with one lit window and smoke from its chimney, a chapel, a lighthouse that flashes after dark, a radio mast with a blinking red lamp, a rusted car, a bridge over a river, a distant train with lit windows, a stone circle, a roadside shrine with a candle, a huge skeleton half in the ground, someone else's abandoned camp, and the creature's hollow, where he sits a while.
 - **Life around him,** rare and quiet: a flock of birds crossing, bats at dusk, fireflies on warm nights, a deer at the edge of the trees that looks up and bounds away, a fox that trots past and stops to watch, a fish leaping under the bridge, leaves falling in the autumn woods.
 - **Sound,** all synthesised in the browser: wind through the trees, rain by what it falls on, thunder after the flash, waves, crickets that slow as the night cools, birds at dawn, an owl, a train far off, his footsteps on grass, gravel, snow, sand, wood or mud, the lighter's click and a slow exhale, the fire's crackle; and soft generative music that never loops.
 
@@ -124,7 +139,7 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 
 - **Fast soak** (`npm run soak -- --speed 16 --hours 48`): 48 in-world hours, no errors; JS heap 24.4 → 24.7 MB, GPU textures (48, 52 MB), buffers and framebuffers constant, frame time p50 16.7 / p99 16.8 ms throughout.
 - **Normal soak** (`npm run soak -- --minutes 122 --hidden 20`): two real hours at speed 1, the first 20 minutes hidden (he walked on 370 m and his steps kept sounding with 9 frames drawn), no errors; frame time p50 16.7 / p99 16.8 ms every minute once shown; GPU resources constant; the heap 21 → 27 MB in the first hour while bounded caches fill, then 26–28 MB.
-- **The creature** (`docs/creature/bench.json`, its in-page bench, 20 s each): 60 fps at 1920×1080 and 3840×2160, frame interval p50 16.7 / p99 16.8 ms, CPU 0.4 ms and GPU 1.2–3.6 ms a frame, on a clear day and on a rainy night with its lantern lit. End to end (`npm run creature:check`): 20 of 20 (`docs/creature/check.txt`).
+- **The creature** (`docs/creature/bench.json`, its in-page bench, 20 s each): 60 fps at 1920×1080 and 3840×2160, frame interval p50 16.7 / p99 16.8 ms, CPU 0.4 ms and GPU 1.2–3.6 ms a frame, on a clear day and on a rainy night with its lantern lit. End to end (`npm run creature:check`): 25 of 25 (`docs/creature/check.txt`).
 - **End to end** (`npm run check`, through the real server): closing and reopening, three hours away, offline, Claude, and a slow, failing or refused API: `docs/soak/check.txt`.
 
 ## Tools
@@ -141,10 +156,10 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 | `npm run bench` | The in-page bench: frame interval, CPU and GPU time, p50 and p99, at 1080p and 4K. |
 | `npm run soak -- --speed 16 --hours 48` | Leaves it running and samples heap, GPU resources and frame time every minute. |
 | `npm run live -- --hours 1000` | Lives the live road's hours one after another and checks that each ends where the next begins. |
-| `npm run site` | Builds the published page into `dist/`. |
-| `npm run site:check` | Serves `dist/` as GitHub Pages would and checks it: the same wanderer as `src/live.ts`, the hour turning without a jump, no requests for anything that is not there. |
-| `npm run creature:tour` | Pictures of the creature: every biome through the day, its moments, its nights, the weather, you (`docs/creature/`). |
-| `npm run creature:check` | The creature end to end through the real server: its first meeting, saving and reopening, days away, a terminal-era save moving in, Claude and when it fails (`docs/creature/check.txt`). |
+| `npm run site` | Builds the published page into `dist/`, both modes; `-- --serve` then serves it as GitHub Pages will, to look at locally. |
+| `npm run site:check` | Serves `dist/` as GitHub Pages would and checks it: the same wanderer as `src/live.ts`, the hour turning without a jump, the hollow kept in the browser and on the live road, Tab both ways, the last mode opening again, the traveller at its door, no requests for anything that is not there. |
+| `npm run creature:tour` | Pictures of the creature: every biome through the day, its moments, its nights, the traveller come by, the weather, you (`docs/creature/`). |
+| `npm run creature:check` | The creature end to end through the real server: its first meeting, saving and reopening, days away, a terminal-era save moving in, Claude and when it fails, and one world, two lives: its hollow on his road, his visit kept, Tab both ways (`docs/creature/check.txt`). |
 | `npm run art:draw`, `npm run art` | Builds the hand-drawn sprites into Aseprite files, then exports the atlas. |
 
 ## How it is made

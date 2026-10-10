@@ -2,8 +2,8 @@
 // Pictures of the creature in its hollow, from headless Chromium on the GPU, stepped in fixed steps (no frame loop):
 // every biome at dawn, by day, at dusk and at night; its moments (at the glass, waving, sitting, digging, stacking its
 // cairn, humming, eating, petted, playing); its nights (the lantern, the stars, asleep at home, its eyes in the dark
-// doorway, the visitor); the traveller come by; the weather; and you (talking to it, the journal, a question). JPEG at quality 90, with a
-// contact sheet of each group.
+// doorway, the visitor); the traveller come by; the weather; and you (talking to it, the journal, a question). JPEG at
+// quality 90, with a contact sheet of each group.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

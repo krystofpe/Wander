@@ -49,6 +49,8 @@ const NAMES: Readonly<Record<string, boolean>> = {
   bench: true,
   now: true,
   user: true,
+  /** The traveller put at its door for a look: sit, or metres past its door (walking). */
+  passer: true,
 };
 
 const num = (v: string | null, min: number, max: number): number | null => {
@@ -104,6 +106,7 @@ export function creatureQuery(argv: readonly string[]): URLSearchParams {
     if (name === 'speed' && num(v, 0.01, 100000) === null) throw new Error(`--speed must be a positive number, not "${v}"`);
     if (name === 'hour' && num(v, 0, 23.999) === null) throw new Error(`--hour must be between 0 and 24, not "${v}"`);
     if (name === 'name' && prettyName(v) === '') throw new Error('--name needs letters');
+    if (name === 'passer' && v !== 'sit' && num(v, -100, 100) === null) throw new Error(`--passer must be sit or metres past its door, not "${v}"`);
     q.set(name, v);
   }
   return q;

@@ -4,7 +4,7 @@ A lone hooded wanderer walks forever through pixel-art lands made up as he goes.
 
 Nobody plays it. It is something to look at, or to leave running for hours full screen on a second monitor.
 
-It has a second mode, a world away and the same world: [the creature](#the-creature), a small fluffy ball of dark fur with glowing eyes that lives in the deep, a lush cavern far under his road, and notices you, a tamagotchi of sorts. Tab goes from one to the other. Every night, when he has lain down by his fire, a portal opens beyond it and the creature comes through to sit with him until the small hours; some nights he wakes and sits up with it, some nights he sleeps on.
+It has a second mode, a world away and the same world: [the creature](#the-creature), a little spirit of moss with glowing eyes that lives in the hollow, an old wood far from his road, and notices you, a tamagotchi of sorts. Tab goes from one to the other. Every night, when he has lain down by his fire, a portal opens beyond it and the creature comes through to sit with him until the small hours; some nights he wakes and sits up with it, some nights he sleeps on.
 
 **Live: [krystofpe.github.io/Wander](https://krystofpe.github.io/Wander/)**: one wanderer for everyone, walking day and night. Whoever opens the page finds him in the same place at the same moment; Tab there opens a creature of your own. Or run your own road from this repository ([Run](#run)).
 
@@ -25,7 +25,7 @@ npm start
 
 | Key | Does |
 |---|---|
-| Tab | The other mode: the creature in the deep, and from there back to the road (a dim line in the corner names it; a click on it works too) |
+| Tab | The other mode: the creature in its hollow, and from there back to the road (a dim line in the corner names it; a click on it works too) |
 | H | A small dim bar: day on the road, distance, the place, the time, the weather, `mind: claude` or `mind: local` |
 | L | The log of places passed |
 | M | Sound on or off |
@@ -74,11 +74,11 @@ Tab there opens [the creature](https://krystofpe.github.io/Wander/creature/): on
 
 ## The creature
 
-`npm run creature` (or Tab from the road) opens the other mode: the deep, and the creature. It is a small fluffy ball of dark fur, soft and quiet: tufts all round it, big eyes glowing in the colour of its mood in a dark little face, a sprout of fur on its crown whose tip glows violet like the deep's crystal, small feet peeking out under it, and paws that come out of the fur when it needs them. It trots, sits down into a round heap, hops, waves a paw. Unlike the wanderer, it notices you. It forages the pale caps, digs for small things, stacks stones into a cairn, chases the butterflies of light and the toy you throw, hums, watches the specks of light in the stone, sleeps at night curled up in its nest of moss under a giant mushroom, its lantern lit on the cap's rim above it, and now and then comes up to the glass: to say hello, to bring you something it found, to ask you a question, or to tap when you have been away too long. Its behaviour is never scripted: a small brain with needs (food, rest, fun, love), a personality fixed at birth and a bond with you picks what it does next. Its clock is yours: night falls when it is night where you are, under today's moon.
+`npm run creature` (or Tab from the road) opens the other mode: the hollow, and the creature. It is a little spirit of moss, after a picture of one: a soft mound, round on top and wide at the bottom, mossy all over, a tuft of grass blades on its crown, little twig arms held out at its sides, two stubby feet of root, a small smile and a blush under big eyes that glow in the colour of its mood, and tiny glowing flowers growing in its moss. It waddles, sits with its feet out in front of it, hops, waves an arm. Unlike the wanderer, it notices you. It forages the pale caps, digs for small things, stacks stones into a cairn, chases the butterflies of light and the toy you throw, hums, watches the light through the leaves, sleeps at night settled flat in its nest of moss under a giant glowing toadstool, its lantern lit on the cap's rim above it, and now and then comes up to the glass: to say hello, to bring you something it found, to ask you a question, or to tap when you have been away too long. Its behaviour is never scripted: a small brain with needs (food, rest, fun, love), a personality fixed at birth and a bond with you picks what it does next. Its clock is yours: night falls when it is night where you are, under today's moon.
 
-The deep keeps the bones of the Underdark of Baldur's Gate 3 and Skyrim's Blackreach ([the research](docs/research/blackreach-research.md)) but is alive, more fairytale than ruin: a cavern under a sky of stone, huge stalactites and dark vines hanging from its roof, a still lake across the middle distance, a far forest of mushroom crowns in the mist, and growth everywhere glowing in the dark: giant caps like jellyfish, tall caps on pale stems lit from inside, soft green ferns curling out with glowing tips, flowers of light in pink, violet and blue all across its floor, torch-caps like dull embers, coral shelves, red bulbs, tube fungi, violet crystal; a few stalagmites and the broken pillars of a people who are gone; butterflies and wisps of light, moths, frogs and bats; motes drifting down. Navy while the sun is up above, violet at night; no weather but its mist.
+The hollow is an old wood, after a picture of one, its colours measured from it: a canopy of dark leaves over everything, hanging deep in places and lower at the sides so it frames the view, strands hanging from it; under it a teal mist, and far off low in the middle the light at the end of the wood, faint shafts of it slanting down; thin trunks in ranks fading into the mist and rising into the leaves; old trees in front, dark and a little gnarled on flares of mossy root, two of them framing the view at its sides; toadstools glowing cyan with pale spots on pale stems, ferns with glowing tips, a few violet flowers, mossy stones; butterflies and wisps of light, moths, frogs and bats; motes drifting down. At night a pair of violet eyes looks out from the old trees now and then. Teal while the sun is up somewhere above, a deeper blue-teal at night; no weather but its mist.
 
-![The deep at night: the creature with its lantern among the glowing caps and flowers](docs/creature/nights/stars.jpg)
+![The hollow by day: old trees framing it, the canopy over it, the light far off in the mist, glowing toadstools, the creature by its nest](docs/creature/deep/day.jpg)
 
 | Key or mouse | Does |
 |---|---|
@@ -101,17 +101,17 @@ With `ANTHROPIC_API_KEY` set, its words come from Claude (`mind: claude` in the 
 
 ### One world, two lives
 
-They live far apart: he walks his road, it lives in the deep. But every night, a while after he has lain down by his fire (from half past eleven to half past three by his clock), a portal tears open in the dark beyond his camp, a point of light, then a slit, then an oval of violet light with blue swirling in it; the creature steps out, trots over and sits down by the fire with him until the small hours, then goes back and the portal closes behind it. Some nights he wakes and sits up with it, the two of them by the fire; some nights he sleeps on and it keeps him company anyway. From the deep you see it go: it says where it is going, walks across from its nest, opens its portal and steps through, and only a faint crack of light is left in the air where it went until it comes back the same way before dawn (if it is asleep itself, it sleeps through). Either way it keeps the visit: a line in its diary, whether he woke or slept, and it tells you about it the next time you open the deep.
+They live far apart: he walks his road, it lives in its hollow. But every night, a while after he has lain down by his fire (from half past eleven to half past three by his clock), a portal tears open in the dark beyond his camp, a point of light, then a slit, then an oval of violet light with blue swirling in it; the creature steps out, trots over and sits down by the fire with him until the small hours, then goes back and the portal closes behind it. Some nights he wakes and sits up with it, the two of them by the fire; some nights he sleeps on and it keeps him company anyway. From the hollow you see it go: it says where it is going, walks across from its nest, opens its portal and steps through, and only a faint crack of light is left in the air where it went until it comes back the same way before dawn (if it is asleep itself, it sleeps through). Either way it keeps the visit: a line in its diary, whether he woke or slept, and it tells you about it the next time you open the hollow.
 
-Both modes keep his clock: here his journey moved on since its last save at the pace he keeps while away, so both agree on when it is night at his camp; on the published page, the live road. On the default road one of his days is a real hour, so a visit lasts about ten minutes. To see one without waiting, a look that is not saved: on the road, `npm start -- --visit` (a new road's second night, him asleep by his fire half a minute before the portal opens; `--seed moth` is a night he wakes, `--seed moss` one he sleeps through), or from the deep, `npm run creature -- --visit` (his night begins a moment after the page opens).
+Both modes keep his clock: here his journey moved on since its last save at the pace he keeps while away, so both agree on when it is night at his camp; on the published page, the live road. On the default road one of his days is a real hour, so a visit lasts about ten minutes. To see one without waiting, a look that is not saved: on the road, `npm start -- --visit` (a new road's second night, him asleep by his fire half a minute before the portal opens; `--seed moth` is a night he wakes, `--seed moss` one he sleeps through), or from the hollow, `npm run creature -- --visit` (his night begins a moment after the page opens).
 
 ![At his camp at night: the portal open beyond the fire, the creature sitting by the fire with him](docs/tour/landmarks/visit.jpg)
 
-![From the deep: it opens its portal and steps through](docs/creature/visit/portal.jpg)
+![From the hollow: it opens its portal and steps through](docs/creature/visit/portal.jpg)
 
 Options (`npm run creature -- --name Ori`): `--name NAME` and `--seed WORD` (a new one), `--new` (start over; the old one is kept as `creature.json.bak`), `--offline`, `--mute`, `--speed X`, `--hour H`, `--visit` (a look, not saved), `--no-browser`, `--port N`, `--save PATH`.
 
-More: [the deep through the day](docs/creature/deep-sheet.jpg) · [moments](docs/creature/moments-sheet.jpg) · [nights](docs/creature/nights-sheet.jpg) · [its visit](docs/creature/visit-sheet.jpg) · [you](docs/creature/you-sheet.jpg) · [later that night on his road](docs/tour/landmarks/visit-later.jpg)
+More: [the hollow through the day](docs/creature/deep-sheet.jpg) · [moments](docs/creature/moments-sheet.jpg) · [nights](docs/creature/nights-sheet.jpg) · [its visit](docs/creature/visit-sheet.jpg) · [you](docs/creature/you-sheet.jpg) · [later that night on his road](docs/tour/landmarks/visit-later.jpg)
 
 ## What there is
 
@@ -144,7 +144,7 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 
 - **Fast soak** (`npm run soak -- --speed 16 --hours 48`): 48 in-world hours, no errors; JS heap 24.4 → 24.7 MB, GPU textures (48, 52 MB), buffers and framebuffers constant, frame time p50 16.7 / p99 16.8 ms throughout.
 - **Normal soak** (`npm run soak -- --minutes 122 --hidden 20`): two real hours at speed 1, the first 20 minutes hidden (he walked on 370 m and his steps kept sounding with 9 frames drawn), no errors; frame time p50 16.7 / p99 16.8 ms every minute once shown; GPU resources constant; the heap 21 → 27 MB in the first hour while bounded caches fill, then 26–28 MB.
-- **The creature** (`docs/creature/bench.json`, its in-page bench, 20 s each): 60 fps at 1920×1080 and 3840×2160, frame interval p50 16.7 / p99 16.8 ms, CPU 0.3–0.4 ms and GPU 2.3–4.7 ms a frame, in the deep by day and at night with its portal open. End to end (`npm run creature:check`): 24 of 24 (`docs/creature/check.txt`).
+- **The creature** (`docs/creature/bench.json`, its in-page bench, 20 s each): 60 fps at 1920×1080 and 3840×2160, frame interval p50 16.7 / p99 16.8 ms, CPU 0.3–0.4 ms and GPU 2.3–4.7 ms a frame, in the hollow by day and at night with its portal open. End to end (`npm run creature:check`): 24 of 24 (`docs/creature/check.txt`).
 - **End to end** (`npm run check`, through the real server): closing and reopening, three hours away, offline, Claude, and a slow, failing or refused API: `docs/soak/check.txt`.
 
 ## Tools
@@ -163,7 +163,7 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 | `npm run live -- --hours 1000` | Lives the live road's hours one after another and checks that each ends where the next begins. |
 | `npm run site` | Builds the published page into `dist/`, both modes; `-- --serve` then serves it as GitHub Pages will, to look at locally. |
 | `npm run site:check` | Serves `dist/` as GitHub Pages would and checks it: the same wanderer as `src/live.ts`, the hour turning without a jump, the creature kept in the browser, its visit to the live road's camp seen from both pages, Tab both ways, the last mode opening again, no requests for anything that is not there. |
-| `npm run creature:tour` | Pictures of the creature: the deep through the day, its moments, its nights, its visit through the portal, you (`docs/creature/`). |
+| `npm run creature:tour` | Pictures of the creature: the hollow through the day, its moments, its nights, its visit through the portal, you (`docs/creature/`). |
 | `npm run creature:check` | The creature end to end through the real server: its first meeting, saving and reopening, days away, a terminal-era save moving in, Claude and when it fails, and one world, two lives: through its portal to his camp at night and the visit kept, Tab both ways (`docs/creature/check.txt`). |
 | `npm run art:draw`, `npm run art` | Builds the hand-drawn sprites into Aseprite files, then exports the atlas. |
 

@@ -1,6 +1,6 @@
 // The world's sounds: wind (a body, trees, whistles and leaf ticks fed by one gusting speed), rain (a bed, a
 // boiling layer and drops by surface), the coast's waves, crickets on warm nights, birds by day, an owl now and
-// then, a train far off, and thunder after each flash (research: Sound §7–10, §14–17).
+// then, and thunder after each flash (research: Sound §7–10, §14–16).
 import { flashIn, FLASH_WINDOW } from '../../src/sky.ts';
 import { db, panFor } from './engine.ts';
 import type { Engine } from './engine.ts';
@@ -20,7 +20,6 @@ const LEVEL = {
   cricket: 0.016,
   bird: 0.035,
   owl: 0.07,
-  train: 0.05,
   thunder: 0.45,
 } as const;
 
@@ -58,11 +57,10 @@ export class Ambience {
   private nextDrop = 0;
   private nextWave = 0;
   private nextOwl = 0;
-  private nextTrain = 0;
   private flashDone = -1;
   private readonly birds = new Birds();
   /** How many of each event have played (the soak and the 30-minute run read these). */
-  readonly count = { leaf: 0, drop: 0, wave: 0, owl: 0, train: 0, thunder: 0, bird: 0 };
+  readonly count = { leaf: 0, drop: 0, wave: 0, owl: 0, thunder: 0, bird: 0 };
 
   constructor(e: Engine) {
     this.e = e;
@@ -146,7 +144,6 @@ export class Ambience {
     this.ticks = Array.from({ length: 8 }, () => leafTick(ctx));
     const now = e.now;
     this.nextOwl = now + 40 + Math.random() * 60;
-    this.nextTrain = now + 120 + Math.random() * 240;
   }
 
   /** Sets every continuous layer's target from the mix (called about four times a second). */
@@ -235,15 +232,6 @@ export class Ambience {
         this.count.owl++;
       }
       this.nextOwl = Math.max(now, this.nextOwl) + 60 + Math.random() * 120;
-    }
-    // A train, heard and never seen: by the rail line every few minutes, elsewhere hardly ever (research: Sound §17).
-    if (this.nextTrain < until) {
-      const chance = m.train > 0.3 ? 0.8 * m.train : m.night > 0.9 ? 0.04 : 0;
-      if (Math.random() < chance && e.take('train')) {
-        this.trainPass(Math.max(now + 0.05, this.nextTrain));
-        this.count.train++;
-      }
-      this.nextTrain = Math.max(now, this.nextTrain) + 180 + Math.random() * 300;
     }
     // Thunder after each flash, later and darker the further off it struck (research: Sound §9).
     if (m.storm) {
@@ -348,69 +336,6 @@ export class Ambience {
     osc.start(at);
     osc.stop(third + 1.5);
     e.free('call', osc, [low, out.gain, out.pan, vib, depth]);
-  }
-
-  /**
-   * A train passing far off: a rumble swelling for most of a minute, the clack of rail joints, and the horn's
-   * B-major-sixth chord sounding long, long, short, long while its pitch falls as it passes.
-   */
-  /** A train seen crossing far off, starting at `x` across the screen (0..1): its sound goes with it. */
-  seenTrain(x: number): void {
-    if (!this.e.take('train')) return;
-    this.trainPass(this.e.now + 0.05, x < 0.5 ? -0.85 : 0.85);
-    this.count.train++;
-  }
-
-  private trainPass(at: number, pan0: number = Math.random() < 0.5 ? -0.85 : 0.85): void {
-    const e = this.e;
-    const ctx = e.ctx;
-    const len = 48;
-    const out = e.out('amb', LEVEL.train, pan0);
-    out.pan.pan.setValueAtTime(pan0, at);
-    out.pan.pan.linearRampToValueAtTime(-pan0, at + len);
-    const rumble = e.burst('brown', at, len);
-    const rumbleLow = new BiquadFilterNode(ctx, { type: 'lowpass', frequency: 150, Q: 0.6 });
-    const rg = new GainNode(ctx, { gain: 0 });
-    rumble.connect(rumbleLow).connect(rg).connect(out.gain);
-    rg.gain.setValueAtTime(0, at);
-    rg.gain.linearRampToValueAtTime(1.6, at + len * 0.5);
-    rg.gain.linearRampToValueAtTime(0, at + len);
-    // Clacks: doublets of low thumps, two a second at speed, swelling and fading with the rumble.
-    const clacks = e.burst('brown', at, len);
-    const clackLow = new BiquadFilterNode(ctx, { type: 'lowpass', frequency: 300, Q: 1 });
-    const cg = new GainNode(ctx, { gain: 0 });
-    clacks.connect(clackLow).connect(cg).connect(out.gain);
-    for (let t = 4; t < len - 4; t += 0.52) {
-      const swell = Math.sin((Math.PI * t) / len) ** 2 * 3;
-      for (const d of [0, 0.11]) {
-        cg.gain.setValueAtTime(swell, at + t + d);
-        cg.gain.setTargetAtTime(0, at + t + d + 0.01, 0.025);
-      }
-    }
-    // The horn, five bells of the Nathan K5LA, far and low-passed, falling about a quarter-tone as it passes.
-    const horn = new GainNode(ctx, { gain: 0 });
-    const hornLow = new BiquadFilterNode(ctx, { type: 'lowpass', frequency: 900, Q: 0.7 });
-    horn.connect(hornLow).connect(out.gain);
-    const oscs: OscillatorNode[] = [];
-    const start = at + len * 0.35;
-    for (const hz of [311, 370, 415, 490, 622]) {
-      const o = new OscillatorNode(ctx, { type: 'sawtooth', frequency: hz });
-      o.detune.setValueAtTime(120, start);
-      o.detune.linearRampToValueAtTime(-130, start + 9);
-      o.connect(horn);
-      o.start(start);
-      o.stop(start + 10);
-      oscs.push(o);
-    }
-    let t = start;
-    for (const dur of [2.2, 2.2, 0.8, 2.6]) {
-      horn.gain.setValueAtTime(0, t);
-      horn.gain.linearRampToValueAtTime(0.05, t + 0.12);
-      horn.gain.setValueAtTime(0.05, t + dur - 0.15);
-      horn.gain.linearRampToValueAtTime(0, t + dur);
-      t += dur + 0.45;
-    }
-    e.free('train', rumble, [rumbleLow, rg, clacks, clackLow, cg, horn, hornLow, out.gain, out.pan, ...oscs]);
   }
 
   /** Renders one peal of thunder off the main thread and plays it at `at` (research: Sound §9). */

@@ -12,7 +12,7 @@ export type Heard = {
   /** Wind in trees (the forest's hero sound), and dry leaves ticking. */
   readonly trees: number;
   readonly leaves: number;
-  /** Whistles where there is something to whistle through: rocks, ruins, wires. */
+  /** Whistles where there is something to whistle through: rocks, crags, bare ground. */
   readonly whistle: number;
   readonly crickets: number;
   readonly birds: number;
@@ -20,8 +20,6 @@ export type Heard = {
   readonly surf: number;
   /** Still water near (drops plink, steps squelch). */
   readonly water: number;
-  /** A distant train now and then. */
-  readonly train: number;
   /** Air temperature by day, °C. */
   readonly warmth: number;
   /** The music's mode: semitones above the road's root. */
@@ -35,7 +33,7 @@ const IONIAN = [0, 2, 4, 5, 7, 9, 11];
 const PHRYGIAN = [0, 1, 3, 5, 7, 8, 10];
 const OPEN = [0, 2, 5, 7, 10];
 
-const h = (trees: number, leaves: number, whistle: number, crickets: number, birds: number, owls: number, surf: number, water: number, train: number, warmth: number, mode: readonly number[]): Heard => ({
+const h = (trees: number, leaves: number, whistle: number, crickets: number, birds: number, owls: number, surf: number, water: number, warmth: number, mode: readonly number[]): Heard => ({
   trees,
   leaves,
   whistle,
@@ -44,28 +42,25 @@ const h = (trees: number, leaves: number, whistle: number, crickets: number, bir
   owls,
   surf,
   water,
-  train,
   warmth,
   mode,
 });
 
 export const HEARD: Readonly<Record<BiomeId, Heard>> = {
-  pine: h(1, 0.5, 0, 0.4, 0.8, 1, 0, 0, 0, 15, AEOLIAN),
-  birch: h(0.8, 0.4, 0, 0.8, 1, 0.7, 0, 0, 0, 17, DORIAN),
-  meadow: h(0.25, 0.1, 0, 1, 0.9, 0.2, 0, 0, 0, 20, IONIAN),
-  autumn: h(0.85, 1, 0, 0.5, 0.6, 0.6, 0, 0, 0, 13, AEOLIAN),
-  plateau: h(0.1, 0, 0.35, 0.6, 0.4, 0.1, 0, 0, 0.1, 16, OPEN),
-  pass: h(0.3, 0.1, 1, 0, 0.2, 0.2, 0, 0, 0, 6, OPEN),
-  coast: h(0.1, 0, 0.2, 0.2, 0.3, 0, 1, 0.3, 0, 16, LYDIAN),
-  desert: h(0, 0, 0.4, 0.4, 0.1, 0.1, 0, 0, 0, 27, PHRYGIAN),
-  tundra: h(0, 0, 0.6, 0, 0.1, 0, 0, 0, 0, 0, OPEN),
-  swamp: h(0.5, 0.2, 0, 0.7, 0.5, 0.4, 0, 1, 0, 19, AEOLIAN),
-  saltflat: h(0, 0, 0.8, 0, 0, 0, 0, 0, 0.2, 24, PHRYGIAN),
-  stones: h(0.1, 0, 0.5, 0.5, 0.5, 0.3, 0, 0, 0, 12, OPEN),
-  ruins: h(0.3, 0.3, 0.7, 0.6, 0.5, 0.6, 0, 0, 0, 16, DORIAN),
-  rail: h(0.4, 0.2, 0.5, 0.7, 0.6, 0.3, 0, 0, 1, 17, DORIAN),
+  pine: h(1, 0.5, 0, 0.4, 0.8, 1, 0, 0, 15, AEOLIAN),
+  birch: h(0.8, 0.4, 0, 0.8, 1, 0.7, 0, 0, 17, DORIAN),
+  meadow: h(0.25, 0.1, 0, 1, 0.9, 0.2, 0, 0, 20, IONIAN),
+  autumn: h(0.85, 1, 0, 0.5, 0.6, 0.6, 0, 0, 13, AEOLIAN),
+  plateau: h(0.1, 0, 0.35, 0.6, 0.4, 0.1, 0, 0, 16, OPEN),
+  pass: h(0.3, 0.1, 1, 0, 0.2, 0.2, 0, 0, 6, OPEN),
+  coast: h(0.1, 0, 0.2, 0.2, 0.3, 0, 1, 0.3, 16, LYDIAN),
+  desert: h(0, 0, 0.4, 0.4, 0.1, 0.1, 0, 0, 27, PHRYGIAN),
+  tundra: h(0, 0, 0.6, 0, 0.1, 0, 0, 0, 0, OPEN),
+  swamp: h(0.5, 0.2, 0, 0.7, 0.5, 0.4, 0, 1, 19, AEOLIAN),
+  saltflat: h(0, 0, 0.8, 0, 0, 0, 0, 0, 24, PHRYGIAN),
+  stones: h(0.1, 0, 0.6, 0.5, 0.5, 0.3, 0, 0, 12, OPEN),
   // Under stone: no trees, birds or crickets; a hollow wind, far water, music in the strange mode.
-  deep: h(0, 0, 0.3, 0, 0, 0, 0, 0.6, 0, 8, PHRYGIAN),
+  deep: h(0, 0, 0.3, 0, 0, 0, 0, 0.6, 8, PHRYGIAN),
 };
 
 /** What the page tells the sound, a few times a second. */
@@ -110,7 +105,6 @@ export type Mix = {
   owls: number;
   surf: number;
   water: number;
-  train: number;
   /** Rain 0..1, snow 0..1, fog 0..1, and a storm. */
   rain: number;
   snow: number;
@@ -150,7 +144,6 @@ export function newMix(): Mix {
     owls: 0,
     surf: 0,
     water: 0,
-    train: 0,
     rain: 0,
     snow: 0,
     fog: 0,
@@ -204,8 +197,6 @@ export function hear(m: Mix, s: Hear): void {
   m.owls = mixOf((x) => x.owls);
   m.surf = mixOf((x) => x.surf);
   m.water = mixOf((x) => x.water);
-  // Trains heard and never seen belong to the rail line; one seen crossing brings its own sound.
-  m.train = mixOf((x) => x.train);
   m.mode = k < 0.5 ? a.mode : b.mode;
   const w = s.weather;
   const base = 0.1 + 0.75 * Math.abs(w.wind);

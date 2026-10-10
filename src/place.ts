@@ -5,6 +5,7 @@ import type { BiomeId } from './biomes.ts';
 import type { Spot } from './brain.ts';
 import { GROUND, LAYERS, PX_PER_M, columnDistance } from './layers.ts';
 import { fbm1, unit } from './noise.ts';
+import { MARK_ON } from './paint/landmarks.ts';
 import { biomeAt, groundHeight, landmarksBetween, share, stretchAt } from './world.ts';
 import type { Blend } from './world.ts';
 
@@ -25,13 +26,9 @@ export type Species =
   | 'marram'
   | 'rock'
   | 'boulder'
-  | 'stone'
   | 'log'
   | 'stump'
   | 'drift'
-  | 'pole'
-  | 'wall'
-  | 'post'
   // The deep's (src/paint/deep.ts).
   | 'cap'
   | 'palecap'
@@ -93,14 +90,12 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
     f('tuft', ['ground', 'fore'], 12, [4, 9], 0.15),
     f('flowers', ['ground'], 4, [3, 6], 0.5),
     f('rock', ['ground'], 0.25, [8, 16], 0.3),
-    f('post', ['ground'], 0.4, [12, 16], 0.9),
   ],
   autumn: [
     f('oak', ['hills', 'mid', 'near'], 4.5, [55, 100], 0.6),
     f('oak', ['ground'], 0.6, [80, 120], 0.7),
     f('bush', ['near', 'ground'], 1.5, [10, 22], 0.5),
     f('drytuft', ['ground', 'fore'], 7, [3, 7], 0.2),
-    f('wall', ['ground'], 0.25, [30, 70], 0.9),
     f('rock', ['ground'], 0.3, [8, 14], 0.3),
     f('stump', ['ground'], 0.2, [6, 9], 0.5),
   ],
@@ -110,7 +105,6 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
     f('shrub', ['mid', 'near'], 1.4, [6, 12], 0.5),
     f('drytuft', ['near', 'ground', 'fore'], 9, [3, 7], 0.3),
     f('rock', ['ground'], 0.6, [8, 20], 0.4),
-    f('stone', ['ground'], 0.08, [14, 22], 0.9),
   ],
   pass: [
     f('spruce', ['mid', 'near'], 2.6, [40, 90], 0.75),
@@ -118,11 +112,9 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
     f('boulder', ['ground'], 0.8, [16, 30], 0.4),
     f('rock', ['ground'], 1.4, [8, 18], 0.3),
     f('drytuft', ['ground'], 3, [3, 5], 0.3),
-    f('stone', ['ground'], 0.1, [10, 16], 0.9),
   ],
   coast: [
     f('marram', ['mid', 'near', 'ground', 'fore'], 6, [10, 22], 0.5),
-    f('post', ['ground'], 0.5, [12, 18], 0.9),
     f('drift', ['ground'], 0.3, [16, 30], 0.4),
     f('rock', ['ground'], 0.2, [8, 16], 0.3),
   ],
@@ -145,31 +137,23 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
     f('tuft', ['ground'], 4, [3, 6], 0.3),
     f('stump', ['ground'], 0.4, [6, 10], 0.5),
   ],
+  // Bare white to the edge of the world: stones lying out on it here and there, a tuft or a dry shrub, nothing tall.
   saltflat: [
-    f('pole', ['mid', 'near', 'ground'], 0.6, [60, 70], 0),
-    f('rock', ['ground'], 0.08, [6, 12], 0.5),
+    f('rock', ['mid', 'near'], 0.8, [10, 24], 0.55),
+    f('boulder', ['near'], 0.14, [18, 32], 0.7),
+    f('shrub', ['near', 'ground'], 0.4, [5, 9], 0.7),
+    f('rock', ['ground'], 0.1, [6, 12], 0.5),
+    f('drytuft', ['ground'], 0.4, [2, 4], 0.6),
   ],
+  // A moor the ice left strewn with boulders, big and small, in drifts across the heather; a few wind-bent trees.
   stones: [
-    f('stone', ['mid', 'near'], 1.8, [18, 44], 0.85),
-    f('stone', ['ground'], 0.5, [16, 30], 0.8),
+    f('boulder', ['mid', 'near'], 1.6, [18, 48], 0.7),
+    f('boulder', ['ground'], 0.45, [16, 30], 0.7),
+    f('rock', ['near', 'ground'], 1.1, [8, 16], 0.5),
     f('oak', ['hills', 'mid'], 0.35, [40, 70], 0.85),
     f('bush', ['mid', 'near'], 0.9, [10, 20], 0.6),
     f('drytuft', ['ground', 'fore'], 8, [3, 6], 0.2),
     f('flowers', ['ground'], 2, [2, 4], 0.6),
-    f('rock', ['ground'], 0.4, [8, 14], 0.3),
-  ],
-  ruins: [
-    f('wall', ['mid', 'near', 'ground'], 1.2, [30, 80], 0.8),
-    f('oak', ['mid', 'near'], 1.5, [50, 90], 0.6),
-    f('bush', ['near', 'ground'], 2, [10, 22], 0.5),
-    f('tuft', ['ground'], 6, [3, 7], 0.3),
-    f('post', ['ground'], 0.2, [40, 50], 0.8),
-  ],
-  rail: [
-    f('pole', ['mid', 'ground'], 0.7, [50, 56], 0),
-    f('bush', ['mid', 'near'], 1.0, [12, 24], 0.6),
-    f('drytuft', ['ground', 'fore'], 8, [3, 7], 0.2),
-    f('birch', ['mid', 'near'], 1.0, [50, 90], 0.7),
   ],
   // After Blackreach and the Underdark, made lush and alive: ranks of giant glowing mushrooms of several kinds into the
   // mist, ferns and glowing flowers everywhere underneath, coral shelves, torch-caps, tube fungi, violet crystal,
@@ -211,13 +195,9 @@ const SPACING: Readonly<Record<Species, number>> = {
   marram: 8,
   rock: 20,
   boulder: 30,
-  stone: 22,
   log: 40,
   stump: 24,
   drift: 30,
-  pole: 110,
-  wall: 60,
-  post: 22,
   cap: 26,
   palecap: 18,
   torch: 12,
@@ -252,6 +232,12 @@ export type Placed = {
 
 const SPECIES: readonly Species[] = Object.keys(SPACING) as Species[];
 
+/** Things tall enough to hide a landmark behind them, the layers that keep them out of its way, and how far (metres
+ * before and after it). */
+const UPRIGHT: ReadonlySet<Species> = new Set(['pine', 'spruce', 'birch', 'oak', 'dead', 'cactus']);
+const CLEARED: ReadonlySet<string> = new Set(['mid', 'near', 'ground']);
+const CLEARING = [42, 16] as const;
+
 /** Groves: a slow mask that clumps trees and leaves clearings. */
 function grove(seed: number, layerIndex: number, u: number): number {
   const v = fbm1(u / 420, seed ^ (0x96e + layerIndex * 131), 2, 0.5) * 2.4;
@@ -266,6 +252,12 @@ function grove(seed: number, layerIndex: number, u: number): number {
 export function placeBetween(seed: number, layerName: string, layerIndex: number, z: number, u0: number, u1: number, out: Placed[] = []): Placed[] {
   out.length = 0;
   const scale = 1 / z;
+  // In front of a landmark standing further back, the trees leave a clearing, so it is seen from where he stops to look.
+  const clear = CLEARED.has(layerName)
+    ? landmarksBetween(seed, columnDistance(u0, z) - 60, columnDistance(u1, z) + 60)
+        .filter((m) => (LAYERS.find((l) => l.name === MARK_ON[m.kind])?.z ?? 0) > z)
+        .map((m) => m.at)
+    : [];
   for (let si = 0; si < SPECIES.length; si++) {
     const sp = SPECIES[si];
     const cell = Math.max(3, Math.round(SPACING[sp] * scale));
@@ -274,6 +266,7 @@ export function placeBetween(seed: number, layerName: string, layerIndex: number
       const u = k * cell + Math.floor(unit(k, seed ^ salt) * cell * 0.85);
       if (u < u0 || u >= u1) continue;
       const d = columnDistance(u, z);
+      if (clear.length > 0 && UPRIGHT.has(sp) && clear.some((at) => d > at - CLEARING[0] && d < at + CLEARING[1])) continue;
       const blend = biomeAt(seed, d, 45);
       const pick = chance(blend, sp, layerName, unit(k, seed ^ salt ^ 0x77));
       if (pick === null) continue;
@@ -342,8 +335,6 @@ export function spotsBetween(seed: number, d0: number, d1: number): SpotAt[] {
     const d = p.u / PX_PER_M;
     const seat = SEATS[p.species];
     if (seat !== undefined && seat.height(p.size) <= 12) out.push({ kind: 'seat', at: d, what: p.species, quality: seat.quality, height: seat.height(p.size), u: p.u });
-    // A standing stone is something to stand beside and look at.
-    if (p.species === 'stone') out.push({ kind: 'view', at: d - 1.5, what: 'stone', quality: 0.5, height: 0, u: p.u });
     if (SHELTER_TREES.has(p.species) && p.size >= 90) out.push({ kind: 'shelter', at: d, what: p.species === 'oak' ? 'oak' : 'pine', quality: 0.6 + Math.min(0.3, (p.size - 90) / 200), height: 0, u: p.u });
   }
   // Rises: a local high point of the ground with a little prominence is a view.

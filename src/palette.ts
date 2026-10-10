@@ -343,23 +343,13 @@ const BIOME_COLOURS: Readonly<Record<BiomeId, Colours>> = {
   saltflat: {
     land: ['#3d3746', '#5a5262', '#7e7584', '#a59ca8', '#cbc4cb'],
     salt: ['#a8a59f', '#d1cec5', '#eeebe2'],
-    metal: ['#2b201c', '#4a3227', '#6c482f', '#8b623f'],
   },
+  // A moor the ice left strewn with boulders: heather-brown grass, the boulders grey with lichen.
   stones: {
     land: ['#262620', '#3b3a2e', '#5a5640', '#5a5640', '#8d8763'],
     grass: ['#262219', '#3d3727', '#575032', '#756d46', '#958e62'],
-    stone: ['#26272d', '#3e4046', '#5c5d5d', '#82827c'],
+    rock: ['#212422', '#363b37', '#525850', '#6b7166', '#8c8c7a'],
     flower: ['#4a3346', '#6b4a62', '#8d6c80'],
-  },
-  ruins: {
-    land: ['#262a30', '#3a4047', '#565d62', '#7a8080', '#a2a59f'],
-    leaf: ['#16231c', '#24362a', '#38503a', '#556b49', '#7b8a5f'],
-    stone: ['#2b2b2f', '#444449', '#626260', '#878580'],
-  },
-  rail: {
-    land: ['#272c33', '#3d454b', '#5a6466', '#7e8783', '#a6ab9f'],
-    grass: ['#29291e', '#413f2c', '#5e5a3b', '#807a50', '#a39c6c'],
-    path: ['#38332e', '#544c43', '#716759'],
   },
   // The hollow, the world under the world: the world still living. Moss and leaf in living greens under a teal mist,
   // pale trees, soft stone; toadstools glowing a quiet sea-green, violet for flowers and eyes; never neon.

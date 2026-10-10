@@ -1,17 +1,13 @@
-// The life around him and what moves at the landmarks: a flock of birds crossing by day, bats at dusk, fireflies on
-// warm nights, a deer at the edge of the trees that looks up and bounds away, a fox that trots past and stops to
-// watch, a fish leaping under the bridge, leaves falling in the autumn woods; smoke from the lone house's chimney,
-// the mast's blinking lamp, the lighthouse's flash, a distant train. Rare and quiet (brief: Life around him). Each
-// thing lives in the layer it belongs to and moves with that layer's parallax.
+// The life around him: a flock of birds crossing by day, bats at dusk, fireflies on warm nights, a deer at the edge
+// of the trees that looks up and bounds away, a fox that trots past and stops to watch, leaves falling in the autumn
+// woods. Rare and quiet (brief: Life around him). Each thing lives in the layer it belongs to and moves with that
+// layer's parallax.
 import { BIOME_IDS } from '../src/biomes.ts';
 import type { BiomeId } from '../src/biomes.ts';
 import { GROUND, LAYERS, PX_PER_M, WALK_Y } from '../src/layers.ts';
 import type { Life } from '../src/life.ts';
 import { unit } from '../src/noise.ts';
-import { landBase, markGround } from '../src/paint/land.ts';
-import { BRIDGE, MARK_POINTS, marksOn } from '../src/paint/landmarks.ts';
-import type { Placed } from '../src/paint/landmarks.ts';
-import { bankTopAt, markTop } from '../src/paint/scene.ts';
+import { bankTopAt } from '../src/paint/scene.ts';
 import type { Weather } from '../src/sky.ts';
 import { biomeAt, blended, groundHeight, landmarkNear, share } from '../src/world.ts';
 import { paletteRow } from './render.ts';
@@ -20,9 +16,6 @@ import type { Atlas } from './sprites.ts';
 
 const layerIndex = (name: string): number => LAYERS.findIndex((l) => l.name === name);
 const RIDGE = layerIndex('ridge');
-const FARHILLS = layerIndex('farhills');
-const HILLS = layerIndex('hills');
-const MID = layerIndex('mid');
 const NEAR = layerIndex('near');
 
 /** What the moment is, for the life around him. */
@@ -40,16 +33,15 @@ export type Moment = {
 };
 
 type Bird = { u: number; y: number; phase: number; bob: number };
-type Puff = { li: number; u: number; y: number; vy: number; age: number; life: number };
 type Fly = { u: number; y: number; phase: number; speed: number };
 type Leaf = { x: number; y: number; vx: number; vy: number; phase: number; floor: number };
 type Deer = { cell: number; li: number; u: number; state: 'graze' | 'lift' | 'stand' | 'run'; time: number; dir: number };
 type Fox = { cell: number; u: number; state: 'trot' | 'sit' | 'gone'; time: number; sat: boolean };
 
-const DEER_HOMES: Partial<Record<BiomeId, number>> = { pine: 0.5, birch: 0.7, autumn: 0.7, meadow: 0.5, stones: 0.3, ruins: 0.3, rail: 0.3, swamp: 0.2 };
-const FOX_HOMES: Partial<Record<BiomeId, number>> = { pine: 0.4, birch: 0.5, autumn: 0.5, meadow: 0.5, plateau: 0.4, ruins: 0.5, rail: 0.5, stones: 0.4, swamp: 0.3, desert: 0.3, tundra: 0.3 };
-const FIREFLY_HOMES: Partial<Record<BiomeId, number>> = { meadow: 1, birch: 0.8, swamp: 1, pine: 0.4, autumn: 0.3, ruins: 0.6, rail: 0.5 };
-const BAT_HOMES: Partial<Record<BiomeId, number>> = { pine: 0.8, birch: 0.8, autumn: 0.8, swamp: 1, ruins: 1, rail: 0.5, meadow: 0.4, stones: 0.5 };
+const DEER_HOMES: Partial<Record<BiomeId, number>> = { pine: 0.5, birch: 0.7, autumn: 0.7, meadow: 0.5, stones: 0.4, swamp: 0.2, plateau: 0.2 };
+const FOX_HOMES: Partial<Record<BiomeId, number>> = { pine: 0.4, birch: 0.5, autumn: 0.5, meadow: 0.5, plateau: 0.4, stones: 0.5, swamp: 0.3, desert: 0.3, tundra: 0.3, coast: 0.2 };
+const FIREFLY_HOMES: Partial<Record<BiomeId, number>> = { meadow: 1, birch: 0.8, swamp: 1, pine: 0.4, autumn: 0.3 };
+const BAT_HOMES: Partial<Record<BiomeId, number>> = { pine: 0.8, birch: 0.8, autumn: 0.8, swamp: 1, meadow: 0.4, stones: 0.5 };
 
 /** A chance at d from per-biome weights, blended. */
 const homes = (seed: number, d: number, table: Partial<Record<BiomeId, number>>): number => blended(biomeAt(seed, d), (id) => table[id] ?? 0);
@@ -58,9 +50,6 @@ export class Around {
   private readonly birds: Bird[] = [];
   private birdsDir = 1;
   private nextFlock = 20;
-  private readonly puffs: Puff[] = Array.from({ length: 40 }, () => ({ li: 0, u: 0, y: 0, vy: 0, age: 0, life: 0 }));
-  private puffAt = 0;
-  private smokeAt = 0;
   private readonly flies: Fly[] = Array.from({ length: 28 }, (_, i) => ({ u: 0, y: 0, phase: i * 1.7, speed: 0.6 + (i % 5) * 0.15 }));
   private batsUntil = 0;
   private nextBats = 40;
@@ -71,14 +60,8 @@ export class Around {
   private readonly fled = new Set<number>();
   private fox: Fox | null = null;
   private readonly foxSeen = new Set<number>();
-  private fish = -1;
-  private fishX = 0;
-  private nextFish = 4;
-  private trainPass = -1;
-  /** Set for one frame when a train begins to cross where he can hear it: its place across the screen. */
-  trainStarted: number | null = null;
   /** How many of each have shown themselves (the watch tool reads it). */
-  readonly seen = { flock: 0, bats: 0, fireflies: 0, leaves: 0, deer: 0, fox: 0, fish: 0, train: 0, smoke: 0, lamp: 0, beacon: 0 };
+  readonly seen = { flock: 0, bats: 0, fireflies: 0, leaves: 0, deer: 0, fox: 0 };
 
   /** What is about now, for the logs. */
   present(): string[] {
@@ -86,17 +69,15 @@ export class Around {
     if (this.birds.length > 0) out.push(`flock of ${this.birds.length}`);
     if (this.deer !== null) out.push(`deer ${this.deer.state}@${Math.round(this.deer.u)}`);
     if (this.fox !== null) out.push(`fox ${this.fox.state}@${Math.round(this.fox.u)}`);
-    if (this.fish >= 0) out.push('fish');
     if (this.leaves.length > 0) out.push(`${this.leaves.length} leaves`);
     return out;
   }
 
-  /** For still pictures (time stopped): what to put in the frame anyway (flock, bats, deer, fox, fish). */
+  /** For still pictures (time stopped): what to put in the frame anyway (flock, bats, deer, fox). */
   show = new Set<string>();
   private still = false;
 
   update(r: Renderer, atlas: Atlas, v: View, l: Life, m: Moment): void {
-    this.trainStarted = null;
     if (m.dt === 0 && !this.still) {
       this.still = true;
       this.stillLife(v, l, m, r.nativeW);
@@ -124,8 +105,6 @@ export class Around {
       return frames[0];
     };
     const wet = m.weather.precip > 0.3 || m.weather.storm;
-
-    this.landmarks(r, atlas, v, l, m, sx, sy, rows, frame);
 
     // ── Birds: a loose flock crossing the sky by day, now and then.
     const dt = m.dt;
@@ -226,37 +205,11 @@ export class Around {
     }
 
     this.deerAndFox(r, atlas, v, l, m, sx, sy, rows, frame);
-
-    // ── A fish leaping in the river while he crosses the bridge.
-    const bridge = landmarkNear(seed, l.at, BRIDGE.half + 20);
-    if (bridge?.kind === 'bridge') {
-      const ground = WALK_Y + m.extra + m.camY;
-      if (this.fish < 0) {
-        this.nextFish -= dt;
-        if (this.nextFish <= 0) {
-          this.fish = 0;
-          this.fishX = bridge.at * PX_PER_M + (Math.random() * 2 - 1) * (BRIDGE.half - 1) * PX_PER_M;
-          this.nextFish = 5 + Math.random() * 10;
-          this.seen.fish++;
-        }
-      } else {
-        this.fish += dt;
-        const [a, b, k] = rows(GROUND, bridge.at);
-        const t = this.fish / 0.5;
-        if (t >= 1.3) this.fish = -1;
-        else {
-          const water = ground + BRIDGE.deep;
-          const x = this.fishX - v.camX;
-          if (t < 1) r.ground.add(x, water - 3 - Math.sin(t * Math.PI) * 9, atlas.sheets.small.fish[Math.min(2, Math.floor(t * 3))], a, b, k, false);
-          else r.ground.add(x + 1, water - 2, atlas.sheets.fire.splash[Math.min(2, Math.floor((t - 1) * 10))], a, b, k, false, 0.9);
-        }
-      }
-    }
   }
 
   /**
-   * A still picture has no time for things to arrive, so they are put in place: smoke already risen, leaves already
-   * falling, and whatever the picture asks for, near him.
+   * A still picture has no time for things to arrive, so they are put in place: leaves already falling, and
+   * whatever the picture asks for, near him.
    */
   private stillLife(v: View, l: Life, m: Moment, W: number): void {
     const seed = l.seed;
@@ -265,9 +218,6 @@ export class Around {
       const ground = WALK_Y + m.extra + m.camY - groundHeight(seed, u / PX_PER_M) * PX_PER_M;
       this.leaves.push({ x: u, y: ground - 10 - Math.random() * 150, vx: 0, vy: 0, phase: Math.random() * 6, floor: ground - 1 });
     }
-    // Smoke: let the chimney run for a while.
-    this.smokeAt = 0;
-    this.prefillSmoke = true;
     if (this.show.has('flock')) {
       this.birdsDir = 1;
       const y = m.extra + v.horizon - 70;
@@ -279,150 +229,6 @@ export class Around {
     }
     if (this.show.has('deer')) this.deer = { cell: -1, li: NEAR, u: v.camX / LAYERS[NEAR].z + m.himX + 90, state: this.show.has('alert') ? 'stand' : 'graze', time: 0, dir: -1 };
     if (this.show.has('fox')) this.fox = { cell: -1, u: v.camX + m.himX + 80, state: 'sit', time: 0, sat: true };
-    if (this.show.has('fish')) {
-      this.fish = 0.22;
-      this.fishX = v.camX + m.himX + 40;
-    }
-  }
-
-  private prefillSmoke = false;
-
-  /** Smoke from the house, the mast's lamp, the lighthouse's flash, and a train crossing on its line. */
-  private landmarks(
-    r: Renderer,
-    atlas: Atlas,
-    v: View,
-    l: Life,
-    m: Moment,
-    sx: (li: number, u: number) => number,
-    sy: (li: number, row: number) => number,
-    rows: (li: number, d: number) => [number, number, number],
-    frame: (sheet: string, tag: string, t: number) => readonly number[],
-  ): void {
-    const seed = l.seed;
-    const W = r.nativeW;
-    const view = (li: number): Placed[] => {
-      const u0 = v.camX / LAYERS[li].z;
-      return marksOn(seed, LAYERS[li], Math.floor(u0) - 60, Math.ceil(u0 + W) + 60);
-    };
-    // The house: a thread of smoke from the chimney, leaning with the wind.
-    for (const p of view(MID)) {
-      if (p.mark.kind !== 'house') continue;
-      const [dx, dy] = MARK_POINTS.house?.chimney ?? [0, 0];
-      const top = markTop(seed, LAYERS[MID], MID, p) + 2 + dy;
-      if (this.prefillSmoke) {
-        this.prefillSmoke = false;
-        for (let j = 0; j < 8; j++) {
-          const puff = this.puffs[this.puffAt];
-          this.puffAt = (this.puffAt + 1) % this.puffs.length;
-          const age = j * 0.75;
-          puff.li = MID;
-          puff.u = p.u + dx + m.weather.wind * 5 * age;
-          puff.vy = -5;
-          puff.y = top - 1 + puff.vy * age;
-          puff.age = age;
-          puff.life = 6.5;
-        }
-      }
-      this.smokeAt -= m.dt;
-      if (this.smokeAt <= 0 && m.dt > 0) {
-        this.smokeAt = 0.7 + Math.random() * 0.5;
-        const puff = this.puffs[this.puffAt];
-        this.puffAt = (this.puffAt + 1) % this.puffs.length;
-        puff.li = MID;
-        puff.u = p.u + dx + Math.random() - 0.5;
-        puff.y = top - 1;
-        puff.vy = -4 - Math.random() * 2;
-        puff.age = 0;
-        puff.life = 5 + Math.random() * 2;
-        this.seen.smoke++;
-      }
-    }
-    const puffFrames = atlas.sheets.fire.puff;
-    for (const puff of this.puffs) {
-      if (puff.life <= 0) continue;
-      puff.age += m.dt;
-      if (puff.age >= puff.life) {
-        puff.life = 0;
-        continue;
-      }
-      puff.u += m.weather.wind * 5 * m.dt;
-      puff.y += puff.vy * m.dt;
-      const k = puff.age / puff.life;
-      const [a, b, bk] = rows(puff.li, (puff.u * LAYERS[puff.li].z) / PX_PER_M);
-      r.batches[puff.li].add(sx(puff.li, puff.u), sy(puff.li, puff.y), puffFrames[Math.min(puffFrames.length - 1, 1 + Math.floor(k * (puffFrames.length - 1)))], a, b, bk, false, 1 - k * 0.5);
-    }
-    // The mast's red lamp: on for a second, off for a second, day and night.
-    for (const p of view(FARHILLS)) {
-      const layer = LAYERS[FARHILLS];
-      const ground = landBase(seed, layer, p.u) - Math.round(markGround(seed, layer, FARHILLS, p)) + 2;
-      if (p.mark.kind === 'mast') {
-        const [dx, dy] = MARK_POINTS.mast?.lamp ?? [0, 0];
-        if ((m.time + p.mark.cell * 0.3) % 2 < 1) {
-          this.seen.lamp++;
-          const [a, b, k] = rows(FARHILLS, p.mark.at);
-          r.batches[FARHILLS].add(sx(FARHILLS, p.u + dx), sy(FARHILLS, ground + dy), frame('small', 'lamp', 0), a, b, k, false);
-        }
-      } else if (p.mark.kind === 'train') this.train(r, atlas, v, l, m, p, ground - 2, sx, sy, rows);
-    }
-    // The lighthouse: a flash every six seconds once the light goes.
-    for (const p of view(HILLS)) {
-      if (p.mark.kind !== 'lighthouse' || m.night < 0.25) continue;
-      const layer = LAYERS[HILLS];
-      const ground = landBase(seed, layer, p.u) - Math.round(markGround(seed, layer, HILLS, p)) + 2;
-      const [dx, dy] = MARK_POINTS.lighthouse?.lamp ?? [0, 0];
-      const t = m.time % 6;
-      if (t < 1.4) {
-        this.seen.beacon++;
-        const [a, b, k] = rows(HILLS, p.mark.at);
-        r.batches[HILLS].add(sx(HILLS, p.u + dx) - 1, sy(HILLS, ground + dy) - 1, frame('small', 'beacon', 0), a, b, k, false, Math.sin((t / 1.4) * Math.PI));
-      }
-    }
-  }
-
-  /** A train crossing its line: a locomotive and four carriages, once every few minutes, lit windows at night. */
-  private train(
-    r: Renderer,
-    atlas: Atlas,
-    v: View,
-    l: Life,
-    m: Moment,
-    p: Placed,
-    rail: number,
-    sx: (li: number, u: number) => number,
-    sy: (li: number, row: number) => number,
-    rows: (li: number, d: number) => [number, number, number],
-  ): void {
-    const period = 150;
-    const speed = 70;
-    const cars = 4;
-    const long = (cars + 1) * 74;
-    const t = (m.time + unit(p.mark.cell, l.seed) * period) % period;
-    const pass = Math.floor((m.time + unit(p.mark.cell, l.seed) * period) / period);
-    const travel = 2 * p.half + long;
-    const dir = p.mark.cell % 2 === 0 ? 1 : -1;
-    if (t * speed > travel) return;
-    const lead = dir > 0 ? p.u - p.half + t * speed : p.u + p.half - t * speed;
-    const lx = sx(FARHILLS, lead);
-    if (pass !== this.trainPass && lx > -long - 200 && lx < r.nativeW + long + 200) {
-      this.trainPass = pass;
-      this.trainStarted = Math.max(0, Math.min(1, lx / r.nativeW));
-      this.seen.train++;
-    }
-    const [a, b, k] = rows(FARHILLS, p.mark.at);
-    const y = sy(FARHILLS, rail) - 9;
-    const sheet = atlas.sheets.train;
-    for (let i = 0; i <= cars; i++) {
-      // The locomotive leads; the carriages follow behind it.
-      const u = dir > 0 ? lead - 74 * (i + 1) : lead + 74 * i;
-      const x = sx(FARHILLS, u);
-      if (x < -80 || x > r.nativeW + 80) continue;
-      // It fades in and out at the line's ends, where the line runs into the land.
-      const inside = Math.min(u + 74 - (p.u - p.half), p.u + p.half - u);
-      if (inside <= 0) continue;
-      r.batches[FARHILLS].add(x, y, i === 0 ? sheet.loco[0] : sheet.car[0], a, b, k, dir < 0, Math.min(1, inside / 120));
-    }
-    void v;
   }
 
   /** A deer at the edge of the woods ahead, and a fox on the road. */

@@ -126,7 +126,7 @@ export class Renderer {
   readonly gpu: Gpu;
   readonly gl: WebGL2RenderingContext;
   private readonly quad: WebGLVertexArrayObject;
-  /** Sprites drawn over each layer (him, the fire and smoke on the playfield; animals, a train, lamps further off). */
+  /** Sprites drawn over each layer (him, the fire and smoke on the playfield; animals further off). */
   readonly batches: SpriteBatch[];
   readonly ground: SpriteBatch;
   atlas: Atlas | null = null;

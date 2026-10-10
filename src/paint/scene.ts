@@ -14,7 +14,7 @@ import type { Blend } from '../world.ts';
 import { Chunk, FLAG, newStamp, put, stamp } from './chunk.ts';
 import type { Stamp } from './chunk.ts';
 import { HORIZON } from './land.ts';
-import { BRIDGE, levelling, marksOn } from './landmarks.ts';
+import { levelling, marksOn } from './landmarks.ts';
 import type { Placed as Mark } from './landmarks.ts';
 import { birch, broadleaf, bush, cactus, cached, conifer, deadTree, reeds, rock, tuft } from './plants.ts';
 import { bigCap, blooms, bulbs, coralFrond, crystals, glowCaps, glowFern, oldTree, paleCap, pillar, shelves, stalagmite, toadstool, torchCap, tubes, urn } from './deep.ts';
@@ -34,8 +34,6 @@ const SURFACE: Readonly<Record<BiomeId, string>> = {
   swamp: 'grass',
   saltflat: 'salt',
   stones: 'grass',
-  ruins: 'grass',
-  rail: 'grass',
   deep: 'grass',
 };
 
@@ -58,13 +56,11 @@ const BANK: Readonly<Record<BiomeId, number>> = {
   swamp: 0.6,
   saltflat: 0,
   stones: 0,
-  ruins: 0.5,
-  rail: 0,
   deep: 0.35,
 };
 
 /** Things that stand on the ground: a stamp for each placed thing, at its layer's scale. */
-export function stampFor(p: Placed, z: number): Stamp {
+export function stampFor(p: Placed): Stamp {
   const snowy = SNOWY.has(p.biome);
   switch (p.species) {
     case 'pine':
@@ -99,20 +95,12 @@ export function stampFor(p: Placed, z: number): Stamp {
       return rock(p.seed % 48, p.size, 'rock');
     case 'boulder':
       return rock(p.seed % 32, p.size, 'rock');
-    case 'stone':
-      return standingStone(p.seed % 32, p.size);
     case 'log':
       return log(p.seed % 16, p.size);
     case 'stump':
       return stump(p.seed % 16, p.size);
     case 'drift':
       return log(p.seed % 16, p.size, 'bone');
-    case 'pole':
-      return pole(p.seed % 8, p.size);
-    case 'wall':
-      return wall(p.seed % 24, p.size, z);
-    case 'post':
-      return post(p.seed % 8, p.size);
     case 'cap':
       return bigCap(p.seed % 40, p.size);
     case 'palecap':
@@ -187,27 +175,6 @@ function flowers(seed: number, size: number): Stamp {
   });
 }
 
-function standingStone(seed: number, size: number): Stamp {
-  return cached(`stone:${seed}:${size}`, () => {
-    const random = rng(seed);
-    const h = Math.max(4, Math.round(size));
-    const w = Math.max(3, Math.round(h * (0.32 + 0.16 * random())));
-    const s = newStamp(w + 2, h, (w + 2) >> 1);
-    const S = [role('stone', 0), role('stone', 1), role('stone', 2), role('stone', 3)];
-    const lean = (random() - 0.5) * 0.25;
-    for (let y = 0; y < h; y++) {
-      const t = y / h;
-      const round = t < 0.15 ? Math.round((0.15 - t) * w * 2.2) : 0;
-      const x0 = 1 + Math.round(lean * (h - y)) + (round >> 1);
-      const x1 = x0 + w - 1 - round;
-      for (let x = x0; x <= x1; x++) put(s, x, y, S[y === 0 || x === x0 + (round > 0 ? 0 : -9) ? 3 : x === x0 ? 2 : x === x1 ? 0 : 1], FLAG.RIM);
-    }
-    // Lichen spots in the lit plane.
-    for (let i = 0; i < h / 6; i++) put(s, 2 + Math.floor(random() * (w - 1)), 2 + Math.floor(random() * (h - 4)), S[2]);
-    return s;
-  });
-}
-
 function log(seed: number, size: number, family = 'bark'): Stamp {
   return cached(`log:${seed}:${size}:${family}`, () => {
     const random = rng(seed);
@@ -237,70 +204,6 @@ function stump(seed: number, size: number): Stamp {
     put(s, 0, h - 1, B[1]);
     put(s, w + 1, h - 1, B[0]);
     void seed;
-    return s;
-  });
-}
-
-/** A telegraph or power pole: a post with a crossbar and insulators. Wires are drawn between poles. */
-function pole(seed: number, size: number): Stamp {
-  return cached(`pole:${seed}:${size}`, () => {
-    const h = Math.max(10, Math.round(size));
-    const bar = Math.max(5, Math.round(h * 0.22)) | 1;
-    const s = newStamp(bar + 2, h, (bar + 2) >> 1);
-    const W = [role('wood', 0), role('wood', 1), role('wood', 2)];
-    const tw = h > 40 ? 2 : 1;
-    for (let y = 0; y < h; y++) for (let t = 0; t < tw; t++) put(s, s.ax + t - (tw >> 1), y, t === 0 ? W[2] : W[0], FLAG.RIM);
-    const by = Math.round(h * 0.08);
-    for (let x = 0; x < s.w; x++) put(s, x, by, W[1], FLAG.RIM);
-    put(s, 0, by - 1, role('glass', 0));
-    put(s, s.w - 1, by - 1, role('glass', 0));
-    void seed;
-    return s;
-  });
-}
-
-function post(seed: number, size: number): Stamp {
-  return cached(`post:${seed}:${size}`, () => {
-    const h = Math.max(4, Math.round(size));
-    const s = newStamp(2, h, 0);
-    for (let y = 0; y < h; y++) {
-      put(s, 0, y, role('wood', y === 0 ? 3 : 2), FLAG.RIM);
-      put(s, 1, y, role('wood', 0), FLAG.RIM);
-    }
-    void seed;
-    return s;
-  });
-}
-
-/** A ruined wall: stone courses, a broken top, an empty window. */
-function wall(seed: number, size: number, z: number): Stamp {
-  return cached(`wall:${seed}:${size}:${z}`, () => {
-    const random = rng(seed);
-    const w = Math.max(10, Math.round(size));
-    const h = Math.max(6, Math.round(w * (0.45 + 0.35 * random())));
-    const s = newStamp(w, h, w >> 1);
-    const S = [role('stone', 0), role('stone', 1), role('stone', 2), role('stone', 3)];
-    const tops: number[] = [];
-    let t = Math.round(h * 0.2 * random());
-    for (let x = 0; x < w; x++) {
-      if (random() < 0.25) t = Math.max(0, Math.min(h - 3, t + Math.round((random() - 0.45) * 4)));
-      tops.push(t);
-    }
-    const course = Math.max(2, Math.round(3 / Math.max(1, z)));
-    for (let x = 0; x < w; x++)
-      for (let y = tops[x]; y < h; y++) {
-        const row = Math.floor(y / course);
-        const joint = y % course === course - 1 || (x + row * 3) % 7 === 0;
-        put(s, x, y, y === tops[x] ? S[3] : joint ? S[0] : x < w * 0.15 ? S[2] : S[1], FLAG.RIM);
-      }
-    // An empty window, dark inside.
-    if (h > 10 && w > 14) {
-      const wx = Math.round(w * (0.3 + 0.3 * random()));
-      const wy = Math.round(h * 0.3);
-      const ww = Math.max(2, Math.round(w * 0.14));
-      const wh = Math.max(3, Math.round(h * 0.28));
-      for (let y = wy; y < wy + wh; y++) for (let x = wx; x < wx + ww; x++) if (y > tops[x]) put(s, x, y, role('soil', 0));
-    }
     return s;
   });
 }
@@ -394,13 +297,12 @@ export function paintTrees(c: Chunk, seed: number, layer: LayerDef, li: number, 
   placed.sort((a, b) => b.size - a.size);
   for (const p of placed) {
     if (marks.some((m) => Math.abs(p.u - m.u) < m.half + 6)) continue;
-    const s = stampFor(p, layer.z);
+    const s = stampFor(p);
     const x = p.u - u0;
     const groundTop = x >= 0 && x < c.w ? tops[x] : bankTopAt(seed, layer, li, p.u);
     stamp(c, s, p.u, groundTop + 1 + (p.species === 'rock' || p.species === 'boulder' ? 1 : 0), p.flip, false);
   }
   for (const m of marks) {
-    if (m.stamp === null) continue;
     const top = markTop(seed, layer, li, m);
     // A strip of ground under it, so in open country it sits on the land rather than on nothing.
     const n = surfaceAt(seed, columnDistance(m.u, layer.z));
@@ -411,7 +313,6 @@ export function paintTrees(c: Chunk, seed: number, layer: LayerDef, li: number, 
     }
     stamp(c, m.stamp, m.u, top + 2, false, false);
   }
-  drawWires(c, seed, layer, li, u0, (u) => bankTopAt(seed, layer, li, u));
 }
 
 /** The row a landmark on a tree layer stands on: its plot's top. */
@@ -463,11 +364,6 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
     const top = groundTop(seed, layer, u);
     tops[x] = top;
     const [n, steps] = ground(surfaceAt(seed, d));
-    const bridge = marks.find((m) => m.mark.kind === 'bridge' && Math.abs(u - m.u) <= m.half + 2);
-    if (bridge !== undefined) {
-      bridgeColumn(c, u, top, bridge, n, steps);
-      continue;
-    }
     // A trodden path runs where the path noise is high (not on bare salt, sand, rock or snow).
     const pathy = PLAYFIELD.road && n === 'grass' && noise1(d / 260, seed ^ 0x9a7) > -0.1;
     // Band edges below the surface wander a pixel or two, so they read as drawn, not ruled.
@@ -519,79 +415,17 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
   placeBetween(seed, layer.name, li, layer.z, u0 - 90, u0 + c.w + 90, placed);
   placed.sort((a, b) => b.size - a.size);
   for (const p of placed) {
-    if (marks.some((m) => Math.abs(p.u - m.u) < m.half + (m.mark.kind === 'bridge' ? 14 : 4))) continue;
-    const s = stampFor(p, layer.z);
+    if (marks.some((m) => Math.abs(p.u - m.u) < m.half + 4)) continue;
+    const s = stampFor(p);
     const x = p.u - u0;
     const top = x >= 0 && x < c.w ? tops[x] : groundTop(seed, layer, p.u);
     const sink = p.species === 'rock' || p.species === 'boulder' || p.species === 'log' ? 1 : 0;
     stamp(c, s, p.u, top + 1 + sink, p.flip, false);
   }
-  for (const m of marks) if (m.stamp !== null) stamp(c, m.stamp, m.u, groundTop(seed, layer, m.u) + 2, false, false);
-  drawWires(c, seed, layer, li, u0, (u) => groundTop(seed, layer, u));
+  for (const m of marks) stamp(c, m.stamp, m.u, groundTop(seed, layer, m.u) + 2, false, false);
 }
 
-/**
- * A column of the bridge: the deck he walks on with its railing, and below it the gorge: banks falling to a river
- * whose surface glints as its colours cycle, piers standing in it.
- */
-function bridgeColumn(c: Chunk, u: number, top: number, m: Mark, n: string, steps: number): void {
-  const gorge = Math.round(BRIDGE.half * PX_PER_M);
-  const dx = Math.abs(u - m.u);
-  const water = top + BRIDGE.deep;
-  const surface = dx < gorge ? water : dx < gorge + BRIDGE.bank ? Math.round(water - ((dx - gorge) / BRIDGE.bank) * BRIDGE.deep) : top;
-  for (let y = surface; y < c.h; y++) {
-    const k = y - surface;
-    if (dx < gorge + 2 && y >= water) {
-      // The river from the side: a bright surface line, glints on the water below it, darkening with depth.
-      const kk = y - water;
-      const glint = kk < 10 && unit(Math.floor((u + kk * 13) / (3 + (kk % 3))) * 64 + kk, 0x5ea) < 0.22 - kk * 0.015;
-      const r = kk === 0 ? role('water', 3) : glint ? role('water', 3) : kk < 5 ? role('water', 2) : kk < 16 ? role('water', 1) : role('water', 0);
-      c.set(u, y, r, FLAG.WATER);
-    } else if (surface === top) c.set(u, y, k === 0 ? role(n, steps - 1) : k < 3 ? role(n, steps - 2) : k < 11 ? role(n, Math.max(1, steps - 3)) : role(n, 0), k < 2 ? FLAG.RIM : 0);
-    else c.set(u, y, k === 0 ? role(n, steps - 2) : k < 3 ? role('soil', 2) : k < 9 ? role(n, Math.max(0, steps - 4)) : role(n, 0), k === 0 ? FLAG.RIM : 0);
-  }
-  if (dx > m.half) return;
-  // The deck: planks, their joints, the beam under them.
-  c.set(u, top, role('wood', 3), FLAG.RIM);
-  c.set(u, top + 1, (u - m.u) % 6 === 0 ? role('wood', 0) : role('wood', 2), FLAG.RIM);
-  c.set(u, top + 2, role('wood', 1), 0);
-  c.set(u, top + 3, role('wood', 0), 0);
-  // The railing: posts, a hand rail and a middle rail.
-  const rel = u - (m.u - m.half);
-  if (rel % 9 === 0) for (let y = top - 8; y < top; y++) c.set(u, y, role('wood', 2), FLAG.RIM);
-  c.set(u, top - 8, role('wood', 3), FLAG.RIM);
-  c.set(u, top - 4, role('wood', 1), FLAG.RIM);
-  // Piers down into the river, braced.
-  const pier = rel % 40;
-  if (pier < 2 && dx < gorge) for (let y = top + 4; y < water + 8; y++) c.set(u, y, y < water ? role('wood', pier === 0 ? 2 : 1) : role('wood', 0), FLAG.RIM);
-  if (dx < gorge && pier >= 2 && pier < 38) {
-    const t = (pier - 2) / 36;
-    c.set(u, top + 4 + Math.round(Math.abs(t - 0.5) * 2 * (BRIDGE.deep - 8)), role('wood', 1), 0);
-  }
-}
-
-/** Wires sagging between neighbouring poles (a parabola looks the same as a catenary at this size). */
-function drawWires(c: Chunk, seed: number, layer: LayerDef, li: number, u0: number, topAt: (u: number) => number): void {
-  const poles = placeBetween(seed, layer.name, li, layer.z, u0 - 220, u0 + c.w + 220, []).filter((p) => p.species === 'pole');
-  for (let i = 1; i < poles.length; i++) {
-    const a = poles[i - 1];
-    const b = poles[i];
-    if (b.u - a.u > 260 / layer.z) continue;
-    const ya = topAt(a.u) - a.size + Math.round(a.size * 0.08);
-    const yb = topAt(b.u) - b.size + Math.round(b.size * 0.08);
-    const sag = Math.max(1, (b.u - a.u) * 0.07);
-    for (const off of [-1, 1]) {
-      const half = Math.round(Math.max(5, Math.round(a.size * 0.22)) / 2) * off;
-      for (let u = Math.max(a.u, u0); u <= Math.min(b.u, u0 + c.w - 1); u++) {
-        const t = (u - a.u) / (b.u - a.u);
-        const y = Math.round(ya + (yb - ya) * t + sag * 4 * t * (1 - t));
-        c.set(u + half, y, role('wire', 0), 0);
-      }
-    }
-  }
-}
-
-/** Paints the sparse foreground: dark tall grass, fronds and posts passing close to the eye, rarely. */
+/** Paints the sparse foreground: dark tall grass and fronds passing close to the eye, rarely. */
 export function paintFore(c: Chunk, seed: number, layer: LayerDef, li: number, u0: number): void {
   c.clear(u0);
   for (let x = 0; x < c.w; x++) {

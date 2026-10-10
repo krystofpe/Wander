@@ -198,14 +198,14 @@ export class Stage {
     v.rim[1] = (this.bytes[1] / 255) * (1 - k) + 0.5 * k;
     v.rim[2] = (this.bytes[2] / 255) * (1 - k) + 0.62 * k;
 
-    // The Milky Way on clear, dark nights, washed out by a bright moon and by the lights of towns and ruins; aurora
-    // over the cold lands on some clear nights.
+    // The Milky Way on clear, dark nights, washed out by a bright moon; aurora over the cold lands on some clear
+    // nights.
     const dark = Math.max(0, (this.grade.night - 0.5) * 2) * (1 - Math.min(1, w.cloud * 1.6)) * (1 - w.fog);
     const here = biomeAt(l.seed, l.at);
     v.here[0] = BIOME_IDS.indexOf(here.a);
     v.here[1] = BIOME_IDS.indexOf(here.b);
     v.here[2] = here.k;
-    v.milky = dark * (1 - 0.6 * m.moonlight * v.moonUp) * (1 - 0.5 * blended(here, (id) => (id === 'ruins' || id === 'rail' ? 1 : 0)));
+    v.milky = dark * (1 - 0.6 * m.moonlight * v.moonUp);
     const cold = blended(here, (id) => (id === 'tundra' ? 1 : id === 'pass' ? 0.7 : id === 'coast' || id === 'saltflat' ? 0.35 : 0));
     const which = Math.floor(l.clock / 24 + 0.5);
     v.aurora = cold * dark * (unit(which, l.seed ^ 0xa0a0) < 0.6 ? 1 : 0);

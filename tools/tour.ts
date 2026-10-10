@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LANDMARK_KINDS, ROAD_BIOMES } from '../src/biomes.ts';
+import type { LandmarkKind } from '../src/biomes.ts';
 import { seedOf } from '../src/options.ts';
 import { flags, open, session } from './headless.ts';
 import { TIMES, biomeCentres, borders, firstLandmarks } from './places.ts';
@@ -60,13 +61,11 @@ for (const [pose, time] of [
 add('poses', 'thought', { at: pine, hour: String(TIMES.golden), weather: 'clear', pose: 'sitsmoke', t: '3.1', thought: 'The pines have been talking all afternoon. Not to me.' });
 // Every landmark, at the hour it is best seen.
 const marks = firstLandmarks(seed);
-const MARK_TIME: Record<string, string> = { house: 'blue', chapel: 'golden', lighthouse: 'dusk', mast: 'blue', car: 'golden', bridge: 'golden', train: 'night', circle: 'dawn', shrine: 'blue', skeleton: 'golden', camp: 'dusk' };
+const MARK_TIME: Record<LandmarkKind, string> = { skeleton: 'golden', lonetree: 'golden', arch: 'dusk', erratic: 'dawn', fallen: 'noon', tor: 'golden', waterfall: 'noon', stacks: 'golden', spires: 'golden', snag: 'dawn' };
 for (const kind of LANDMARK_KINDS) {
   const at = marks.get(kind);
   if (at === undefined) continue;
-  // The train is seen crossing: pick an animation time when it is on its line.
-  const t = kind === 'train' ? '40' : '3.1';
-  add('landmarks', kind, { at: String(Math.round(at - 4)), hour: String(TIMES[MARK_TIME[kind]]), weather: 'clear', t, show: kind === 'bridge' ? 'fish' : '' });
+  add('landmarks', kind, { at: String(Math.round(at - 4)), hour: String(TIMES[MARK_TIME[kind]]), weather: 'clear', t: '3.1' });
 }
 // At night at his camp the creature comes through its portal to sit by his fire: just come, and some hours on.
 add('landmarks', 'visit', { at: pine, hour: '0.4', weather: 'clear', pose: 'camp', t: '3.1' });
@@ -85,7 +84,7 @@ add('4k', 'pine-golden', { at: pine, hour: String(TIMES.golden), weather: 'clear
 add('4k', 'pine-camp', { at: pine, hour: String(TIMES.night), weather: 'clear', pose: 'camp', t: '3.1' }, big);
 add('4k', 'pass-noon', { at: String(Math.round(centres.get('pass') ?? 0)), hour: String(TIMES.noon), weather: 'clear' }, big);
 add('4k', 'coast-dusk', { at: String(Math.round(centres.get('coast') ?? 0)), hour: String(TIMES.dusk), weather: 'clear' }, big);
-add('4k', 'house-blue', { at: String(Math.round((marks.get('house') ?? 0) - 4)), hour: String(TIMES.blue), weather: 'clear' }, big);
+add('4k', 'lonetree-golden', { at: String(Math.round((marks.get('lonetree') ?? 0) - 4)), hour: String(TIMES.golden), weather: 'clear' }, big);
 add('4k', 'tundra-night', { at: String(Math.round(centres.get('tundra') ?? 0)), hour: String(TIMES.night), weather: 'clear' }, big);
 add('4k', 'meadow-storm', { at: String(Math.round(centres.get('meadow') ?? 0)), hour: String(TIMES.dusk), weather: 'storm', t: '7.9' }, big);
 

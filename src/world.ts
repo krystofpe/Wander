@@ -29,7 +29,7 @@ const smooth = (a: number, b: number, v: number): number => {
 
 // ── Climate ────────────────────────────────────────────────────────────────
 
-/** Where each biome sits in temperature, moisture, altitude and human trace (−1..1). */
+/** Where each biome sits in temperature, moisture, altitude and bareness (−1..1): the odd, bare places sit high. */
 const CENTROIDS: Readonly<Record<BiomeId, readonly [number, number, number, number]>> = {
   pine: [-0.3, 0.45, 0.1, -0.5],
   birch: [0.05, 0.2, -0.1, -0.2],
@@ -43,8 +43,6 @@ const CENTROIDS: Readonly<Record<BiomeId, readonly [number, number, number, numb
   swamp: [0.4, 0.8, -0.55, -0.35],
   saltflat: [0.65, -0.6, -0.55, 0.55],
   stones: [-0.35, 0.45, 0.35, 0.3],
-  ruins: [0.2, 0.35, -0.2, 0.8],
-  rail: [0.0, -0.2, -0.3, 0.8],
   // Never picked for the road (ROAD_BIOMES); only a realm is the deep.
   deep: [0, 0, 0, 0],
 };
@@ -229,12 +227,10 @@ function biomeGround(seed: number, id: BiomeId, d: number): number {
 export function groundHeight(seed: number, d: number): number {
   const blend = biomeAt(seed, d, 70);
   const h = blended(blend, (id) => biomeGround(seed, id, d));
-  // Near a landmark the ground flattens, so the moment reads as a pause; at a bridge it is level from bank to bank.
+  // Near a landmark the ground flattens, so the moment reads as a pause.
   const mark = landmarkNear(seed, d, 60);
   if (mark === null) return h;
-  const level = mark.kind === 'bridge';
-  const calm = level ? smooth(12, 60, Math.abs(d - mark.at)) : 1 - 0.6 * (1 - smooth(20, 60, Math.abs(d - mark.at)));
-  return h * calm;
+  return h * (1 - 0.6 * (1 - smooth(20, 60, Math.abs(d - mark.at))));
 }
 
 // ── Landmarks ──────────────────────────────────────────────────────────────

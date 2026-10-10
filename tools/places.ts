@@ -1,6 +1,6 @@
 // Where things are on a road: the middle of each biome's first stretch, the borders between them, landmarks.
 // Pure (it only asks the world), so the tour and the tests can use it.
-import { ROAD_BIOMES } from '../src/biomes.ts';
+import { LANDMARK_KINDS, ROAD_BIOMES } from '../src/biomes.ts';
 import type { BiomeId, LandmarkKind } from '../src/biomes.ts';
 import { shownHour, sunElevation } from '../src/sky.ts';
 import { landmarksBetween, stretchesBetween } from '../src/world.ts';
@@ -31,7 +31,7 @@ export function firstLandmarks(seed: number, limit = 2e6): Map<LandmarkKind, num
   const step = 100000;
   for (let from = 0; from < limit; from += step) {
     for (const m of landmarksBetween(seed, from, from + step)) if (!out.has(m.kind)) out.set(m.kind, m.at);
-    if (out.size >= 11) break;
+    if (out.size >= LANDMARK_KINDS.length) break;
   }
   return out;
 }

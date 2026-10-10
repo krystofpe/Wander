@@ -423,7 +423,8 @@ function logLines(): string[] {
   const out: string[] = [shared ? 'the live road' : `the road from “${journey.word}”`];
   for (let i = life.log.length - 1; i >= 0 && out.length < 32; i--) {
     const e = life.log[i];
-    const what = e.kind === 'camp' ? `a night's camp, ${e.name}` : e.kind === 'landmark' ? `a ${e.name}` : e.name;
+    // Landmarks are logged by name ("the lone tree"); an older save may hold a bare kind.
+    const what = e.kind === 'camp' ? `a night's camp, ${e.name}` : e.kind === 'landmark' && !e.name.startsWith('the ') ? `a ${e.name}` : e.name;
     out.push(`day ${e.day}, ${clockText(e.hour)}   ${what}`);
   }
   return out;
@@ -525,7 +526,6 @@ function step(now: number): void {
     keptNight = visit.night;
     keepVisit(visit.woke ? 'woke' : 'slept');
   }
-  if (stage.around.trainStarted !== null) sound?.train(stage.around.trainStarted);
   // Text sits in CSS pixels: one art pixel is scale / devicePixelRatio of them.
   const css = renderer.scale / devicePixelRatio;
   ui.setScale(css);

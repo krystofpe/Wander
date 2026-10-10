@@ -71,7 +71,7 @@ export const LEGEND: Readonly<Record<string, number>> = {
   P: role('water', 2),
   Q: role('water', 3),
   F: role('firefly', 0),
-  // Lamps and a far train: the red lamp, glass (dark, and the pane lit at night), the body, the running gear.
+  // Lamps, glass, roofs and rails, from when his road had houses and a train: no sprite uses them now.
   R: role('lamp', 0),
   G: role('glass', 0),
   W: role('glass', 1),

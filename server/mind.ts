@@ -5,6 +5,8 @@
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { MARK_NAMES } from '../src/biomes.ts';
+import type { LandmarkKind } from '../src/biomes.ts';
 import { pastOf } from '../src/thoughts.ts';
 
 export const MIND = {
@@ -55,7 +57,7 @@ export function systemPrompt(seed: number): string {
   const past = pastOf(seed);
   const people = past.people.map((p) => `${p.name} (${p.who})`).join(', ');
   return [
-    'You are the inner voice of a lone wanderer in an endless, quiet land: a hooded traveller in a long coat with a pack and a walking stick, whose face is darkness. He walks on and on through forests, hills, coasts, deserts, snow and the ruins of towns, smokes now and then, sits on rocks, makes a small fire at night and sleeps by it. He has been walking a long time. He is alone with his thoughts.',
+    'You are the inner voice of a lone wanderer in an endless, quiet land: a hooded traveller in a long coat with a pack and a walking stick, whose face is darkness. He walks on and on through forests, hills, moors, coasts, deserts, marshes and snow, a wild land with nobody else in it, smokes now and then, sits on rocks, makes a small fire at night and sleeps by it. He has been walking a long time. He is alone with his thoughts.',
     '',
     `The life he left: ${people}; ${past.places.join(' and ')}. He still carries ${past.keepsake}. They come back to him, not every time.`,
     '',
@@ -73,7 +75,7 @@ export function situationText(r: ThoughtRequest): string {
   const recent = Array.isArray(r.recent) ? r.recent.filter((x): x is string => typeof x === 'string').slice(-5) : [];
   return [
     `Where: ${str(r.place, 'the road')}. When: ${str(r.phase, 'day')}, day ${num(r.day, 1)} on the road. Sky: ${str(r.sky, 'clear')}${r.windy === true ? ', windy' : ''}${r.cold === true ? ', cold' : ''}.`,
-    `He is ${str(r.doing, 'walking')}.${typeof r.near === 'string' ? ` In sight: a ${str(r.near)}.` : ''}`,
+    `He is ${str(r.doing, 'walking')}.${typeof r.near === 'string' ? ` In sight: ${Object.hasOwn(MARK_NAMES, r.near) ? MARK_NAMES[r.near as LandmarkKind] : `a ${str(r.near)}`}.` : ''}`,
     num(r.cigarettes) > 1 && typeof r.since === 'string' ? `Cigarettes since ${str(r.since)}: ${num(r.cigarettes)}.` : '',
     recent.length > 0 ? `His recent thoughts: ${recent.join(' | ')}` : '',
   ]

@@ -1,5 +1,5 @@
 // The far land: ridges, mountains, mesas, dunes, hills and the sea on the land layers, as silhouettes shaded in a
-// few flat planes, crowned by tree lines, stones or ruins drawn as part of the silhouette (research: Pixel craft
+// few flat planes, crowned by tree lines, boulders or reeds drawn as part of the silhouette (research: Pixel craft
 // §8, §12, §27; Depth §10). Pure: the same seed, layer and chunk paint the same bytes.
 import { BIOME_IDS } from '../biomes.ts';
 import type { BiomeId } from '../biomes.ts';
@@ -25,8 +25,6 @@ const R = {
   water1: role('water', 1),
   water2: role('water', 2),
   water3: role('water', 3),
-  rail: role('rail', 1),
-  railDark: role('rail', 0),
 };
 
 /** The horizon's row on screen: lower under big skies (plateau, salt flat, coast), higher in closed country. */
@@ -43,13 +41,11 @@ export const HORIZON: Readonly<Record<BiomeId, number>> = {
   swamp: 200,
   saltflat: 222,
   stones: 190,
-  ruins: 186,
-  rail: 192,
   deep: 174,
 };
 
 type Style = 'round' | 'ridged' | 'mesa' | 'dune' | 'sea' | 'spires';
-type Cover = 'none' | 'conifer' | 'broad' | 'birch' | 'dead' | 'stones' | 'ruins' | 'poles' | 'reeds' | 'trunks';
+type Cover = 'none' | 'conifer' | 'broad' | 'birch' | 'dead' | 'boulders' | 'reeds' | 'trunks';
 /** One land layer of one biome: amplitude (px at that layer), feature width (layer px), style and what crowns it. */
 type Form = readonly [number, number, Style, Cover];
 
@@ -59,16 +55,14 @@ const FORMS: Readonly<Record<BiomeId, readonly [Form, Form, Form, Form, Form]>> 
   birch: [[55, 260, 'round', 'none'], [40, 190, 'round', 'broad'], [32, 150, 'round', 'birch'], [27, 110, 'round', 'birch'], [24, 90, 'round', 'birch']],
   meadow: [[42, 300, 'round', 'none'], [30, 240, 'round', 'none'], [26, 190, 'round', 'broad'], [20, 150, 'round', 'none'], [16, 130, 'round', 'broad']],
   autumn: [[52, 260, 'round', 'none'], [44, 200, 'round', 'broad'], [38, 150, 'round', 'broad'], [32, 115, 'round', 'broad'], [28, 95, 'round', 'broad']],
-  plateau: [[84, 230, 'ridged', 'none'], [46, 260, 'mesa', 'none'], [16, 220, 'round', 'none'], [10, 170, 'round', 'stones'], [8, 130, 'round', 'none']],
-  pass: [[140, 170, 'ridged', 'none'], [108, 140, 'ridged', 'none'], [70, 115, 'ridged', 'none'], [36, 95, 'round', 'conifer'], [20, 80, 'round', 'stones']],
+  plateau: [[84, 230, 'ridged', 'none'], [46, 260, 'mesa', 'none'], [16, 220, 'round', 'none'], [10, 170, 'round', 'boulders'], [8, 130, 'round', 'none']],
+  pass: [[140, 170, 'ridged', 'none'], [108, 140, 'ridged', 'none'], [70, 115, 'ridged', 'none'], [36, 95, 'round', 'conifer'], [20, 80, 'round', 'boulders']],
   coast: [[38, 300, 'round', 'none'], [0, 200, 'sea', 'none'], [0, 160, 'sea', 'none'], [0, 120, 'sea', 'none'], [4, 90, 'dune', 'reeds']],
   desert: [[48, 260, 'mesa', 'none'], [82, 220, 'mesa', 'none'], [56, 180, 'mesa', 'none'], [18, 150, 'dune', 'none'], [14, 110, 'dune', 'none']],
   tundra: [[62, 240, 'ridged', 'none'], [40, 200, 'round', 'none'], [24, 160, 'round', 'conifer'], [16, 130, 'round', 'none'], [12, 100, 'round', 'none']],
   swamp: [[0, 300, 'round', 'none'], [12, 220, 'round', 'dead'], [9, 170, 'round', 'conifer'], [11, 130, 'round', 'dead'], [9, 100, 'round', 'reeds']],
-  saltflat: [[46, 300, 'mesa', 'none'], [24, 260, 'mesa', 'none'], [0, 200, 'round', 'none'], [0, 160, 'round', 'poles'], [0, 120, 'round', 'none']],
-  stones: [[46, 260, 'round', 'none'], [36, 200, 'round', 'none'], [28, 150, 'round', 'stones'], [22, 120, 'round', 'none'], [18, 100, 'round', 'stones']],
-  ruins: [[40, 260, 'round', 'none'], [30, 200, 'round', 'ruins'], [26, 150, 'round', 'ruins'], [22, 110, 'round', 'broad'], [18, 90, 'round', 'ruins']],
-  rail: [[46, 260, 'round', 'none'], [32, 200, 'round', 'none'], [26, 150, 'round', 'broad'], [20, 120, 'round', 'poles'], [16, 100, 'round', 'none']],
+  saltflat: [[46, 300, 'mesa', 'none'], [24, 260, 'mesa', 'none'], [0, 200, 'round', 'none'], [0, 160, 'round', 'boulders'], [0, 120, 'round', 'none']],
+  stones: [[46, 260, 'round', 'none'], [36, 200, 'round', 'none'], [28, 150, 'round', 'boulders'], [22, 120, 'round', 'none'], [18, 100, 'round', 'boulders']],
   // The hollow, the world under the world: soft hills of moss in ranks into the mist, wooded, under its roof.
   deep: [[44, 220, 'round', 'none'], [36, 170, 'round', 'broad'], [28, 140, 'round', 'broad'], [20, 110, 'round', 'broad'], [14, 90, 'round', 'none']],
 };
@@ -130,10 +124,9 @@ export function landHeight(seed: number, layer: LayerDef, li: number, u: number)
   return blended(blend, (id) => shapeHeight(seed, FORMS[id][k], salt, u));
 }
 
-/** The land's height under a landmark on this layer: where it stands, levelled; a train's line kept low. */
+/** The land's height under a landmark on this layer: where it stands, levelled, and risen if it stands on a rise. */
 export function markGround(seed: number, layer: LayerDef, li: number, m: Placed): number {
-  const g = landHeight(seed, layer, li, m.u);
-  return m.mark.kind === 'train' ? Math.min(g, 14) : g;
+  return landHeight(seed, layer, li, m.u) + m.rise;
 }
 
 /** The layer's baseline row in its texture at a column. */
@@ -159,8 +152,8 @@ function coverAt(seed: number, layer: LayerDef, u: number): Cover {
 }
 
 /**
- * The crown's extra height at a column: tree tips, rounded crowns, spikes, stones, broken walls, poles. Drawn as
- * part of the silhouette, as a far tree line is: one flat shape with a lit rim (research: Procgen §19).
+ * The crown's extra height at a column: tree tips, rounded crowns, spikes, boulders, reeds. Drawn as part of the
+ * silhouette, as a far tree line is: one flat shape with a lit rim (research: Procgen §19).
  */
 function crown(seed: number, cover: Cover, z: number, u: number, salt: number): number {
   if (cover === 'none') return 0;
@@ -200,17 +193,13 @@ function crown(seed: number, cover: Cover, z: number, u: number, salt: number): 
       case 'reeds':
         t = dx === 0 ? 3 * size : 0;
         break;
-      case 'stones':
-        t = dx <= Math.round(size) ? 5 * size : 0;
-        break;
-      case 'ruins': {
-        const w = Math.round(4 * size + 3);
-        t = dx <= w ? (6 + 7 * unit(j * 3, seed)) * size - (u % 3 === 0 && dx > 1 ? 2 : 0) : 0;
+      case 'boulders': {
+        // A boulder far off: a low dome, wider than it is tall, a little flatter on one shoulder.
+        const rad = 2.2 * size + 1;
+        const lean = unit(j * 11 + 7, seed ^ salt) < 0.5 ? -0.5 : 0.5;
+        t = dx < rad ? Math.sqrt(rad * rad - dx * dx) * (0.75 + lean * Math.sign(u - cx) * 0.25) : 0;
         break;
       }
-      case 'poles':
-        t = dx === 0 ? 14 * size : 0;
-        break;
       case 'trunks': {
         // Old trees far off: a trunk rising into the canopy, a flare of roots at its foot.
         const tw = Math.round(size * (0.8 + 2.4 * unit(j * 23 + 1, seed ^ salt)));
@@ -243,7 +232,10 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
     marks.forEach((m, j) => {
       const k = levelling(m, u);
       if (k <= 0) return;
-      ground[i] += (under[j] - ground[i]) * k;
+      // A rise swells up to its crown under the landmark and falls away gently, instead of standing as a terrace.
+      const t = Math.min(1, Math.abs(u - m.u) / (m.half + 70));
+      const target = under[j] - m.rise * (0.5 - 0.5 * Math.cos(Math.PI * t));
+      ground[i] += (target - ground[i]) * k;
       tops[i] += (ground[i] - tops[i]) * Math.min(1, k * 1.6);
     });
   }
@@ -305,7 +297,7 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
     // Scattered growth on the slopes below the crest: tiny dark conifers, crowns, birches or boulders, thinning
     // toward the foot, so a hill's body reads as a wooded or stony slope instead of a flat colour.
     const cover = coverAt(seed, layer, u);
-    if (cover !== 'none' && cover !== 'reeds' && cover !== 'poles' && cover !== 'ruins') {
+    if (cover !== 'none' && cover !== 'reeds') {
       const scale = Math.min(1.4, 4 / layer.z + 0.3);
       const cell = Math.max(3, Math.round(5 * scale));
       for (let row = 0; row < 7; row++) {
@@ -314,17 +306,17 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
         const r0 = unit(j * 8 + row, seed ^ (salt + 0x51));
         // Rounded crowns are sparser and fewer rows deep than conifers, or a meadow's hills turn to polka dots.
         if (cover === 'broad' && row > 3) continue;
-        if (r0 > (cover === 'stones' ? 0.18 : cover === 'broad' ? 0.26 : 0.62) * (1 - row * 0.11)) continue;
+        if (r0 > (cover === 'boulders' ? 0.18 : cover === 'broad' ? 0.26 : 0.62) * (1 - row * 0.11)) continue;
         const cx = j * cell - row * 17 + Math.floor(unit(j * 8 + row + 3, seed ^ salt) * cell);
         const dx = Math.abs(u - cx);
         const hgt = Math.round((3 + 4 * unit(j * 8 + row + 5, seed ^ salt)) * scale);
         const tipY = landTop + cy - hgt;
         let span = -1;
         if (cover === 'conifer') span = Math.floor((hgt - 1) / 2.6) - dx >= 0 ? 0 : -1;
-        else if (cover === 'stones') span = dx <= Math.round(scale) ? 0 : -1;
+        else if (cover === 'boulders') span = dx <= Math.round(scale) + 1 ? 0 : -1;
         else span = dx <= Math.round(hgt * 0.45) ? 0 : -1;
         if (span < 0) continue;
-        const from = cover === 'conifer' ? tipY + Math.round(dx * 2.6) : tipY + (cover === 'stones' ? Math.round(hgt * 0.5) : Math.round((dx * dx) / Math.max(1, hgt * 0.5)));
+        const from = cover === 'conifer' ? tipY + Math.round(dx * 2.6) : tipY + (cover === 'boulders' ? Math.round(hgt * 0.55) + (dx > Math.round(scale) ? 1 : 0) : Math.round((dx * dx) / Math.max(1, hgt * 0.5)));
         for (let y = Math.max(from, landTop + 1); y <= landTop + cy && y < H; y++) c.set(u, y, y === from && cover !== 'conifer' ? R.shade : R.deep, FLAG.RIM);
       }
     }
@@ -346,14 +338,5 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
       }
     }
   }
-  for (const [j, m] of marks.entries()) {
-    if (m.mark.kind === 'train') {
-      // The line a distant train runs on: a low embankment with the rails catching the light.
-      for (let u = Math.max(u0, m.u - m.half); u < Math.min(u0 + c.w, m.u + m.half); u++) {
-        const top = landBase(seed, layer, u) - Math.round(under[j]);
-        c.set(u, top - 1, R.rail, FLAG.RIM);
-        c.set(u, top, R.railDark, FLAG.RIM);
-      }
-    } else if (m.stamp !== null) stamp(c, m.stamp, m.u, landBase(seed, layer, m.u) - Math.round(under[j]) + 2, false, false);
-  }
+  for (const [j, m] of marks.entries()) stamp(c, m.stamp, m.u, landBase(seed, layer, m.u) - Math.round(under[j]) + 2 + m.sink, false, false);
 }

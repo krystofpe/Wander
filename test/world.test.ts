@@ -94,11 +94,12 @@ test('landmarks are rare, spaced apart, and fit their place', () => {
   for (let i = 1; i < marks.length; i++) assert.ok(marks[i].at - marks[i - 1].at > 400, `too close at ${marks[i].at}`);
   for (const m of marks) {
     const here = stretchAt(21, m.at).biome;
-    if (m.kind === 'lighthouse') assert.equal(here, 'coast');
+    if (m.kind === 'stacks') assert.equal(here, 'coast');
+    if (m.kind === 'waterfall') assert.equal(here, 'pass');
     if (m.kind === 'skeleton') assert.ok(['desert', 'saltflat', 'tundra', 'plateau'].includes(here), `skeleton in ${here}`);
   }
   const kinds = new Set(marks.map((m) => m.kind));
-  assert.ok(kinds.size >= 9, `only ${[...kinds].join(', ')}`);
+  assert.ok(kinds.size >= 8, `only ${[...kinds].join(', ')}`);
 });
 
 test('the weather leans with the place', () => {
@@ -109,7 +110,7 @@ test('the weather leans with the place', () => {
 });
 
 test('the first stretch of a biome is found, and is that biome', () => {
-  for (const id of ['pine', 'coast', 'rail'] as const) {
+  for (const id of ['pine', 'coast', 'stones'] as const) {
     const s = firstStretchOf(77, id);
     assert.ok(s !== null, id);
     assert.equal(stretchAt(77, (s.start + s.end) / 2).biome, id);

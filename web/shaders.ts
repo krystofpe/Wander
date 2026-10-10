@@ -164,86 +164,6 @@ void main() {
  * final pass dithers them); the sun's disc, the moon in its phase and the stars are pixel art on the native grid
  * (research: Light §9–17, HD §14–15).
  */
-/** The canopy's edge (the hollow's sky and its near canopy share it): wants hash, smoothNoise, u_view, u_seed. */
-const CANOPY_GLSL = `
-// How far a canopy of leaves hangs down at column x (native px from the top): a scalloped lower edge of rounded leaf
-// clumps, two sizes of them, lower towards the sides of the view so the leaves frame it. 'rank' picks the far or
-// the near canopy.
-float canopy(float x, float rank, float base, float sides) {
-  float k = rank * 31.0 + u_seed;
-  float side = abs(x - u_view.x * 0.5) / (u_view.x * 0.5);
-  float line = base + sides * pow(side, 2.2) + 8.0 * smoothNoise(vec2(x / 37.0, k));
-  float drop = 0.0;
-  for (int o = 0; o < 3; o++) {
-    float w = o == 0 ? 23.0 + 9.0 * rank : o == 1 ? 11.0 + 3.0 * rank : 5.0;
-    float off = hash(vec2(float(o), k)) * 7.0;
-    float cell = floor(x / w + off);
-    float u = fract(x / w + off) - 0.5;
-    float h = hash(vec2(cell, k + float(o) * 7.0));
-    float r = (o == 0 ? 10.0 + 9.0 * rank : o == 1 ? 6.0 + 2.0 * rank : 3.0) * (0.3 + 0.9 * h);
-    // Now and then a mass of leaves hanging deep.
-    if (o == 0 && h > 0.82) r *= 1.8;
-    drop = max(drop, r * sqrt(max(0.0, 1.0 - 4.0 * u * u)));
-  }
-  return line + drop;
-}
-`;
-
-/**
- * The hollow's near canopy, drawn over everything after the last layer: dark masses of leaves across the top of the
- * view, hanging lower at its sides so they frame it, their lower edge catching a little light; strands hanging from
- * them, swaying, a dim bead of light on the odd one. The far trees rise into it and are lost.
- */
-export const CANOPY_FS = `#version 300 es
-precision highp float;
-uniform vec3 u_dark;
-uniform vec3 u_edge;
-uniform float u_scale;
-uniform vec2 u_view;
-uniform vec4 u_viewport;
-uniform float u_time;
-uniform float u_seed;
-out vec4 o_color;
-
-float hash(vec2 p) {
-  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-  p3 += dot(p3, p3.yzx + 33.33);
-  return fract((p3.x + p3.y) * p3.z);
-}
-
-float smoothNoise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 q = fract(p);
-  vec2 u = q * q * (3.0 - 2.0 * q);
-  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-}
-${CANOPY_GLSL}
-void main() {
-  vec2 screen = vec2(gl_FragCoord.x - u_viewport.x, u_viewport.w - (gl_FragCoord.y - u_viewport.y));
-  vec2 n = floor(screen / u_scale);
-  float mott = smoothNoise(n / vec2(5.0, 4.0) + u_seed) * 0.6 + smoothNoise(n / vec2(2.0, 2.0) + 9.0) * 0.4;
-  float edge = canopy(n.x, 1.0, 6.0, 70.0);
-  if (n.y < edge) {
-    vec3 c = u_dark * (0.45 + 0.4 * mott);
-    if (n.y >= edge - 2.0 && hash(n + 3.1) < 0.45) c = mix(c, u_edge, 0.3);
-    o_color = vec4(c, 1.0);
-    return;
-  }
-  // Strands hanging from it, dark, swaying a little; a dim bead of light on the odd one.
-  float vx = n.x + floor(1.2 * sin(u_time * 0.4 + n.y * 0.06 + hash(vec2(floor(n.x / 2.0), 3.0)) * 6.0));
-  if (hash(vec2(vx, 23.0)) < 0.16) {
-    float vlen = 8.0 + 46.0 * hash(vec2(vx, 29.0));
-    float below = n.y - canopy(vx, 1.0, 6.0, 70.0);
-    if (below >= 0.0 && below < vlen) {
-      vec3 c = mix(u_dark * 0.6, vec3(0.03, 0.14, 0.13), 0.5);
-      if (mod(below + vx * 7.0, 15.0) < 1.0 && hash(vec2(vx, below)) < 0.4) c = mix(c, u_edge, 0.55);
-      o_color = vec4(c, 1.0);
-      return;
-    }
-  }
-  discard;
-}`;
-
 export const SKY_FS = `#version 300 es
 precision highp float;
 uniform vec3 u_zenith;
@@ -282,30 +202,84 @@ float smoothNoise(vec2 p) {
   return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
 }
 
-${CANOPY_GLSL}
-// The hollow's sky: a wood all round. Misty teal, darker overhead; far off low in the middle, the light at the end
-// of the wood, and faint shafts of it slanting down from gaps in the leaves; a far canopy hazed into the mist,
-// hanging lower at the sides. (The near canopy is drawn over everything, CANOPY_FS.)
+// How far the roof of the hollow hangs down at column x (native px from the top): the underside of the world above,
+// vaulted, high in the middle and lower toward the sides; broad soft swells like hills upside down, two ranks of them,
+// with tangles of root bulging from it here and there.
+float roof(float x, float rank) {
+  float k = rank * 41.0 + u_seed;
+  float side = abs(x - u_view.x * 0.5) / (u_view.x * 0.5);
+  float base = (rank < 0.5 ? 30.0 : 6.0) + (rank < 0.5 ? 34.0 : 46.0) * side * side;
+  float swell = (rank < 0.5 ? 14.0 : 12.0) * smoothNoise(vec2(x / (rank < 0.5 ? 70.0 : 45.0), k)) + 5.0 * smoothNoise(vec2(x / 17.0, k + 5.0));
+  float tangle = pow(max(0.0, smoothNoise(vec2(x / 11.0, k + 9.0)) - 0.64) / 0.36, 1.5) * (rank < 0.5 ? 10.0 : 18.0);
+  return base + swell + tangle;
+}
+
+// Where the i-th opening in the roof is (native px), and its half size.
+vec4 opening(int i) {
+  float fi = float(i);
+  float x = u_view.x * (0.3 + 0.2 * fi + 0.05 * (hash(vec2(fi, u_seed)) - 0.5));
+  return vec4(x, roof(x, 0.0) - 9.0, 8.0 + 5.0 * hash(vec2(fi, u_seed + 5.0)), 3.0);
+}
+
+// The hollow's sky: a world under the world. Its mist, darker overhead; far above, the roof of earth and stone, the
+// underside of his world, vaulted, in two ranks, the far one hazed, their edges catching the light from below; a few
+// openings in it where the sky above shows at his hour, soft shafts of that light slanting down through the mist;
+// enormous roots of the world's trees reaching down from the roof into the land, dark in the mist; thin roots hanging
+// from the roof, swaying a little.
 vec3 cave(vec2 f, vec2 n) {
   float t = clamp(f.y / u_horizonRow, 0.0, 1.0);
-  vec3 c = mix(u_zenith, u_horizon, pow(t, 1.15));
-  float cx = u_view.x * 0.5;
-  float dx = (f.x - cx) / (u_view.x * 0.2);
-  float dy = (f.y - u_horizonRow * 0.95) / (u_horizonRow * 0.5);
-  float far = exp(-dx * dx - dy * dy);
-  vec3 light = mix(u_horizon, vec3(0.6, 0.97, 0.95), 0.5);
-  c = mix(c, light, clamp(far * 0.95, 0.0, 1.0));
-  // Shafts of light, slanting, strongest near the light far off.
-  float s = smoothNoise(vec2((f.x + f.y * 0.5) / 11.0, u_seed + 3.0));
-  float shaft = pow(max(0.0, s - 0.58) / 0.42, 2.0) * smoothstep(0.1, 0.55, t) * (0.25 + 0.75 * far);
-  c = mix(c, light, shaft * 0.22);
-  // Leaves on leaves: a soft mottle for the canopies.
-  float mott = smoothNoise(n / vec2(5.0, 4.0) + u_seed) * 0.6 + smoothNoise(n / vec2(2.0, 2.0) + 9.0) * 0.4;
-  // The far canopy, hazed toward the mist, its edge catching a little of the light.
-  float farEdge = canopy(n.x, 0.0, 30.0, 34.0);
-  if (n.y < farEdge) {
-    c = mix(u_zenith, u_horizon, 0.3 + 0.25 * far) * (0.8 + 0.35 * mott);
-    if (n.y >= farEdge - 1.0) c = mix(c, light, 0.18);
+  vec3 c = mix(u_zenith, u_horizon, pow(t, 1.3));
+  vec3 above = u_glow;
+  // Shafts of the light from above, slanting down from the openings through the mist.
+  for (int i = 0; i < 3; i++) {
+    vec4 o = opening(i);
+    float down = max(0.0, f.y - o.y);
+    float sx = o.x + down * 0.28;
+    float wide = o.z * 0.8 + 0.14 * down;
+    float d = abs(f.x - sx) / wide;
+    float shaft = exp(-d * d * 2.0) * step(o.y, f.y) * (1.0 - smoothstep(u_horizonRow * 0.6, u_horizonRow * 1.1, f.y));
+    c = mix(c, above, shaft * 0.13);
+  }
+  // Enormous roots reaching down from the roof into the land, dark in the mist, fanning out where they meet the roof.
+  for (int i = 0; i < 2; i++) {
+    float fi = float(i);
+    float rx = u_view.x * (fi < 0.5 ? 0.14 : 0.83) + 20.0 * (hash(vec2(fi + 7.0, u_seed)) - 0.5);
+    float top = roof(rx, 0.0);
+    float below = max(0.0, f.y - top);
+    float bend = 10.0 * sin(f.y / 55.0 + fi * 2.0);
+    float fan = 22.0 * pow(max(0.0, 1.0 - below / 40.0), 2.0);
+    float w = 4.0 + 7.0 * (1.0 - t) + fan;
+    float dx = f.x - rx - bend;
+    if (abs(dx) < w && f.y > top - 4.0) {
+      c = mix(u_zenith, u_horizon, 0.2 + 0.32 * t);
+      if (dx > w - 1.5) c = mix(c, u_horizon, 0.25);
+    }
+  }
+  // The far rank of the roof, hazed toward the mist, its edge lit from below.
+  float farRoof = roof(n.x, 0.0);
+  if (n.y < farRoof) {
+    c = mix(u_zenith, u_horizon, 0.26);
+    if (n.y >= farRoof - 1.0) c = mix(c, u_horizon, 0.3);
+  }
+  // Openings in it where the sky above shows at his hour: the sky lighter at their top, their rims dark, then lit.
+  for (int i = 0; i < 3; i++) {
+    vec4 o = opening(i);
+    vec2 e = (n - o.xy) / o.zw;
+    float r = dot(e, e) + 0.25 * smoothNoise(n / 3.0 + float(i) * 7.0);
+    if (r < 1.0) c = mix(above, vec3(1.0), 0.15 * (1.0 - clamp((n.y - o.y + o.w) / (2.0 * o.w), 0.0, 1.0)));
+    else if (r < 1.5) c = mix(u_zenith, u_horizon, 0.1);
+  }
+  // The near rank, darker, its edge catching the light; thin roots hanging from it, swaying a little.
+  float nearRoof = roof(n.x, 1.0);
+  if (n.y < nearRoof) {
+    c = mix(u_zenith, u_horizon, 0.07);
+    if (n.y >= nearRoof - 1.0) c = mix(c, u_horizon, 0.35);
+  }
+  float vx = n.x + floor(1.0 * sin(u_time * 0.35 + n.y * 0.05 + hash(vec2(floor(n.x / 3.0), 3.0)) * 6.0));
+  if (hash(vec2(vx, 23.0)) < 0.05) {
+    float vlen = 6.0 + 34.0 * hash(vec2(vx, 29.0));
+    float below = n.y - roof(vx, 1.0);
+    if (below >= 0.0 && below < vlen) c = mix(u_zenith, u_horizon, 0.1);
   }
   return c;
 }

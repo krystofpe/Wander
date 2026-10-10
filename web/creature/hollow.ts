@@ -8,7 +8,7 @@ import { BIOME_IDS } from '../../src/biomes.ts';
 import { BIOMES } from '../../src/creature/config.ts';
 import { portalOf } from '../../src/creature/brain.ts';
 import type { Game } from '../../src/creature/game.ts';
-import { CREATURE, EDGE, EYES_FRONT, EYES_SIDE, HAND, HEAD, LANTERN, MOOD_EYES, NEST, TREE } from '../../src/creature/look.ts';
+import { CREATURE, EYES_FRONT, EYES_SIDE, HAND, HEAD, LANTERN, MOOD_EYES, NEST, TREE } from '../../src/creature/look.ts';
 import type { EyeShape, PoseTag } from '../../src/creature/look.ts';
 import type { Prop } from '../../src/creature/scene.ts';
 import { forestFocus } from '../../src/creature/scene.ts';
@@ -24,9 +24,6 @@ import type { Renderer } from '../render.ts';
 import type { Atlas, SpriteBatch } from '../sprites.ts';
 import type { Stage } from '../stage.ts';
 
-/** The old trees at the sides of the hollow: how far into the band they stand, and how much of them is past the edge. */
-const EDGE_Z = 0.72;
-const EDGE_IN = 22;
 const NEAR = GROUND - 1;
 const MID = GROUND - 2;
 const COAT = role('coat', 0);
@@ -75,7 +72,7 @@ type Growth = { readonly x: number; readonly z: number; readonly sheet: string; 
 function undergrowth(game: Game): Growth[] {
   const def = BIOMES[game.place];
   const kinds: readonly (readonly [string, string])[] =
-    game.place === 'deep' ? [['shrooms', 'a'], ['shrooms', 'b'], ['shrooms', 'a'], ['bloom', 'violet'], ['bloom', 'blue'], ['reeds', 'a'], ['reeds', 'a']]
+    game.place === 'deep' ? [['fern', 'a'], ['fern', 'b'], ['fern', 'a'], ['reeds', 'a'], ['shrooms', 'a'], ['bloom', 'violet']]
     : game.place === 'forest' ? [['fern', 'a'], ['fern', 'b'], ['fern', 'a'], ['shrooms', 'a']]
     : game.place === 'swamp' ? [['reeds', 'a'], ['mushrooms', 'a'], ['fern', 'b']]
     : game.place === 'meadow' ? [['fern', 'a'], ['fern', 'b']]
@@ -84,7 +81,7 @@ function undergrowth(game: Game): Growth[] {
   const layout = game.scene.layout;
   const random = rng(game.life.seed ^ 0x9f0e);
   const out: Growth[] = [];
-  const count = game.place === 'deep' ? 44 : def.canopy ? 46 : 18;
+  const count = game.place === 'deep' ? 40 : def.canopy ? 46 : 18;
   for (let tries = 0; out.length < count && tries < count * 8; tries++) {
     const x = 0.02 + random() * 0.96;
     const z = Math.pow(random(), 1.6);
@@ -150,7 +147,7 @@ export class Hollow {
     const inside = game.body.inside && game.body.visible;
     const dark = game.sky.daylight < 0.35;
     if (home.nest === true) {
-      // Its nest under the giant mushroom: the mushroom and the nest's far side, then (after it, curled up) the near lip.
+      // Its stone, then (after it, asleep on top) the grass at its foot.
       const left = geo.leftOf(home);
       const flip = home.variant === 1;
       const foot = geo.footY(home.x, home.z);
@@ -158,7 +155,7 @@ export class Hollow {
       const lip = frameOf('nest', 'front');
       later(home.z, () => {
         put(ground, left, foot - back[3], back, flip);
-        // By day its lantern hangs dark from the cap's rim; at night it carries it, or, asleep, it hangs there lit.
+        // By day its lantern stands dark on the stone; at night it carries it, or, asleep, it stands there lit.
         const lit = dark && inside;
         const px = flip ? left + NEST.w - 1 - NEST.peg[0] : left + NEST.peg[0];
         const py = foot - back[3] + NEST.peg[1];
@@ -191,21 +188,6 @@ export class Hollow {
       const foot = geo.footY(home.x, home.z);
       const frame = frameOf('shelter', home.variant === 1 ? 'snow' : 'turf');
       later(home.z, () => put(ground, geo.leftOf(home), foot - frame[3], frame, !game.scene.layout.homeLeft));
-    }
-
-    // In the hollow, old trees frame the view at both sides, near the front, rising into the canopy.
-    if (game.place === 'deep') {
-      const foot = Math.round(geo.footY(0.5, EDGE_Z));
-      const f = frameOf('edge', 'foot');
-      const tile = sheets.edgetrunk.tile[0];
-      for (const right of [false, true]) {
-        const left = right ? geo.w + EDGE_IN - f[2] : -EDGE_IN;
-        const tx = right ? geo.w + EDGE_IN - tile[2] : -EDGE_IN;
-        later(EDGE_Z, () => {
-          put(ground, left, foot - f[3], f, right, 1, undefined, false);
-          for (let y = foot - f[3] - tile[3]; y > -tile[3]; y -= tile[3]) put(ground, tx, y, tile, right, 1, undefined, false);
-        });
-      }
     }
 
     // The undergrowth.
@@ -306,7 +288,7 @@ export class Hollow {
       const world = game.worldNow();
       const dark = Math.min(1, (0.3 - game.sky.daylight) * 8);
       // The owl comes on most nights to its place on the trunk.
-      // (No owl in the hollow: eyes look out from its old trees instead.)
+      // (No owl in the hollow, under the world.)
       const owl = game.place === 'deep' ? null : owlTonight(seed, world);
       if (home.edge !== undefined && owl !== null) {
         const left = geo.leftOf(home);
@@ -317,15 +299,9 @@ export class Hollow {
         const oy = geo.footY(home.x, home.z) - TREE.h - 36 - Math.round(owl.height * 70);
         later(home.z + 0.0005, () => put(ground, ox, oy, f, flip, dark));
       }
-      // Eyes in the dark between the trees: a pair now and then, watching a while, blinking, gone. In the hollow they
-      // look out from the old trees at its sides, violet.
+      // Eyes in the dark between the trees: a pair now and then, watching a while, blinking, gone.
       const eyes = eyesAt(seed, world);
-      if (eyes !== null && game.place === 'deep') {
-        const right = eyes.x > 0.5;
-        const ex = right ? geo.w + EDGE_IN - EDGE.trunk / 2 - 2 : EDGE.trunk / 2 - EDGE_IN - 3;
-        const ey = Math.round(geo.footY(0.5, EDGE_Z) - EDGE.footH - 10 - eyes.up * 90);
-        later(EDGE_Z + 0.001, () => put(ground, Math.round(ex), ey, sheets.eyes[eyes.blink ? 'shut' : 'open'][0], false, eyesFade(eyes.t) * Math.max(0.5, dark), [-1, 0, EYE, role('amethyst', 1)]));
-      } else if (eyes !== null) {
+      if (eyes !== null) {
         const [na, nb, nk] = rows(NEAR);
         const lo = game.scene.layout.homeLeft ? 0.3 : 0.06;
         const ex = geo.px(lo + eyes.x * 0.62);
@@ -410,11 +386,11 @@ export class Hollow {
     const swap = [COAT, role(`cloak${life.cloak}`, 0) - COAT, EYE, role('mood', Math.max(0, colour))];
     if (!b.visible) return;
     if (b.inside && game.scene.layout.home.nest === true) {
-      // Curled up in its nest, facing the open side: its eyes shut asleep, peeking out awake.
+      // Settled on top of its stone, facing the open side: its eyes shut asleep, open awake.
       const home = game.scene.layout.home;
       const door = geo.door(home);
       const cx = geo.px(door.x);
-      const foot = geo.footY(door.x, door.z) + 1;
+      const foot = geo.footY(door.x, door.z) - NEST.top + 2;
       const frames = sheets.creature.curl;
       const i = loopFrame(frames.map((f) => f[4]), time);
       const flip = !game.scene.layout.homeLeft;

@@ -1,12 +1,12 @@
 // The creature, drawn by rule and by hand and composed into frames: 24 × 26, facing right, its feet on row 25. A
-// small spirit of moss: a soft mound, round on top and wide at the bottom, mossy all over, lit from the upper left;
-// a tuft of grass blades on its crown; little twig arms held out at its sides; two stubby feet of dark root; a small
-// smile and a blush under its eyes (the page lays the eyes in, eyes.ts, where src/creature/look.ts says its face
-// is); tiny flowers growing on it that glow. It waddles, sits with its feet out in front, hops, waves, digs, nibbles,
-// and sleeps settled flat. The moss is drawn in the coat's roles (the page moves it to its own colour), the feet in
-// bark, the flowers in glowing roles. Legend in ../legend.ts.
+// small creature of the hollow wearing its moss like a blanket (as in the picture it was asked to look like): a soft
+// mound of moss over its back and head, lit from the upper left; under it, low at the front, its face peeking out,
+// in the shadow of its moss, a small mouth (the page lays its eyes in, eyes.ts, where src/creature/look.ts says its face is); little
+// mossy paws in front; on top, tiny mushrooms, one red and one sea-green, and a couple of leaves. It pads along, sits,
+// hops, waves a paw, digs, nibbles, and sleeps settled low. The moss is drawn in the coat's roles (the page moves it
+// to its own colour), the face in bone, the mushrooms and leaves in their own. Legend in ../legend.ts.
 import { CREATURE, HEAD } from '../../../src/creature/look.ts';
-import { block, compose, stroke } from '../compose.ts';
+import { block, compose } from '../compose.ts';
 import type { Part, Placed } from '../compose.ts';
 import type { Sheet } from '../legend.ts';
 
@@ -56,61 +56,39 @@ function mound(cx: number, cy: number, rx: number, top: number, bottom: number, 
 
 // ── Its face and crown (moved together, as look.ts says) ─────────────────────
 
-/** Blades of grass from its crown, lighter at their tips, swayed `sway` (−1, 0, 1) at the top. */
-function blades(x0: number, y0: number, sway = 0): Part {
-  const BLADES: readonly (readonly [number, number, number])[] = [
-    // root x, tip x, tip y (from y0)
-    [2, 0, 3],
-    [3, 2, 0],
-    [4, 5, -1],
-    [5, 6, 1],
-    [6, 8, 0],
-    [7, 9, 3],
-  ];
-  const out: Record<number, (readonly [number, string])[]> = {};
-  for (const [rx, tx, ty] of BLADES) {
-    const p = stroke(x0 + tx + sway, y0 + ty, x0 + rx, y0 + 6, 'l', 'L');
-    for (const [k, segs] of Object.entries(p)) out[Number(k)] = [...(out[Number(k)] ?? []), ...segs];
-  }
-  return out;
-}
-/** Side on: a small smile under the eyes (which go at x 13–17, rows 12–13), a blush either side. */
-const FACE: Part = { 14: [[12, '·'], [18, '·']], 15: [[14, 'h'], [17, 'h']], 16: [[15, 'hh']] };
-const CROWN = blades(6, 1);
+/** Side on: its pale face peeking out low at the front of the moss; the eyes go at x 14–18, rows 14–15. */
+const FACE: Part = block(13, 12, ['..ddd...', '.dz//z..', 'dz//zzz.', 'z//zzzzz', 'z/zzzzz.', '.zzzhzz.', '..zzzz..']);
+/** On top: a tiny red mushroom and a sea-green one, and two leaves. */
+const CROWN: Part = { 2: [[9, '&+']], 3: [[8, '&&+&'], [14, 'PQ']], 4: [[9, 'UU'], [13, 'PPQ']], 5: [[10, 'U'], [5, 'Y.'], [14, 'U'], [17, '7']], 6: [[4, 'YM'], [17, 'Y7']], 7: [[5, 'M'], [18, 'M']] };
 const HEAD_SIDE: readonly Part[] = [CROWN, FACE];
-/** Facing you: the eyes go at x 9–13, rows 12–13. */
-const FACE_FRONT: Part = { 14: [[7, '··'], [14, '··']], 15: [[9, 'h'], [13, 'h']], 16: [[10, 'hhh']] };
-const HEAD_FRONT: readonly Part[] = [CROWN, FACE_FRONT];
-/** Asleep, settled flat: its blades lying over, its face low on its side (the eyes shut at x 15–19, rows 18–19). */
-const FACE_CURL: Part = { 14: [[12, '·']], 15: [[14, 'hh']] };
-const CROWN_CURL: Part = { 7: [[4, 'Ll']], 8: [[2, 'L.lll']], 9: [[1, 'L.l.dd']], 10: [[3, 'ldd']] };
-const HEAD_CURL: readonly Part[] = [CROWN_CURL, FACE_CURL];
+/** Facing you: its face in the middle, low; the eyes go at x 9–13, rows 14–15. */
+const FACE_FRONT: Part = block(6, 12, ['..dddddddd..', '.dz//zzzzzd.', 'dz//zzzzzzzd', 'z//zzzzzzzzz', 'z/zzzzzzzzzz', '.zzzzzhzzzz.', '..zzzzzzzz..']);
+const CROWN_FRONT: Part = { 2: [[8, '&+']], 3: [[7, '&&+&'], [14, 'PQ']], 4: [[8, 'UU'], [13, 'PPQ']], 5: [[9, 'U'], [4, 'Y.'], [14, 'U'], [18, '7']], 6: [[3, 'YM'], [18, 'Y7']], 7: [[4, 'M'], [19, 'M']] };
+const HEAD_FRONT: readonly Part[] = [CROWN_FRONT, FACE_FRONT];
+/** Asleep, settled low: the same face, lower down (the eyes shut at x 15–19, rows 19–20). */
+const HEAD_CURL: readonly Part[] = [CROWN, FACE];
 
-// ── Its arms, feet and flowers ─────────────────────────────────────────────
+// ── Its paws and feet ──────────────────────────────────────────────────────
 
-/** Its feet of dark root, at columns `far` and `near` (their left), each lifted `up` rows. */
+/** Its two stubby mossy feet under it, at columns `far` and `near` (their left), each lifted `up` rows. */
 function feet(far: number, near: number, upFar = 0, upNear = 0): Part {
   const out: Record<number, (readonly [number, string])[]> = {};
   const add = (y: number, x: number, s: string): void => {
     out[y] = [...(out[y] ?? []), [x, s]];
   };
   for (let k = 0; k < 3; k++) {
-    add(23 + k - upFar, far, k === 0 ? ')[' : k === 1 ? ')[[' : '())');
-    add(23 + k - upNear, near, k === 0 ? '[]]' : k === 1 ? '[]][' : ')[[(');
+    add(23 + k - upFar, far, k === 2 ? 'odd' : 'odm');
+    add(23 + k - upNear, near, k === 2 ? 'oddo' : 'odmo');
   }
   return out;
 }
-const STANDING: [number, number] = [6, 12];
-/** Its near arm, a little twig held out at its side, its fingers forked; and the far one behind. */
-const ARM: Part = block(19, 13, ['...l', '..ld', 'odd.', 'od..']);
-const ARM_FAR: Part = block(0, 13, ['o...', 'do..', '.do.']);
-/** An arm raised (waving), at its tip (x, y). */
-const ARM_UP = (x: number, y: number): Part => block(x, y, ['.l.l', '.ld.', 'od..', 'od..', 'o...']);
-/** Its arms scrabbling at the ground (digging), one forward or the other. */
-const SCRABBLE = (i: number): Part => (i === 0 ? block(18, 19, ['..od', '.odl', 'od..']) : block(18, 20, ['.odl', 'odd.']));
-/** Tiny flowers growing in its moss, glowing faintly. */
-const FLOWERS: Part = { 11: [[5, '•']], 16: [[4, '$']], 19: [[9, 'β']] };
-const FLOWERS_FRONT: Part = { 11: [[16, '•']], 17: [[4, '$']], 19: [[15, 'β']], 12: [[6, 'β']] };
+const STANDING: [number, number] = [7, 13];
+/** Its little mossy paws in front, under its face. */
+const PAWS: Part = block(14, 19, ['.odl.odl', 'odmloddm', '.ooo.oo.']);
+/** A paw raised (waving), its top at (x, y). */
+const PAW_UP = (x: number, y: number): Part => block(x, y, ['.oo.', 'odLl', 'odl.', '.od.']);
+/** Its paws scrabbling at the ground (digging), one forward or the other. */
+const SCRABBLE = (i: number): Part => (i === 0 ? block(17, 21, ['.odl', 'odm.', 'oo..']) : block(18, 22, ['odl.', 'ooo.']));
 
 // ── Frames ─────────────────────────────────────────────────────────────────
 
@@ -123,42 +101,37 @@ function frame(tag: keyof typeof HEAD, i: number, head: readonly Part[], body: r
   return compose(W, H, [...body, ...all(head, dx, dy)]);
 }
 
-const MOUND = mound(11.5, 16.5, 9.5, 9.5, 6);
-const MOUND_LOW = mound(11.5, 17, 9.7, 9, 5.6);
-const side = (dy: number, body: Part = MOUND): (Part | Placed)[] => [at(ARM_FAR, 0, dy), at(body, 0, dy), at(FLOWERS, 0, dy)];
+const MOUND = mound(11.5, 15.5, 10, 9, 6.5);
+const MOUND_LOW = mound(11.5, 16, 10.2, 8.5, 6.1);
 
-// Breathing: the mound settles a pixel and rises.
+// Breathing: the moss settles a pixel and rises.
 const STAND = [
-  frame('stand', 0, HEAD_SIDE, [feet(...STANDING), ...side(0), ARM]),
-  frame('stand', 1, HEAD_SIDE, [feet(...STANDING), ...side(0, MOUND_LOW), at(ARM, 0, 1)]),
+  frame('stand', 0, HEAD_SIDE, [feet(...STANDING), MOUND, PAWS]),
+  frame('stand', 1, HEAD_SIDE, [feet(...STANDING), MOUND_LOW, at(PAWS, 0, 1)]),
 ];
-// A waddle on its root feet, one forward and one back, a bob as they pass.
+// Padding along on its stubby feet, a bob as they pass.
 const WALK = [0, 1, 2, 3].map((i) => {
   const dy = i % 2 === 1 ? -1 : 0;
-  const f = i === 0 ? feet(4, 14) : i === 2 ? feet(8, 10) : i === 1 ? feet(6, 12, 1, 0) : feet(6, 12, 0, 1);
-  return frame('walk', i, HEAD_SIDE, [f, ...side(dy), at(ARM, 0, dy + (i % 2 === 0 ? 0 : -1))]);
+  const f = i === 0 ? feet(5, 15) : i === 2 ? feet(9, 11) : i === 1 ? feet(7, 13, 1, 0) : feet(7, 13, 0, 1);
+  return frame('walk', i, HEAD_SIDE, [f, at(MOUND, 0, dy), at(PAWS, 0, dy)]);
 });
-// Sitting, its feet out in front of it.
-const SIT_FEET: Part = { 22: [[14, '[]]'], [18, '[]]']], 23: [[13, '[]]]['], [17, '[]]][']], 24: [[13, ')[[[(.)[[[(']], 25: [[14, '()(..()((']] };
-const SIT = [0, 1].map((i) => frame('sit', i, HEAD_SIDE, [at(ARM_FAR, 0, 2), mound(11.5, 18.5 + i * 0.5, 9.8, 9.5 - i * 0.5, 5.5), at(FLOWERS, 0, 2), SIT_FEET, at(ARM, 0, 2)]));
-// A hop: up off its feet, its arms out, its blades swaying back.
-const JUMP = [frame('jump', 0, [blades(6, 1, -1), FACE], [at(feet(...STANDING, 2, 2), 0, -2), ...side(-2, mound(11.5, 14.5, 9.2, 9.8, 6)), ARM_UP(20, 8)])];
-// Waving its near arm.
-const WAVE = [0, 1].map((i) => frame('wave', i, HEAD_SIDE, [feet(...STANDING), ...side(0), ARM_UP(19, 6 + i)]));
-// Digging: leaning forward, its face low, its arms scrabbling.
-const DIG = [0, 1].map((i) => frame('dig', i, HEAD_SIDE, [feet(5, 10), at(ARM_FAR, 0, 3), mound(12.5, 18.5 + i * 0.5, 9.5, 8.5, 5.5), at(FLOWERS, 1, 3), SCRABBLE(i)]));
+// Sitting low, its paws in front of it.
+const SIT = [0, 1].map((i) => frame('sit', i, HEAD_SIDE, [mound(11.5, 17.5 + i * 0.5, 10.4, 9 - i * 0.5, 7), at(PAWS, 0, 3)]));
+// A hop: up off its feet, its paws tucked.
+const JUMP = [frame('jump', 0, HEAD_SIDE, [at(feet(...STANDING, 2, 2), 0, -2), at(mound(11.5, 13.5, 9.6, 9.4, 6.5), 0, 0), at(PAWS, 0, -3)])];
+// Waving a paw.
+const WAVE = [0, 1].map((i) => frame('wave', i, HEAD_SIDE, [feet(...STANDING), MOUND, block(14, 19, ['.odl', 'odml', '.ooo']), PAW_UP(19, 8 + i)]));
+// Digging: leaning forward, its face low, its paws scrabbling.
+const DIG = [0, 1].map((i) => frame('dig', i, HEAD_SIDE, [feet(5, 10), mound(12.5, 17.5 + i * 0.5, 10, 8.5, 6), SCRABBLE(i)]));
 // Nibbling at the ground, its face down.
-const EAT = [0, 1].map((i) => frame('eat', i, HEAD_SIDE, [feet(5, 10), at(ARM_FAR, 0, 3), mound(12.5, 19 + i * 0.5, 9.5, 8.2, 5.2), at(FLOWERS, 1, 3), block(19, 21, ['od', 'dl'])]));
-// Facing you: both arms held out at its sides, its feet in front.
-const ARMS_FRONT: Part = { 13: [[0, 'l'], [22, 'l']], 14: [[0, 'dl'], [21, 'ld']], 15: [[1, 'ddo'], [20, 'odd']], 16: [[2, 'do'], [20, 'od']] };
-const ARM_FRONT_LEFT: Part = { 13: [[0, 'l']], 14: [[0, 'dl']], 15: [[1, 'ddo']], 16: [[2, 'do']] };
-const ARM_FRONT_UP: Part = block(19, 6, ['l.l', '.ld', '.do', 'odd', 'od.']);
-const FEET_FRONT: Part = { 22: [[5, '[]]['], [15, '[]][']], 23: [[4, '[]]]]['], [14, '[]]]][']], 24: [[4, ')[[[[('], [14, ')[[[[(']], 25: [[5, '()()'], [15, '()()']] };
-const MOUND_FRONT = mound(11.5, 16.5, 9.5, 9.5, 6, 4);
-const FRONT = [0, 1].map((i) => frame('front', i, HEAD_FRONT, [FEET_FRONT, ARMS_FRONT, i === 0 ? MOUND_FRONT : mound(11.5, 17, 9.7, 9, 5.6, 4), FLOWERS_FRONT]));
-const FRONT_WAVE = [0, 1].map((i) => frame('frontwave', i, HEAD_FRONT, [FEET_FRONT, ARM_FRONT_LEFT, MOUND_FRONT, FLOWERS_FRONT, at(ARM_FRONT_UP, 0, i)]));
-// Asleep, settled flat on the ground, rising and falling.
-const CURL = [0, 1].map((i) => frame('curl', i, HEAD_CURL, [mound(12, 21.5 + i * 0.3, 10.5, 6.5 - i * 0.4, 3.5, 2), { 21: [[6, '•']], 23: [[16, 'β']] }]));
+const EAT = [0, 1].map((i) => frame('eat', i, HEAD_SIDE, [feet(5, 10), mound(12.5, 18 + i * 0.5, 10, 8.2, 5.8), block(18, 22, ['odl', 'oo.'])]));
+// Facing you: its face in the middle, its paws in front.
+const MOUND_FRONT = mound(11.5, 15.5, 10, 9, 6.5, 4);
+const PAWS_FRONT: Part = block(7, 19, ['.odl...odl', 'odml..odml', '.ooo...ooo']);
+const FRONT = [0, 1].map((i) => frame('front', i, HEAD_FRONT, [feet(6, 13), i === 0 ? MOUND_FRONT : mound(11.5, 16, 10.2, 8.5, 6.1, 4), at(PAWS_FRONT, 0, i)]));
+const FRONT_WAVE = [0, 1].map((i) => frame('frontwave', i, HEAD_FRONT, [feet(6, 13), MOUND_FRONT, block(7, 19, ['.odl', 'odml', '.ooo']), PAW_UP(18, 9 + i)]));
+// Asleep, settled low with its paws in front, rising and falling.
+const CURL = [0, 1].map((i) => frame('curl', i, HEAD_CURL, [mound(11.5, 19.5 + i * 0.3, 10.6, 7.5 - i * 0.4, 5.5, 2), at(PAWS, 0, 5)]));
 
 export const SHEET: Sheet = {
   name: 'creature',

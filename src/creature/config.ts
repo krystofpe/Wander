@@ -230,7 +230,7 @@ export const BIOMES: Readonly<Record<PlaceName, BiomeDef>> = {
     cold: false,
     canopy: true,
     nest: true,
-    props: [['shrooms', 8], ['fern', 3], ['rock', 1]],
+    props: [['shrooms', 3], ['fern', 5], ['bush', 2], ['rock', 2]],
     forage: 'shrooms',
     water: 'pond',
     dayCritters: ['butterfly', 'butterfly', 'moth', 'firefly', 'frog', 'bat'],

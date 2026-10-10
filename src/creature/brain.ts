@@ -12,7 +12,7 @@ export function portalOf(layout: { readonly homeLeft: boolean }): { readonly x: 
 }
 import { MAX_CAIRN, clamp01, isNightFor, warm } from './life.ts';
 import type { Feelings, Life, Mood } from './life.ts';
-import { CREATURE } from './look.ts';
+import { CREATURE, NEST } from './look.ts';
 import { forestFocus } from './scene.ts';
 import type { Critter, Geometry, Prop, Scene, SignKind } from './scene.ts';
 import type { Sky } from './sky.ts';
@@ -933,7 +933,7 @@ function* comeForward(c: Ctx): Script {
 function zFromDoor(c: Ctx): void {
   const home = c.scene.layout.home;
   const door = c.geo.door(home);
-  c.scene.emit({ kind: c.random() < 0.5 ? 'z' : 'Z', x: c.geo.px(door.x) + 3, y: c.geo.footY(door.x, door.z) - (home.nest === true ? 14 : 22), vx: 4, vy: -6, life: 2.5 });
+  c.scene.emit({ kind: c.random() < 0.5 ? 'z' : 'Z', x: c.geo.px(door.x) + 3, y: c.geo.footY(door.x, door.z) - (home.nest === true ? 12 + NEST.top : 22), vx: 4, vy: -6, life: 2.5 });
 }
 
 function shootingStar(c: Ctx): void {

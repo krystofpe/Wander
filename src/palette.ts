@@ -361,25 +361,25 @@ const BIOME_COLOURS: Readonly<Record<BiomeId, Colours>> = {
     grass: ['#29291e', '#413f2c', '#5e5a3b', '#807a50', '#a39c6c'],
     path: ['#38332e', '#544c43', '#716759'],
   },
-  // The hollow, a wood after the picture it was asked to look like: nearly one hue, teal-navy darks, the mist in mid
-  // teals, toadstools glowing cyan, violet for flowers and eyes; trunks near black; the stems of the toadstools pale.
+  // The hollow, the world under the world: the world still living. Moss and leaf in living greens under a teal mist,
+  // pale trees, soft stone; toadstools glowing a quiet sea-green, violet for flowers and eyes; never neon.
   deep: {
-    land: ['#050d16', '#071927', '#0a2630', '#0f3842', '#174c58'],
-    rock: ['#060e1a', '#0c1c2a', '#14303c', '#20444e', '#305e66'],
-    soil: ['#04090f', '#07141c', '#0c2028', '#13303a'],
-    grass: ['#041618', '#07282a', '#0c3a3a', '#144e4c', '#1f6862'],
-    leaf: ['#040c16', '#071a26', '#0b2a36', '#123e4a', '#1b5664'],
-    needle: ['#040c14', '#071824', '#0c2632', '#143a46'],
-    bark: ['#03070e', '#060f1a', '#0a1a26', '#122836'],
-    birch: ['#16283a', '#4a7090', '#8fb4d0', '#c8def0'],
-    stone: ['#0a1620', '#14242e', '#203640', '#344c56'],
-    water: ['#030e18', '#08202e', '#0f3442', '#5ab8c8'],
-    shroom: ['#13707c', '#36bfcf', '#c0f6f4'],
-    wing: ['#2a3b5e', '#6c6cb4', '#cfc6f2'],
-    flower: ['#242852', '#4666a0', '#8c81c1'],
-    bone: ['#4a7a80', '#8ebcbe', '#d0eeea'],
+    land: ['#0c1612', '#16261e', '#22382c', '#33503e', '#4a6c54'],
+    rock: ['#10171a', '#1c2628', '#2a3838', '#3e5050', '#586c68'],
+    soil: ['#0c100c', '#161c14', '#22291e', '#30382a'],
+    grass: ['#0e1c10', '#18301a', '#264828', '#38643a', '#52824e'],
+    leaf: ['#0c1a10', '#16301c', '#24482a', '#36643a', '#508250'],
+    needle: ['#0c1812', '#162a1e', '#22402c', '#30563a'],
+    bark: ['#141410', '#222018', '#332f24', '#474134'],
+    birch: ['#34443c', '#71867a', '#a9bdae', '#d6e4d8'],
+    stone: ['#141c1c', '#222c2c', '#344040', '#4c5a58'],
+    water: ['#08140f', '#10241c', '#1c3a2e', '#6aa890'],
+    shroom: ['#1c5a52', '#4aa898', '#b0e4d4'],
+    wing: ['#3c3a5a', '#7a74a8', '#cac4e4'],
+    flower: ['#3a3450', '#6c6496', '#aca2cc'],
+    bone: ['#6a7a6e', '#a8b8a8', '#d8e4d4'],
     smoke: ['#3f6a70', '#7ea6a6', '#bfe0da'],
-    dry: ['#0a2226', '#14363a', '#204c50', '#2e6266'],
+    dry: ['#1a2418', '#28361f', '#384a2a', '#4c6236'],
   },
 };
 
@@ -464,15 +464,15 @@ const MORNING: readonly Key[] = EVENING.map((k) => {
   return { ...k, ...(swap[k.e] ?? {}) };
 });
 
-// The hollow's keys: a wood under a canopy, its mist teal by day (as the picture it was asked to look like, the light
-// far off at the end of the wood about half bright) and a deeper blue-teal by night; its light the toadstools' cold
-// cyan; no glow lobe (the sky shader draws the light far off itself).
+// The hollow's keys: a world under the world, its roof dark overhead and its mist a living green-teal by day, warmer
+// at dusk, dark teal at night; `glow` is the light of the world above as it shows through the openings in its roof
+// at his hour (pale day, warm dusk, moonlight), which the sky shader draws; no glow lobe.
 const DEEP: readonly Key[] = [
-  { e: -90, lift: 0.015, gain: 0.52, boost: 0, light: '#5a86c8', warm: 0.05, ambient: '#0c2036', cool: 0.5, sat: 0.9, zenith: '#02070e', horizon: '#0f2e40', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#123044', haze: 0.9 },
-  { e: -12, lift: 0.015, gain: 0.54, boost: 0, light: '#5a8ac8', warm: 0.05, ambient: '#0c2238', cool: 0.5, sat: 0.9, zenith: '#02080f', horizon: '#103244', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#133448', haze: 0.9 },
-  { e: -4, lift: 0.012, gain: 0.6, boost: 0.01, light: '#6fb4cc', warm: 0.08, ambient: '#0c2c3c', cool: 0.48, sat: 0.95, zenith: '#030c14', horizon: '#164a58', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#164452', haze: 0.95 },
-  { e: 6, lift: 0.01, gain: 0.66, boost: 0.02, light: '#80d6dc', warm: 0.1, ambient: '#0d3640', cool: 0.46, sat: 1, zenith: '#04121a', horizon: '#1f6670', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#1b5862', haze: 1 },
-  { e: 90, lift: 0.01, gain: 0.7, boost: 0.03, light: '#8ae0e4', warm: 0.12, ambient: '#0e3a44', cool: 0.45, sat: 1, zenith: '#05161e', horizon: '#257680', glow: '#000000', glowStrength: 0, glowWidth: 0.1, fog: '#1e6470', haze: 1 },
+  { e: -90, lift: 0.015, gain: 0.55, boost: 0, light: '#6a8aa8', warm: 0.05, ambient: '#0e1c22', cool: 0.5, sat: 0.9, zenith: '#04080a', horizon: '#14262a', glow: '#2c3a62', glowStrength: 0, glowWidth: 0.1, fog: '#152a2c', haze: 0.9 },
+  { e: -12, lift: 0.015, gain: 0.57, boost: 0, light: '#6a8aa8', warm: 0.05, ambient: '#0e1e22', cool: 0.5, sat: 0.9, zenith: '#05090b', horizon: '#16292c', glow: '#34446e', glowStrength: 0, glowWidth: 0.1, fog: '#172c2e', haze: 0.9 },
+  { e: -4, lift: 0.012, gain: 0.62, boost: 0.01, light: '#c0a080', warm: 0.2, ambient: '#1a2a28', cool: 0.45, sat: 0.95, zenith: '#070d0e', horizon: '#2c4440', glow: '#d89a70', glowStrength: 0, glowWidth: 0.1, fog: '#2a403c', haze: 0.95 },
+  { e: 6, lift: 0.01, gain: 0.68, boost: 0.02, light: '#cfe4c0', warm: 0.12, ambient: '#20382e', cool: 0.42, sat: 1, zenith: '#0b1513', horizon: '#4e7a66', glow: '#9cc0d8', glowStrength: 0, glowWidth: 0.1, fog: '#46705e', haze: 1 },
+  { e: 90, lift: 0.01, gain: 0.72, boost: 0.03, light: '#dcecc8', warm: 0.12, ambient: '#223c32', cool: 0.42, sat: 1, zenith: '#0d1816', horizon: '#5a8a72', glow: '#a8cce4', glowStrength: 0, glowWidth: 0.1, fog: '#4f7c66', haze: 1 },
 ];
 
 type KeyLab = {

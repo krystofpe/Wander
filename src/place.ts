@@ -174,30 +174,22 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
   // After Blackreach and the Underdark, made lush and alive: ranks of giant glowing mushrooms of several kinds into the
   // mist, ferns and glowing flowers everywhere underneath, coral shelves, torch-caps, tube fungi, violet crystal,
   // glowing bulbs and purple coral on the floor; a few stalagmites, a broken pillar or two of a people who are gone.
-  // The hollow, a wood: old trees in ranks into the mist, the near ones huge and dark; glowing toadstools under
-  // them, ferns, violet flowers, mossy stones; no path.
+  // The hollow, the world under the world, the world still living: groves of round old trees and pale ones, ferns,
+  // bushes, flowers, mossy stones, a few toadstools glowing quietly; lush, but no path and nobody else.
   deep: [
-    f('oldtree', ['hills'], 1, [205, 250], 0.3),
-    f('oldtree', ['mid'], 0.6, [260, 320], 0.4),
-    f('fern', ['hills', 'mid'], 2, [10, 18], 0.4),
-    f('toadstool', ['hills', 'mid'], 0.9, [6, 14], 0.6),
-    f('bloom', ['mid'], 1, [6, 12], 0.5),
-    f('oldtree', ['near'], 0.3, [280, 340], 0.5),
-    f('bush', ['near'], 0.8, [14, 26], 0.5),
-    f('glowfern', ['near'], 1.6, [14, 24], 0.4),
-    f('toadstool', ['near'], 0.8, [10, 22], 0.6),
-    f('toadstool', ['ground'], 1.3, [10, 30], 0.6),
-    f('glowcap', ['ground'], 1.4, [4, 9], 0.6),
-    f('bloom', ['ground'], 0.9, [6, 13], 0.6),
-    f('glowfern', ['ground'], 2.2, [12, 22], 0.4),
-    f('tuft', ['ground'], 2, [6, 12], 0.3),
-    f('rock', ['ground'], 0.35, [8, 18], 0.3),
-    f('stump', ['ground'], 0.12, [10, 16], 0.5),
-    // Right at the front, dark against the light behind: ferns, toadstools, flowers, grass.
-    f('glowfern', ['fore'], 2.2, [20, 34], 0.4),
-    f('toadstool', ['fore'], 0.45, [22, 40], 0.6),
-    f('bloom', ['fore'], 1.1, [12, 20], 0.5),
-    f('tuft', ['fore'], 1.6, [12, 20], 0.3),
+    f('oak', ['hills', 'mid'], 3.5, [45, 85], 0.6),
+    f('birch', ['hills', 'mid'], 1.2, [40, 80], 0.6),
+    f('oak', ['near'], 0.9, [80, 130], 0.6),
+    f('bush', ['mid', 'near'], 1.6, [10, 22], 0.5),
+    f('fern', ['near', 'ground'], 2.5, [10, 18], 0.4),
+    f('flowers', ['ground'], 1.6, [4, 8], 0.5),
+    f('tuft', ['ground', 'fore'], 5, [4, 9], 0.3),
+    f('rock', ['ground'], 0.4, [8, 16], 0.3),
+    f('boulder', ['ground'], 0.12, [16, 26], 0.5),
+    f('stump', ['ground'], 0.12, [6, 10], 0.5),
+    f('toadstool', ['ground'], 0.35, [6, 14], 0.7),
+    f('glowcap', ['ground'], 0.4, [3, 6], 0.7),
+    f('fern', ['fore'], 1.4, [16, 26], 0.4),
   ],
 };
 

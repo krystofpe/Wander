@@ -8,7 +8,7 @@ import { Brain, dry, headOf, newBody } from './brain.ts';
 import type { Body, Ctx, DoName, Gaze, VoiceKind } from './brain.ts';
 import { addDiary, ageDays, clamp01, drain, duration, isNightFor, moodEyes, moodOf, prettyName, remember, traitWords, warm } from './life.ts';
 import type { Feelings, Life, Mood } from './life.ts';
-import { CREATURE } from './look.ts';
+import { CREATURE, NEST } from './look.ts';
 import type { EyeColour } from './look.ts';
 import { situationText } from './mind.ts';
 import { cameWhileAway, travellerCame } from './traveller.ts';
@@ -468,7 +468,8 @@ export class Game implements Ctx {
       const door = this.geo.door(home);
       const dw = home.sprite.door?.w ?? 10;
       const dh = home.sprite.door?.h ?? 12;
-      const foot = this.geo.footY(door.x, door.z);
+      // On its stone it lies on top.
+      const foot = this.geo.footY(door.x, door.z) - (home.nest === true ? NEST.top : 0);
       return Math.abs(x - this.geo.px(door.x)) <= dw / 2 && y <= foot && y > foot - dh;
     }
     const foot = this.geo.footY(b.x, b.z) - b.lift;

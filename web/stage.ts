@@ -256,8 +256,8 @@ export class Stage {
     v.rainColor[2] = Math.min(1, v.fogColor[2] * 0.6 + 0.45);
 
     if (deep) {
-      // Under stone: no sun, moon, stars, Milky Way or aurora (the sun's place is kept out of the way, up in the roof);
-      // the fungus's cold light rims what stands in it; everything that glows blooms.
+      // Under the world: no sun, moon, stars, Milky Way or aurora (the sun's place is kept out of the way, up in the
+      // roof); the light from the openings rims what stands in it, softly.
       v.sunX = Math.round(W * 0.64);
       v.sunY = extra + 58;
       v.sunUp = 0;
@@ -267,12 +267,12 @@ export class Stage {
       v.clear = 0;
       v.shine.fill(0);
       v.rimSide = 0;
-      v.rimStrength = 0.35;
-      v.rim[0] = 0.45;
-      v.rim[1] = 0.85;
-      v.rim[2] = 0.88;
-      // Motes of light drifting down through the dark (the rain pass, as slow snow: web/render.ts).
-      v.rain = 0.07;
+      v.rimStrength = 0.25;
+      v.rim[0] = 0.62;
+      v.rim[1] = 0.8;
+      v.rim[2] = 0.7;
+      // Motes drifting down through the light from above (the rain pass, as slow snow: web/render.ts).
+      v.rain = 0.03;
       v.snow = true;
       v.rainColor[0] = 0.5;
       v.rainColor[1] = 0.92;
@@ -280,7 +280,7 @@ export class Stage {
     }
     for (const b of r.batches) b.clear();
     v.light.count = 0;
-    v.bloom = deep ? 0.75 : 0.35 + 0.55 * this.grade.night;
+    v.bloom = deep ? 0.45 + 0.3 * this.grade.night : 0.35 + 0.55 * this.grade.night;
   }
 
   /** The screen row of the ground's top at a distance on the road (native px), with the camera as it is. */

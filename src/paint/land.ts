@@ -69,8 +69,8 @@ const FORMS: Readonly<Record<BiomeId, readonly [Form, Form, Form, Form, Form]>> 
   stones: [[46, 260, 'round', 'none'], [36, 200, 'round', 'none'], [28, 150, 'round', 'stones'], [22, 120, 'round', 'none'], [18, 100, 'round', 'stones']],
   ruins: [[40, 260, 'round', 'none'], [30, 200, 'round', 'ruins'], [26, 150, 'round', 'ruins'], [22, 110, 'round', 'broad'], [18, 90, 'round', 'ruins']],
   rail: [[46, 260, 'round', 'none'], [32, 200, 'round', 'none'], [26, 150, 'round', 'broad'], [20, 120, 'round', 'poles'], [16, 100, 'round', 'none']],
-  // The hollow: old trunks in ranks fading into the mist, rising into the canopy; the forest floor rolling a little.
-  deep: [[0, 200, 'round', 'none'], [6, 170, 'round', 'trunks'], [8, 150, 'round', 'trunks'], [8, 120, 'round', 'none'], [6, 100, 'round', 'none']],
+  // The hollow, the world under the world: soft hills of moss in ranks into the mist, wooded, under its roof.
+  deep: [[44, 220, 'round', 'none'], [36, 170, 'round', 'broad'], [28, 140, 'round', 'broad'], [20, 110, 'round', 'broad'], [14, 90, 'round', 'none']],
 };
 
 /** Which of the five land layers a layer is (by depth), or −1. */

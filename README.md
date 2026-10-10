@@ -45,6 +45,8 @@ The same options work on the command line (`npm start -- --seed moss --speed 20`
 | `--frozen --at M --weather W --pose P` | A still frame for pictures: time stopped at a distance, hour and weather. |
 | `--no-browser`, `--port N`, `--save PATH` | Serve only; pick the port; keep the journey somewhere else. |
 
+Runs that bend time (`--speed`, `--hour`) or take pictures (`--frozen`, `--at`) are never saved, so they cannot disturb the road.
+
 ### His thoughts
 
 Every three to five minutes a short line fades in beside him and out again. With `ANTHROPIC_API_KEY` set for the server, his thoughts come from Claude (one short request every few minutes, with a strict reply format; `WANDER_MODEL` picks another model), and the bar says `mind: claude`. Without a key, offline, or whenever the API is slow or failing, his own local voice speaks instead, with hundreds of lines tied to the place, the hour, the weather and the people he left behind, and the bar says `mind: local`. Nothing on screen ever waits for the API.

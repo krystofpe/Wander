@@ -14,6 +14,7 @@ import { visitAt } from '../../src/creature/visitor.ts';
 import { GROUND } from '../../src/layers.ts';
 import { role } from '../../src/palette.ts';
 import { rng } from '../../src/noise.ts';
+import { eyesAt, eyesFade, owlTonight } from '../../src/creature/night.ts';
 import { loopFrame } from '../../src/walker.ts';
 import { biomeAt } from '../../src/world.ts';
 import { paletteRow } from '../render.ts';
@@ -253,6 +254,32 @@ export class Hollow {
         const f = frameOf('visitor', 'walk');
         const fade = Math.min(1, visit.progress * 8, (1 - visit.progress) * 8);
         r.batches[MID].add(Math.round(vx - f[2] / 2), Math.round(base - f[3]), f, ma, mb, mk, visit.dir < 0, 0.85 * fade);
+      }
+    }
+
+    // At night under the canopy: the owl on the great tree, and now and then a pair of eyes watching from the trees.
+    if (BIOMES[life.biome].canopy && game.sky.daylight < 0.3) {
+      const world = game.worldNow();
+      const dark = Math.min(1, (0.3 - game.sky.daylight) * 8);
+      // The owl comes on most nights to its place on the trunk.
+      const owl = owlTonight(seed, world);
+      if (home.edge !== undefined && owl !== null) {
+        const left = geo.leftOf(home);
+        const flip = home.edge > 0;
+        const f = frameOf('owl', 'perch', time + owl.phase);
+        const trunkEdge = flip ? left + home.sprite.w - TREE.trunk + 2 : left + TREE.trunk - 2;
+        const ox = flip ? trunkEdge - f[2] + 3 : trunkEdge - 3;
+        const oy = geo.footY(home.x, home.z) - TREE.h - 36 - Math.round(owl.height * 70);
+        later(home.z + 0.0005, () => put(ground, ox, oy, f, flip, dark));
+      }
+      // Eyes in the dark between the trees: a pair now and then, watching a while, blinking, gone.
+      const eyes = eyesAt(seed, world);
+      if (eyes !== null) {
+        const [na, nb, nk] = rows(NEAR);
+        const lo = game.scene.layout.homeLeft ? 0.3 : 0.06;
+        const ex = geo.px(lo + eyes.x * 0.62);
+        const ey = geo.footY(0.5, 0) - 34 - Math.round(eyes.up * 60);
+        r.batches[NEAR].add(Math.round(ex), Math.round(ey), sheets.eyes[eyes.blink ? 'shut' : 'open'][0], na, nb, nk, false, eyesFade(eyes.t) * dark, [-1, 0, EYE, role('mood', MOOD_EYES.indexOf('hungry'))]);
       }
     }
 

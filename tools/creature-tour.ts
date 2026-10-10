@@ -11,6 +11,7 @@ import type { Page } from 'playwright-core';
 import { LIVE } from '../src/live.ts';
 import { seedOf } from '../src/options.ts';
 import { visitAt } from '../src/creature/visitor.ts';
+import { eyesAt, owlTonight } from '../src/creature/night.ts';
 import { daylightAt, localHour } from '../src/creature/sky.ts';
 import { ROOT, flags, session } from './headless.ts';
 
@@ -47,6 +48,25 @@ function visitMoment(seed: number): number {
   return start;
 }
 
+/** The first moment from a day on, at that hour of the night, when the owl has come. */
+function owlMoment(seed: number, hour: number): number {
+  for (let d = 0; d < 30; d++) {
+    const t = new Date(2026, 9, 10 + d, Math.floor(hour), Math.round((hour % 1) * 60)).getTime();
+    if (owlTonight(seed, t) !== null) return t;
+  }
+  return new Date(2026, 9, 10, Math.floor(hour)).getTime();
+}
+
+/** The first moment from a night on when a pair of eyes watches from the trees, wide open, three seconds in. */
+function eyesMoment(seed: number): number {
+  const start = new Date(2026, 9, 10, 22, 0).getTime();
+  for (let t = start; t < start + 86400000; t += 1000) {
+    const e = eyesAt(seed, t);
+    if (e !== null && e.t > 3 && e.t < 4 && !e.blink) return t;
+  }
+  return start;
+}
+
 for (const biome of ['forest', 'meadow', 'tundra', 'swamp']) {
   for (const [time, hour] of [['dawn', '6.6'], ['day', '11'], ['dusk', '18.9'], ['night', '23.2']] as const) {
     add('biomes', `${biome}-${time}`, { biome, hour, weather: 'clear', act: time === 'night' ? 'stroll' : 'idle' }, 6);
@@ -67,6 +87,8 @@ add('nights', 'lantern', { hour: '20.6', weather: 'clear', act: 'stroll' }, 4);
 add('nights', 'stars', { hour: '22.5', weather: 'clear', act: 'stargaze' }, 16);
 add('nights', 'asleep', { hour: '2', weather: 'clear', act: 'sleep' }, 40);
 add('nights', 'doorway', { hour: '21', weather: 'rain', act: 'shelter' }, 18);
+add('nights', 'owl', { now: String(owlMoment(seedOf(word), 22.8)), weather: 'clear', act: 'stargaze' }, 14);
+add('nights', 'eyes', { now: String(eyesMoment(seedOf(word))), weather: 'clear', act: 'idle' }, 0.5);
 add('nights', 'visitor', { now: String(visitMoment(seedOf(word))), weather: 'clear', act: 'watch' }, 3);
 
 add('weather', 'rain', { hour: '16', weather: 'rain', act: 'dance' }, 3);

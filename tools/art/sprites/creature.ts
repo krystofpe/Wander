@@ -21,7 +21,7 @@ const HOOD: Part = block(3, 3, [
   '.odmmmmmllo...',
   '.odmmmmlllLo..',
   'odmmmmmllllLo.',
-  'odmmmmlhhhhhlo',
+  'odmmmmLhhhhhlo',
   'odmmmmhhhhhhhlo',
   'odmmmmhhhhhhhlo',
   'odmmmmhhhhhhhlo',
@@ -44,26 +44,27 @@ const HOOD_FRONT: Part = block(3, 3, [
   '.oddmhhhhhhmmlo.',
 ]);
 
-/** The cloak side on, from the shoulders to the hem: rows 15–23. */
+/** The cloak side on, from the shoulders to the hem: rows 15–23. Lit at the chest, two folds running down, a sleeve
+ * with its mitten peeping out at the front, shadow at the back of the hem. */
 const CLOAK: Part = block(1, 15, [
   '..oddmmmmmllllUlo...',
-  '.oddmmmmmmmmmmmlo...',
-  '.oddmmmmmmmmmmmmlo..',
-  '.oddmmmmmmmmmmmmlo..',
-  'oddmmmmmdmmmmmmmmlo.',
-  'oddmmmmmdmmmmmmmmlo.',
-  'oddmmmmmdmmmmmmmmmlo',
-  'oddmmmmmmdmmmmmmmmlo',
+  '.oddmmmmmmmmmlllo...',
+  '.oddmmmmdmmmmmmllo..',
+  '.oddmmmmdmmmmmmdlo..',
+  'oddmmmmmdmmmmmmdbBo.',
+  'oddmmmmmmdmmmmmmmlo.',
+  'oddmmmmmmdmmmdmmmmlo',
+  'odddmmmmmmdmmmdmmmlo',
   'ooddddddddddddddddoo',
 ]);
 
 /** The cloak facing you. */
 const CLOAK_FRONT: Part = block(1, 15, [
   '...oddmmmmUmmmmlo...',
+  '..oddmmmmmmmmmllo..',
   '..oddmmmmmmmmmmmlo..',
-  '..oddmmmmmmmmmmmlo..',
-  '.oddmmmmmmmmmmmmmlo.',
-  '.oddmmmmmdmmmmmmmlo.',
+  '.oddmmdmmmmmmmdmmlo.',
+  '.odbbmmmmdmmmmmbblo.',
   '.oddmmmmmdmmmmmmmlo.',
   'oddmmmmmmdmmmmmmmmlo',
   'oddmmmmmmdmmmmmmmmlo',

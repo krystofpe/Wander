@@ -5,15 +5,16 @@
 import { BIOMES, DEPTH_PX, FOODS, PLAN_W } from './config.ts';
 import type { CritterKind, FoodKind, PlaceName, PropKind } from './config.ts';
 import { rng } from '../noise.ts';
-import { TREE } from './look.ts';
+import { NEST, TREE } from './look.ts';
 import type { Sky } from './sky.ts';
 
 /** A prop's sprite: its size in native pixels, and for a home where its door is (its centre from the left, width). */
 export type Footprint = { readonly w: number; readonly h: number; readonly door?: { readonly x: number; readonly w: number; readonly h: number } };
 
 /** The sizes of what stands in the scene (tools/art/sprites/things.ts and hollow.ts). */
-export const FOOTPRINTS: Readonly<Record<PropKind | 'tree' | 'shelter', Footprint>> = {
+export const FOOTPRINTS: Readonly<Record<PropKind | 'tree' | 'shelter' | 'nest', Footprint>> = {
   tree: { w: TREE.w, h: TREE.h, door: TREE.door },
+  nest: { w: NEST.w, h: NEST.h, door: NEST.door },
   shelter: { w: 44, h: 26, door: { x: 28, w: 9, h: 13 } },
   home: { w: 44, h: 26 },
   bush: { w: 24, h: 16 },
@@ -40,6 +41,8 @@ export type Prop = {
   readonly sprite: Footprint;
   /** Set for the great tree, which stands against the view's left (-1) or right (1) edge, whatever its width. */
   readonly edge?: -1 | 1;
+  /** Set for the nest under its giant mushroom; `variant` 1 turns it round (the mushroom on the left). */
+  readonly nest?: boolean;
 };
 
 /** Under the canopy the scene is laid out round its home tree: the glow at the end of the path stands off on the open side. */
@@ -64,6 +67,8 @@ export type Layout = {
 /** Low things that grow among the others and need no room of their own. */
 const COVER: ReadonlySet<PropKind> = new Set(['shrooms', 'mushrooms', 'fern']);
 const HOME_Z = 0.15;
+/** The nest stands a little nearer than a shelter: its giant mushroom over it, the creature curled in it. */
+const NEST_Z = 0.28;
 const TREE_Z = 0.22;
 const CAIRN_Z = 0.3;
 
@@ -110,7 +115,12 @@ export function layoutScene(seed: number, biome: PlaceName): Layout {
   const homeLeft = r() < 0.5;
   let home: Prop;
   let homeX: number;
-  if (def.canopy) {
+  if (def.nest === true) {
+    // In the deep it sleeps in a nest of moss under a giant mushroom, the mushroom on the side of the view's edge.
+    const sprite = FOOTPRINTS.nest;
+    homeX = place(sprite.w / 2, NEST_Z, homeLeft ? 0.12 : 0.62, homeLeft ? 0.38 : 0.88, true);
+    home = { kind: 'home', x: homeX, z: NEST_Z, variant: homeLeft ? 1 : 0, sprite, nest: true };
+  } else if (def.canopy) {
     // Under the canopy it lives in the hollow at the foot of the great tree at the view's edge (drawn for the left,
     // turned round for the right). Its door is kept clear; whatever stands behind the tree is hidden anyway.
     const sprite = FOOTPRINTS.tree;
@@ -141,7 +151,7 @@ export function layoutScene(seed: number, biome: PlaceName): Layout {
       const variant = Math.floor(r() * 1000);
       const sprite = FOOTPRINTS[kind];
       // Nothing in the doorway of the great tree, where it would be hidden behind the trunk anyway.
-      const [lo, hi] = def.canopy ? (homeLeft ? [TREE_CLEAR, 0.97] : [0.03, 1 - TREE_CLEAR]) : [0.03, 0.97];
+      const [lo, hi] = def.canopy && def.nest !== true ? (homeLeft ? [TREE_CLEAR, 0.97] : [0.03, 1 - TREE_CLEAR]) : [0.03, 0.97];
       const half = cover ? 6 : sprite.w / 2;
       const x = placeIfClear(half, z, lo, hi, cover);
       if (x === null) continue;
@@ -157,7 +167,7 @@ export function layoutScene(seed: number, biome: PlaceName): Layout {
   }
   const seats = props.filter((p) => p.kind === 'rock' || p.kind === 'stump' || p.kind === 'drift');
   const side = homeLeft ? 1 : -1;
-  const near = homeX + side * (def.canopy ? 0.13 : 0.1);
+  const near = homeX + side * (def.canopy && def.nest !== true ? 0.13 : 0.12);
   const cairnX = place(7, CAIRN_Z, Math.min(near, near + side * 0.06), Math.max(near, near + side * 0.06), true);
   return { props, home, water, forage, seats, cairn: { x: Math.min(0.95, Math.max(0.05, cairnX)), z: CAIRN_Z }, homeLeft };
 }
@@ -211,7 +221,8 @@ export class Geometry {
   door(home: Prop): { x: number; z: number } {
     if (home.edge !== undefined) return { x: this.x(home.edge < 0 ? TREE_IN : this.w - TREE_IN), z: home.z };
     const left = this.leftOf(home);
-    return { x: this.x(left + (home.sprite.door?.x ?? home.sprite.w / 2)), z: home.z };
+    const dx = home.sprite.door?.x ?? home.sprite.w / 2;
+    return { x: this.x(left + (home.nest === true && home.variant === 1 ? home.sprite.w - dx : dx)), z: home.z };
   }
 }
 

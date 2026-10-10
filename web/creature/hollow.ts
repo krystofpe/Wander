@@ -6,9 +6,9 @@
 // mushrooms, the portal.
 import { BIOME_IDS } from '../../src/biomes.ts';
 import { BIOMES } from '../../src/creature/config.ts';
-import { PORTAL } from '../../src/creature/brain.ts';
+import { portalOf } from '../../src/creature/brain.ts';
 import type { Game } from '../../src/creature/game.ts';
-import { CREATURE, EYES_FRONT, EYES_SIDE, HAND, HEAD, LANTERN, MOOD_EYES, TREE } from '../../src/creature/look.ts';
+import { CREATURE, EYES_FRONT, EYES_SIDE, HAND, HEAD, LANTERN, MOOD_EYES, NEST, TREE } from '../../src/creature/look.ts';
 import type { EyeShape, PoseTag } from '../../src/creature/look.ts';
 import type { Prop } from '../../src/creature/scene.ts';
 import { forestFocus } from '../../src/creature/scene.ts';
@@ -143,10 +143,30 @@ export class Hollow {
 
     // Its home.
     const home = game.scene.layout.home;
-    // Its lantern is lit by the door only while it is asleep inside.
+    // Its lantern is lit at home only while it is asleep there.
     const inside = game.body.inside && game.body.visible;
     const dark = game.sky.daylight < 0.35;
-    if (home.edge !== undefined) {
+    if (home.nest === true) {
+      // Its nest under the giant mushroom: the mushroom and the nest's far side, then (after it, curled up) the near lip.
+      const left = geo.leftOf(home);
+      const flip = home.variant === 1;
+      const foot = geo.footY(home.x, home.z);
+      const back = frameOf('nest', 'back');
+      const lip = frameOf('nest', 'front');
+      later(home.z, () => {
+        put(ground, left, foot - back[3], back, flip);
+        // By day its lantern hangs dark from the cap's rim; at night it carries it, or, asleep, it hangs there lit.
+        const lit = dark && inside;
+        const px = flip ? left + NEST.w - 1 - NEST.peg[0] : left + NEST.peg[0];
+        const py = foot - back[3] + NEST.peg[1];
+        if (!dark) put(ground, px - 2, py, sheets.carry.dark[0], flip);
+        if (lit) {
+          put(ground, px - 2, py, sheets.carry.lantern[0], flip);
+          addLight(px, py + 4, 40, 0.8 * (0.85 + 0.15 * flicker(time, 3)));
+        }
+      });
+      later(home.z + 0.002, () => put(ground, left, foot - lip[3], lip, flip));
+    } else if (home.edge !== undefined) {
       const left = geo.leftOf(home);
       const flip = home.edge > 0;
       const foot = geo.footY(home.x, home.z);
@@ -294,6 +314,7 @@ export class Hollow {
     // turning, closing; while it is gone, a faint crack of light in the air where it went.
     const open = game.portal;
     if (open > 0 || game.gone) {
+      const PORTAL = portalOf(game.scene.layout);
       const px = Math.round(geo.px(PORTAL.x)) + 6;
       const foot = Math.round(geo.footY(PORTAL.x, PORTAL.z));
       const sheet = sheets.portal;
@@ -364,6 +385,28 @@ export class Hollow {
     const colour = MOOD_EYES.indexOf(game.eyeColour(glyphs));
     const swap = [COAT, role(`cloak${life.cloak}`, 0) - COAT, EYE, role('mood', Math.max(0, colour))];
     if (!b.visible) return;
+    if (b.inside && game.scene.layout.home.nest === true) {
+      // Curled up in its nest, facing the open side: its eyes shut asleep, peeking out awake.
+      const home = game.scene.layout.home;
+      const door = geo.door(home);
+      const cx = geo.px(door.x);
+      const foot = geo.footY(door.x, door.z) + 1;
+      const frames = sheets.creature.curl;
+      const i = loopFrame(frames.map((f) => f[4]), time);
+      const flip = !game.scene.layout.homeLeft;
+      const left = cx - CREATURE.w / 2;
+      const top = foot - CREATURE.foot;
+      const [hx, hy] = HEAD.curl[i];
+      const mx = (x: number, w = 0): number => (flip ? CREATURE.w - x - w : x);
+      const eyes = eyesOf(life.asleep ? '- -' : glyphs);
+      this.headX = cx;
+      this.headY = top + 14;
+      later(home.z + 0.001, () => {
+        put(r.ground, left, top, frames[i], flip, 1, swap);
+        put(r.ground, left + mx(EYES_SIDE[0] + hx, 5) + (life.asleep ? 0 : eyes.dx), top + EYES_SIDE[1] + hy + (life.asleep ? 0 : eyes.dy), sheets.eyes[eyes.shape][0], flip, 1, swap);
+      });
+      return;
+    }
     if (b.inside) {
       // Only its eyes, in the dark of the doorway (none while it sleeps).
       const home = game.scene.layout.home;
@@ -378,7 +421,7 @@ export class Hollow {
       return;
     }
     const front = b.gaze === 'center' && (b.pose === 'stand' || b.pose === 'wave');
-    const tag: PoseTag = front ? (b.pose === 'wave' ? 'frontwave' : 'front') : b.pose === 'sleep' ? 'sit' : b.pose;
+    const tag: PoseTag = front ? (b.pose === 'wave' ? 'frontwave' : 'front') : b.pose === 'sleep' ? 'curl' : b.pose;
     const frames = sheets.creature[tag];
     const i = tag === 'walk' ? Math.floor(b.walked / 4) % frames.length : frames.length === 1 ? 0 : loopFrame(frames.map((f) => f[4]), time);
     const frame = frames[i];

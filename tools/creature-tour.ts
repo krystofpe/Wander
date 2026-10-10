@@ -1,9 +1,9 @@
 // npm run creature:tour -- [--seed WORD] [--out docs/creature] [--only group,group] [--size 1920x1080]
 // Pictures of the creature in the deep, from headless Chromium on the GPU, stepped in fixed steps (no frame loop):
 // the deep at dawn, by day, at dusk and at night; its moments (at the glass, waving, sitting, digging, stacking its
-// cairn, humming, eating, petted, playing); its nights (the lantern, the stars, asleep at home, its eyes in the dark
-// doorway, the visitor); its visit (through its portal to his camp, and back); and you (talking to it, the journal, a
-// question). JPEG at quality 90, with a contact sheet of each group.
+// cairn, humming, eating, petted, playing); its nights (the lantern, the stars, curled up asleep in its nest, a pair
+// of eyes in the dark, the visitor); its visit (through its portal to his camp, and back); and you (talking to it,
+// the journal, a question). JPEG at quality 90, with a contact sheet of each group.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -11,7 +11,7 @@ import type { Page } from 'playwright-core';
 import { LIVE } from '../src/live.ts';
 import { seedOf } from '../src/options.ts';
 import { visitAt } from '../src/creature/visitor.ts';
-import { eyesAt, owlTonight } from '../src/creature/night.ts';
+import { eyesAt } from '../src/creature/night.ts';
 import { daylightAt, localHour } from '../src/creature/sky.ts';
 import { ROOT, flags, session } from './headless.ts';
 
@@ -48,15 +48,6 @@ function visitMoment(seed: number): number {
   return start;
 }
 
-/** The first moment from a day on, at that hour of the night, when the owl has come. */
-function owlMoment(seed: number, hour: number): number {
-  for (let d = 0; d < 30; d++) {
-    const t = new Date(2026, 9, 10 + d, Math.floor(hour), Math.round((hour % 1) * 60)).getTime();
-    if (owlTonight(seed, t) !== null) return t;
-  }
-  return new Date(2026, 9, 10, Math.floor(hour)).getTime();
-}
-
 /** The first moment from a night on when a pair of eyes watches from the trees, wide open, three seconds in. */
 function eyesMoment(seed: number): number {
   const start = new Date(2026, 9, 10, 22, 0).getTime();
@@ -85,8 +76,7 @@ add('moments', 'play', { hour: '14', weather: 'clear', act: 'play' }, 1.4);
 add('nights', 'lantern', { hour: '20.6', weather: 'clear', act: 'stroll' }, 4);
 add('nights', 'stars', { hour: '22.5', weather: 'clear', act: 'stargaze' }, 16);
 add('nights', 'asleep', { hour: '2', weather: 'clear', act: 'sleep' }, 40);
-add('nights', 'doorway', { hour: '21', weather: 'rain', act: 'shelter' }, 18);
-add('nights', 'owl', { now: String(owlMoment(seedOf(word), 22.8)), weather: 'clear', act: 'stargaze' }, 14);
+add('nights', 'nest', { hour: '23.4', weather: 'clear', act: 'sleep' }, 9);
 add('nights', 'eyes', { now: String(eyesMoment(seedOf(word))), weather: 'clear', act: 'idle' }, 0.5);
 add('nights', 'visitor', { now: String(visitMoment(seedOf(word))), weather: 'clear', act: 'watch' }, 3);
 

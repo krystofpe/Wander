@@ -71,5 +71,22 @@ test('set in the deep: no rain, its own small lives, its home', () => {
   const life = newLife(12, now - 86400000, { biome: 'meadow' });
   const g = new Game(life, { geo: new Geometry(640), now, random: rng(4), mind: null, login: 'k', firstMeeting: false, away: null, place: 'deep' });
   assert.equal(g.place, 'deep');
-  assert.ok(g.scene.layout.home.edge !== undefined, 'its home down there, whatever its land above');
+  const home = g.scene.layout.home;
+  assert.ok(home.nest === true && home.edge === undefined, 'its home down there is a nest, not a tree with a door, whatever its land above');
+});
+
+test('in the deep it sleeps curled up in its nest, in sight, and hops out in the morning', () => {
+  const night = new Date(2026, 9, 10, 23).getTime();
+  const life = newLife(12, night - 86400000, { biome: 'forest' });
+  const g = new Game(life, { geo: new Geometry(640), now: night, random: rng(4), mind: null, login: 'k', firstMeeting: false, away: null, place: 'deep' });
+  g.brain.run('sleep');
+  let fades = 0;
+  for (let i = 0; i < 600 && !(g.body.inside && life.asleep); i++) {
+    g.update(0.1);
+    if (g.body.doorway > 0) fades++;
+  }
+  const door = g.geo.door(g.scene.layout.home);
+  assert.ok(g.body.inside && life.asleep && g.body.visible, 'asleep in its nest');
+  assert.equal(fades, 0, 'it hops in: no doorway to fade into');
+  assert.ok(Math.abs(g.body.x - door.x) < 1e-9, 'in the middle of the nest');
 });

@@ -16,7 +16,8 @@ test('the system prompt says who it is', () => {
   assert.match(p, /JSON/);
   assert.match(p, /the deep/);
   assert.match(p, /portal/, 'it goes through its portal to him at night');
-  assert.match(p, /furry/);
+  assert.match(p, /ball of dark fur/);
+  assert.match(p, /nest of moss/);
 });
 
 test('the situation carries the moment and the state of things', () => {

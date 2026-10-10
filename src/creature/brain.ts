@@ -6,7 +6,10 @@ import type { PlaceName } from './config.ts';
 import type { Visit } from './visit.ts';
 
 /** Where in its world its portal opens (a share across, a depth). */
-export const PORTAL = { x: 0.74, z: 0.3 } as const;
+/** Where its portal opens: across the scene from its home. */
+export function portalOf(layout: { readonly homeLeft: boolean }): { readonly x: number; readonly z: number } {
+  return { x: layout.homeLeft ? 0.74 : 0.26, z: 0.3 };
+}
 import { MAX_CAIRN, clamp01, isNightFor, warm } from './life.ts';
 import type { Feelings, Life, Mood } from './life.ts';
 import { CREATURE } from './look.ts';
@@ -57,7 +60,7 @@ export type VoiceKind = 'visit' | 'thought' | 'gift' | 'return' | 'greet' | 'sta
 /** What activities can see and do; the game provides it. */
 export interface Ctx {
   readonly life: Life;
-  /** Where its scene is set: its biome, or the deep beyond the hollow. */
+  /** Where its scene is set: its biome, or the deep. */
   readonly place: PlaceName;
   readonly body: Body;
   readonly scene: Scene;
@@ -214,21 +217,35 @@ function* hop(c: Ctx, height = 1.5): Script {
   b.pose = pose === 'jump' ? 'stand' : pose;
 }
 
-/** Walks to its door and steps in: framed by the doorway, it fades into the dark inside. */
+/** Walks to its door and steps in: framed by the doorway, it fades into the dark inside. Its nest it hops into. */
 function* goIn(c: Ctx, run = false): Script {
-  const door = c.geo.door(c.scene.layout.home);
+  const home = c.scene.layout.home;
+  const door = c.geo.door(home);
+  if (home.nest === true) {
+    yield* walkTo(c, door.x, Math.min(1, door.z + 0.08), run);
+    yield* hop(c, 1);
+    c.body.x = door.x;
+    c.body.z = door.z;
+    c.body.inside = true;
+    return;
+  }
   yield* walkTo(c, door.x, door.z, run);
   yield* through(c, 1);
   c.body.inside = true;
   c.body.doorway = 0;
 }
 
-/** Steps out of the dark of its doorway and walks a few steps from the door. */
+/** Steps out of the dark of its doorway (or hops out of its nest) and walks a few steps from it. */
 function* comeOut(c: Ctx): Script {
-  c.body.inside = false;
-  c.body.doorway = 1;
-  yield* through(c, 0);
   const home = c.scene.layout.home;
+  c.body.inside = false;
+  if (home.nest === true) {
+    c.body.z = Math.min(1, home.z + 0.08);
+    yield* hop(c, 1);
+  } else {
+    c.body.doorway = 1;
+    yield* through(c, 0);
+  }
   yield* walkTo(c, c.body.x, Math.min(1, home.z + 0.1));
 }
 
@@ -619,6 +636,7 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       c.body.pose = 'stand';
       c.say('portal');
       yield* hush(c, 3);
+      const PORTAL = portalOf(c.scene.layout);
       yield* walkTo(c, PORTAL.x - 0.03, PORTAL.z);
       c.body.facing = 1;
       // It tears open in the air before it, turns a moment; it steps in and fades into the light.
@@ -915,7 +933,7 @@ function* comeForward(c: Ctx): Script {
 function zFromDoor(c: Ctx): void {
   const home = c.scene.layout.home;
   const door = c.geo.door(home);
-  c.scene.emit({ kind: c.random() < 0.5 ? 'z' : 'Z', x: c.geo.px(door.x) + 3, y: c.geo.footY(door.x, door.z) - 22, vx: 4, vy: -6, life: 2.5 });
+  c.scene.emit({ kind: c.random() < 0.5 ? 'z' : 'Z', x: c.geo.px(door.x) + 3, y: c.geo.footY(door.x, door.z) - (home.nest === true ? 14 : 22), vx: 4, vy: -6, life: 2.5 });
 }
 
 function shootingStar(c: Ctx): void {

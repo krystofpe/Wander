@@ -54,7 +54,7 @@ export type GameSetup = {
   readonly ephemeral?: boolean;
   /** A fixed weather instead of its biome's own (pictures, checks). */
   readonly weather?: Weather | null;
-  /** Where its scene is set: the deep beyond the hollow (the page), or its own biome (the default). */
+  /** Where its scene is set: the deep (the page), or its own biome (the default). */
   readonly place?: PlaceName;
 };
 

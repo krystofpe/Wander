@@ -146,6 +146,8 @@ export type BiomeDef = {
   readonly cold: boolean;
   /** Under a dense canopy: its home is the great tree, the woods are full of life, the visitor walks at night. */
   readonly canopy: boolean;
+  /** Its home is a nest of moss under a giant mushroom (the deep), not the great tree or a shelter. */
+  readonly nest?: boolean;
   /** Props besides the home: kind and how many. */
   readonly props: readonly (readonly [PropKind, number])[];
   /** Where it finds food for itself. */
@@ -219,7 +221,7 @@ export const BIOMES: Readonly<Record<PlaceName, BiomeDef>> = {
     finds: ['a frog-shaped stone', 'glowing moss', 'a lily seed', 'a bent spoon', 'a tooth of something', 'a bubble that will not pop'],
     forageFood: 'mushrooms',
   },
-  // The deep, under a sky of stone: it lives in the hollow among the roots of the great tree, glowing caps, ferns and
+  // The deep, under a sky of stone: it lives in a nest of moss under a giant mushroom, glowing caps, ferns and
   // flowers all about it, giant mushrooms in ranks into the mist; no weather but the mist; butterflies and wisps of
   // light, moths, bats, a pale frog.
   deep: {
@@ -228,6 +230,7 @@ export const BIOMES: Readonly<Record<PlaceName, BiomeDef>> = {
     rain: 0,
     cold: false,
     canopy: true,
+    nest: true,
     props: [['shrooms', 8], ['fern', 3], ['rock', 1]],
     forage: 'shrooms',
     water: 'pond',

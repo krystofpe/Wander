@@ -1,13 +1,13 @@
 PASS  the server starts offline without a key: "mind: local"
-PASS  the bar says mind: local — "day 1 on the road · 0.0 km · desert of mesas · 17:16 · fog · mind: local"
-PASS  closing saved the road "tarn-9609" at 20.2 m (the page was at 20.2 m)
-PASS  reopening continues the same road from 20.2 m
+PASS  the bar says mind: local — "day 1 on the road · 0.0 km · field of standing stones · 17:16 · rain · mind: local"
+PASS  closing saved the road "moss-2600" at 40.5 m (the page was at 40.5 m)
+PASS  reopening continues the same road from 40.7 m
 PASS  after three hours away he has walked on 6697 m (0.62 m/s average, capped at 20 km), the clock 72.0 world hours on, 15 places logged on the way
-PASS  the log of places names the same road (“tarn-9609”)
+PASS  the log of places names the same road (“moss-2600”)
 PASS  with a key the server says "mind: claude (claude-opus-5-5)"
 PASS  the bar says mind: claude — "day 1 on the road · 0.0 km · rail embankment · 17:25 · cloudy · mind: claude"
 PASS  his thought came from the API: "The road keeps its own counsel tonight." (request: /v1/messages?beta=true model claude-opus-5-5, output_config {"effort":"low","format":{"type":"json_schema","schema":{"ty…, anthropic-beta: server-side-fallback-2026-07-01)
-PASS  a slow API (60 s): his own voice answered after 10.4 s — "The rain sounds different on every kind of ground."; frames kept coming at 60 fps meanwhile
-PASS  a failing API (500): his own voice answered after 0.4 s — "A view like this ought to mean something. Maybe it means itself."; frames kept coming at 61 fps meanwhile
-PASS  a refused key (401): his own voice answered after 0.4 s — "Long shadows. Mine is taller than I ever was."; frames kept coming at 62 fps meanwhile
+PASS  a slow API (60 s): his own voice answered after 10.4 s — "Rain like this, Nora would put the radio on and not listen to it."; frames kept coming at 60 fps meanwhile
+PASS  a failing API (500): his own voice answered after 0.4 s — "I dreamt of the farm past the quarry again. Everyone was there, and nobody turned round."; frames kept coming at 61 fps meanwhile
+PASS  a refused key (401): his own voice answered after 0.4 s — "White trunks in the dark. Like people standing very still."; frames kept coming at 62 fps meanwhile
 PASS  once the key is refused the bar says mind: local — "day 1 on the road · 0.1 km · birch woods · 17:42 · rain · mind: local"

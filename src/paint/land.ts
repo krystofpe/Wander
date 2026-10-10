@@ -294,7 +294,9 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
         const cy = Math.floor(row * 9 * scale) + 6;
         const j = Math.floor((u + row * 17) / cell);
         const r0 = unit(j * 8 + row, seed ^ (salt + 0x51));
-        if (r0 > (cover === 'stones' ? 0.18 : 0.62) * (1 - row * 0.11)) continue;
+        // Rounded crowns are sparser and fewer rows deep than conifers, or a meadow's hills turn to polka dots.
+        if (cover === 'broad' && row > 3) continue;
+        if (r0 > (cover === 'stones' ? 0.18 : cover === 'broad' ? 0.26 : 0.62) * (1 - row * 0.11)) continue;
         const cx = j * cell - row * 17 + Math.floor(unit(j * 8 + row + 3, seed ^ salt) * cell);
         const dx = Math.abs(u - cx);
         const hgt = Math.round((3 + 4 * unit(j * 8 + row + 5, seed ^ salt)) * scale);

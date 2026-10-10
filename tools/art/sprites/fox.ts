@@ -5,7 +5,9 @@ import type { Sheet } from '../legend.ts';
 
 const W = 22;
 const H = 11;
-const f = (rows: readonly string[]): string[] => compose(W, H, [block(0, 0, rows)]);
+/** Drawn in fur shades, coloured as a fox: rust body, a lighter back, the white tip of the tail. */
+const rust = (row: string): string => row.replace(/2/g, 'D').replace(/3/g, 'E').replace(/4/g, 'U');
+const f = (rows: readonly string[]): string[] => compose(W, H, [block(0, 0, rows.map(rust))]);
 
 const BODY = [
   '......................',

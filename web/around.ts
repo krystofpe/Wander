@@ -80,8 +80,27 @@ export class Around {
   /** How many of each have shown themselves (the watch tool reads it). */
   readonly seen = { flock: 0, bats: 0, fireflies: 0, leaves: 0, deer: 0, fox: 0, fish: 0, train: 0, smoke: 0, lamp: 0, beacon: 0 };
 
+  /** What is about now, for the logs. */
+  present(): string[] {
+    const out: string[] = [];
+    if (this.birds.length > 0) out.push(`flock of ${this.birds.length}`);
+    if (this.deer !== null) out.push(`deer ${this.deer.state}@${Math.round(this.deer.u)}`);
+    if (this.fox !== null) out.push(`fox ${this.fox.state}@${Math.round(this.fox.u)}`);
+    if (this.fish >= 0) out.push('fish');
+    if (this.leaves.length > 0) out.push(`${this.leaves.length} leaves`);
+    return out;
+  }
+
+  /** For still pictures (time stopped): what to put in the frame anyway (flock, bats, deer, fox, fish). */
+  show = new Set<string>();
+  private still = false;
+
   update(r: Renderer, atlas: Atlas, v: View, l: Life, m: Moment): void {
     this.trainStarted = null;
+    if (m.dt === 0 && !this.still) {
+      this.still = true;
+      this.stillLife(v, l, m, r.nativeW);
+    }
     const seed = l.seed;
     const W = r.nativeW;
     const blend = biomeAt(seed, l.at);
@@ -235,6 +254,39 @@ export class Around {
     }
   }
 
+  /**
+   * A still picture has no time for things to arrive, so they are put in place: smoke already risen, leaves already
+   * falling, and whatever the picture asks for, near him.
+   */
+  private stillLife(v: View, l: Life, m: Moment, W: number): void {
+    const seed = l.seed;
+    for (let i = 0; i < 18; i++) {
+      const u = v.camX + Math.random() * W;
+      const ground = WALK_Y + m.extra + m.camY - groundHeight(seed, u / PX_PER_M) * PX_PER_M;
+      this.leaves.push({ x: u, y: ground - 10 - Math.random() * 150, vx: 0, vy: 0, phase: Math.random() * 6, floor: ground - 1 });
+    }
+    // Smoke: let the chimney run for a while.
+    this.smokeAt = 0;
+    this.prefillSmoke = true;
+    if (this.show.has('flock')) {
+      this.birdsDir = 1;
+      const y = m.extra + v.horizon - 70;
+      for (let i = 0; i < 9; i++) this.birds.push({ u: v.camX / LAYERS[RIDGE].z + W * 0.62 - i * 8 - Math.random() * 6, y: y + Math.abs(i - 4) * 2.5 + Math.random() * 3, phase: Math.random(), bob: Math.random() * 6 });
+    }
+    if (this.show.has('bats')) {
+      this.batsUntil = m.time + 60;
+      this.batsAt = v.camX / LAYERS[NEAR].z + W * 0.55;
+    }
+    if (this.show.has('deer')) this.deer = { cell: -1, li: NEAR, u: v.camX / LAYERS[NEAR].z + m.himX + 90, state: this.show.has('alert') ? 'stand' : 'graze', time: 0, dir: -1 };
+    if (this.show.has('fox')) this.fox = { cell: -1, u: v.camX + m.himX + 80, state: 'sit', time: 0, sat: true };
+    if (this.show.has('fish')) {
+      this.fish = 0.22;
+      this.fishX = v.camX + m.himX + 40;
+    }
+  }
+
+  private prefillSmoke = false;
+
   /** Smoke from the house, the mast's lamp, the lighthouse's flash, and a train crossing on its line. */
   private landmarks(
     r: Renderer,
@@ -258,6 +310,20 @@ export class Around {
       if (p.mark.kind !== 'house') continue;
       const [dx, dy] = MARK_POINTS.house?.chimney ?? [0, 0];
       const top = markTop(seed, LAYERS[MID], MID, p) + 2 + dy;
+      if (this.prefillSmoke) {
+        this.prefillSmoke = false;
+        for (let j = 0; j < 8; j++) {
+          const puff = this.puffs[this.puffAt];
+          this.puffAt = (this.puffAt + 1) % this.puffs.length;
+          const age = j * 0.75;
+          puff.li = MID;
+          puff.u = p.u + dx + m.weather.wind * 5 * age;
+          puff.vy = -5;
+          puff.y = top - 1 + puff.vy * age;
+          puff.age = age;
+          puff.life = 6.5;
+        }
+      }
       this.smokeAt -= m.dt;
       if (this.smokeAt <= 0 && m.dt > 0) {
         this.smokeAt = 0.7 + Math.random() * 0.5;
@@ -381,9 +447,9 @@ export class Around {
       const d = cell * CELL + CELL * 0.5;
       const chance = homes(seed, d, DEER_HOMES) * (m.sun < 12 ? 1 : 0.4);
       if (!this.fled.has(cell) && unit(cell, seed ^ 0xdee5) < chance && landmarkNear(seed, d, 80) === null && d > l.at + 30) {
-        const u = (d * PX_PER_M) / LAYERS[MID].z;
-        if (sx(MID, u) > W + 10 && sx(MID, u) < W + 160) {
-          this.deer = { cell, li: MID, u, state: 'graze', time: 0, dir: -1 };
+        const u = (d * PX_PER_M) / LAYERS[NEAR].z;
+        if (sx(NEAR, u) > W + 10 && sx(NEAR, u) < W + 160) {
+          this.deer = { cell, li: NEAR, u, state: 'graze', time: 0, dir: -1 };
           this.seen.deer++;
         }
       }
@@ -393,7 +459,9 @@ export class Around {
       deer.time += dt;
       const x = sx(deer.li, deer.u);
       const near = x - m.himX;
-      if (deer.state === 'graze' && near < 110) {
+      if (dt === 0) {
+        // Time stopped: it holds still.
+      } else if (deer.state === 'graze' && near < 110) {
         deer.state = 'lift';
         deer.time = 0;
       } else if (deer.state === 'lift' && deer.time > 0.4) {

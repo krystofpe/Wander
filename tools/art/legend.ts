@@ -54,6 +54,11 @@ export const LEGEND: Readonly<Record<string, number>> = {
   '6': role('bird', 1),
   '7': role('leaf', 3),
   '8': role('leaf', 4),
+  // A fox's rust and the white of its chest and tail tip.
+  C: role('metal', 1),
+  D: role('metal', 2),
+  E: role('metal', 3),
+  U: role('bone', 2),
   P: role('water', 2),
   Q: role('water', 3),
   F: role('firefly', 0),

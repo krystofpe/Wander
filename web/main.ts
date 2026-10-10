@@ -13,6 +13,7 @@ import { localThought } from '../src/thoughts.ts';
 import { biomeAt, firstStretchOf, landmarkNear, stretchAt } from '../src/world.ts';
 import { Sound, ticker } from './audio/sound.ts';
 import type { Hear } from './audio/heard.ts';
+import { Bench } from './bench.ts';
 import { Ui } from './ui.ts';
 import { Renderer } from './render.ts';
 import { loadAtlas } from './sprites.ts';
@@ -118,6 +119,8 @@ const life = journey.life;
 status.life = life;
 (status as unknown as { mind: string }).mind = mind;
 const stage = new Stage(life.seed, journey.moonStart);
+// Still pictures may ask for life to be put in the frame (?show=deer,flock).
+if (opts.frozen && params.get('show') !== null) stage.around.show = new Set((params.get('show') ?? '').split(','));
 renderer.atlas = await loadAtlas(renderer.gpu);
 const ui = new Ui();
 /** Pictures and stepped captures are silent; everything else has its sound (M turns it off and on). */
@@ -143,6 +146,7 @@ Object.assign(status, {
       fire: life.fire === null ? 0 : Math.round(life.fire.heat * 100) / 100,
       landmark: landmarkNear(life.seed, life.at, 300)?.kind ?? null,
       seen: { ...stage.around.seen },
+      around: stage.around.present(),
       thought: shown[shown.length - 1] ?? null,
     };
   },
@@ -349,10 +353,67 @@ if (opts.frozen && params.get('thought') !== null) {
   ui.say(params.get('thought') || localThought(ctx, rng(seedOf(params.get('thought') ?? '') || 1), []), 0, 999, true);
 }
 
+// ── Measuring: the bench (?bench=SEC) and the soak's minute-by-minute probe ─────────────────────────────────────
+
+const bench = opts.bench !== null ? new Bench(renderer.gpu, opts.bench) : null;
+/** Frame intervals and CPU times since the soak last asked (a fixed buffer: no allocation per frame). */
+const intervals = new Float32Array(16384);
+const cpuTimes = new Float32Array(16384);
+let logged = 0;
+let lastFrame = 0;
+
+const percentile = (a: Float32Array, n: number, q: number): number => {
+  if (n === 0) return 0;
+  const v = Array.from(a.subarray(0, n)).sort((x, y) => x - y);
+  return Math.round(v[Math.min(n - 1, Math.floor(q * n))] * 100) / 100;
+};
+
+Object.assign(status, {
+  bench: null as unknown,
+  /** One sample for the soak: the road, the JS heap after a collection, GPU resources alive, frame times. */
+  soak: () => {
+    (window as unknown as { gc?: () => void }).gc?.();
+    const memory = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
+    const live = renderer.gpu.live;
+    const n = Math.min(logged, intervals.length);
+    const b = biomeAt(life.seed, life.at);
+    const out = {
+      worldHours: Math.round(life.clock * 100) / 100,
+      km: Math.round(life.at / 10) / 100,
+      heapMB: memory === undefined ? -1 : Math.round((memory.usedJSHeapSize / 1048576) * 100) / 100,
+      textures: live.textures,
+      buffers: live.buffers,
+      framebuffers: live.framebuffers,
+      textureMB: Math.round((live.textureBytes / 1048576) * 100) / 100,
+      frames: logged,
+      p50: percentile(intervals, n, 0.5),
+      p99: percentile(intervals, n, 0.99),
+      cpuP50: percentile(cpuTimes, n, 0.5),
+      voices: (sound?.status().voices as number | undefined) ?? 0,
+      stage: life.stage,
+      biome: b.k < 0.5 ? b.a : b.b,
+      weather: weatherOf(life, env).name,
+    };
+    logged = 0;
+    return out;
+  },
+});
+
 function frame(now: number): void {
   try {
+    const t0 = performance.now();
+    bench?.begin(now);
     step(now);
     renderer.frame(stage.view, opts.frozen ? 999 : 1);
+    bench?.end();
+    if (bench?.report != null && (status as unknown as { bench: unknown }).bench === null) (status as unknown as { bench: unknown }).bench = bench.report;
+    if (lastFrame > 0) {
+      const i = logged % intervals.length;
+      intervals[i] = now - lastFrame;
+      cpuTimes[i] = performance.now() - t0;
+      logged++;
+    }
+    lastFrame = now;
     status.frames++;
     if (status.frames >= 3) status.ready = true;
   } catch (err) {

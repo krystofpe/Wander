@@ -2,6 +2,7 @@
 // Pure (it only asks the world), so the tour and the tests can use it.
 import { BIOME_IDS } from '../src/biomes.ts';
 import type { BiomeId, LandmarkKind } from '../src/biomes.ts';
+import { shownHour, sunElevation } from '../src/sky.ts';
 import { landmarksBetween, stretchesBetween } from '../src/world.ts';
 
 /** The middle of the first stretch of every biome, searching up to `limit` metres. */
@@ -34,3 +35,41 @@ export function firstLandmarks(seed: number, limit = 2e6): Map<LandmarkKind, num
   }
   return out;
 }
+
+/** The clock hour (warped) when the sun stands at an elevation, rising (morning) or setting. */
+function hourAt(elevation: number, morning: boolean): number {
+  let best = 12;
+  let err = Infinity;
+  for (let h = 0; h < 24; h += 0.005) {
+    if (shownHour(h) < 12 !== morning) continue;
+    const e = Math.abs(sunElevation(h) - elevation);
+    if (e < err) {
+      err = e;
+      best = h;
+    }
+  }
+  return Math.round(best * 1000) / 1000;
+}
+
+function highest(): number {
+  let best = 12;
+  for (let h = 0; h < 24; h += 0.01) if (sunElevation(h) > sunElevation(best)) best = h;
+  return Math.round(best * 100) / 100;
+}
+
+function lowest(): number {
+  let best = 0;
+  for (let h = 0; h < 24; h += 0.01) if (sunElevation(h) < sunElevation(best)) best = h;
+  return Math.round(best * 100) / 100;
+}
+
+/** Clock hours (warped) for the named times of day the tour and the bench use. */
+export const TIMES: Readonly<Record<string, number>> = {
+  dawn: hourAt(1.5, true),
+  noon: highest(),
+  golden: hourAt(5, false),
+  dusk: hourAt(-2, false),
+  blue: hourAt(-6.5, false),
+  night: lowest(),
+};
+

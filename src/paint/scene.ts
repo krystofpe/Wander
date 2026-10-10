@@ -8,7 +8,7 @@ import { fbm1, noise1, rng, unit } from '../noise.ts';
 import { role } from '../palette.ts';
 import { placeBetween } from '../place.ts';
 import type { Placed } from '../place.ts';
-import { biomeAt, blended, groundHeight } from '../world.ts';
+import { biomeAt, blended, groundHeight, share } from '../world.ts';
 import { Chunk, FLAG, newStamp, put, stamp } from './chunk.ts';
 import type { Stamp } from './chunk.ts';
 import { HORIZON } from './land.ts';
@@ -401,9 +401,20 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
     const b1 = 3 + j1;
     const b2 = 11 + j2;
     const b3 = 26 + j3;
+    // Still pools in the swamp, below the bank he walks on: a bright line of sky on the water, glints, then dark.
+    const swamp = share(blend, 'swamp');
+    const poolN = swamp > 0.3 ? noise1(d / 16, seed ^ 0x5009) * 0.75 + noise1(d / 5, seed ^ 0x500a) * 0.25 : -1;
+    const limit = 0.12 - 0.25 * (swamp - 0.3);
+    const pool = poolN > limit ? Math.min(12, Math.round(2 + (poolN - limit) * 26)) : 0;
     for (let y = top; y < c.h; y++) {
       const k = y - top;
       let r: number;
+      if (pool > 0 && k >= 4 && k < 4 + pool) {
+        const kk = k - 4;
+        const glint = kk > 0 && unit(Math.floor((u + kk * 11) / 4) * 64 + kk, seed ^ 0x51) < 0.14;
+        c.set(u, y, kk === 0 || glint ? role('water', 3) : kk < 3 ? role('water', 2) : role('water', 1), FLAG.WATER);
+        continue;
+      }
       if (pathy && k < 3) r = k === 0 ? role('path', 2) : role('path', 1);
       else if (k === 0) r = role(n, steps - 1);
       else if (k < b1) r = role(n, steps - 2);

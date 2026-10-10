@@ -176,7 +176,8 @@ export class Stage {
     v.cover = w.cloud;
     v.cloudDrift += dt * (1.2 + 5 * w.wind);
     this.drift += dt * (2 + 7 * w.wind);
-    labToBytes(this.grade.fog[0] + 0.04, this.grade.fog[1], this.grade.fog[2], this.bytes, 0);
+    // Fog is lit by the sky: a little lighter than the haze, so a veil never darkens the ground it lies on.
+    labToBytes(this.grade.fog[0] + 0.09, this.grade.fog[1], this.grade.fog[2], this.bytes, 0);
     v.fogColor[0] = this.bytes[0] / 255;
     v.fogColor[1] = this.bytes[1] / 255;
     v.fogColor[2] = this.bytes[2] / 255;

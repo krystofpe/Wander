@@ -16,7 +16,10 @@
     "motion": "node --disable-warning=ExperimentalWarning tools/motion.ts",
     "start": "node --disable-warning=ExperimentalWarning server/main.ts",
     "listen": "node --disable-warning=ExperimentalWarning tools/listen.ts",
-    "watch": "node --disable-warning=ExperimentalWarning tools/watch.ts"
+    "watch": "node --disable-warning=ExperimentalWarning tools/watch.ts",
+    "tour": "node --disable-warning=ExperimentalWarning tools/tour.ts",
+    "bench": "node --disable-warning=ExperimentalWarning tools/bench.ts",
+    "soak": "node --disable-warning=ExperimentalWarning tools/soak.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.132.1"

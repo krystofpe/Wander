@@ -292,7 +292,7 @@ const BIOME_COLOURS: Readonly<Record<BiomeId, Colours>> = {
   },
   swamp: {
     land: ['#1a2420', '#2a3832', '#3f4f45', '#5a6a5b', '#7f8c7a'],
-    water: ['#121a17', '#1d2a25', '#2d3d35', '#4c5f53'],
+    water: ['#141c1e', '#23323a', '#3d5157', '#7a8f91'],
     grass: ['#1d241a', '#2e3826', '#455132', '#606a41', '#828858'],
     bark: ['#1c1b1b', '#2e2c2a', '#454240', '#5f5b56'],
     dry: ['#2e2a1e', '#4a432e', '#6b6141', '#8d8258'],

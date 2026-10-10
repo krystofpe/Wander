@@ -88,6 +88,8 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
   ],
   plateau: [
     f('boulder', ['mid', 'near'], 0.8, [20, 40], 0.4),
+    f('dead', ['mid', 'near'], 0.22, [30, 60], 0.9),
+    f('shrub', ['mid', 'near'], 1.4, [6, 12], 0.5),
     f('drytuft', ['near', 'ground', 'fore'], 9, [3, 7], 0.3),
     f('rock', ['ground'], 0.6, [8, 20], 0.4),
     f('stone', ['ground'], 0.08, [14, 22], 0.9),
@@ -130,7 +132,10 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
     f('rock', ['ground'], 0.08, [6, 12], 0.5),
   ],
   stones: [
-    f('stone', ['mid', 'near', 'ground'], 0.9, [14, 30], 0.7),
+    f('stone', ['mid', 'near'], 1.8, [18, 44], 0.85),
+    f('stone', ['ground'], 0.5, [16, 30], 0.8),
+    f('oak', ['hills', 'mid'], 0.35, [40, 70], 0.85),
+    f('bush', ['mid', 'near'], 0.9, [10, 20], 0.6),
     f('drytuft', ['ground', 'fore'], 8, [3, 6], 0.2),
     f('flowers', ['ground'], 2, [2, 4], 0.6),
     f('rock', ['ground'], 0.4, [8, 14], 0.3),

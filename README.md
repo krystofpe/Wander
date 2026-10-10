@@ -4,7 +4,7 @@ A lone hooded wanderer walks forever through pixel-art lands made up as he goes.
 
 Nobody plays it. It is something to look at, or to leave running for hours full screen on a second monitor.
 
-It has a second mode, a world away and the same world: [the creature](#the-creature), a small hooded thing in a hollow on his road that notices you, a tamagotchi of sorts. Tab goes from one to the other. Now and then his road passes its door, and he sits with it a while.
+It has a second mode, a world away and the same world: [the creature](#the-creature), a small masked moth of the deep that lives beyond a hollow on his road and notices you, a tamagotchi of sorts. Tab goes from one to the other. Now and then his road passes its door, and he sits with it a while.
 
 **Live: [krystofpe.github.io/Wander](https://krystofpe.github.io/Wander/)**: one wanderer for everyone, walking day and night. Whoever opens the page finds him in the same place at the same moment; Tab there opens a creature of your own. Or run your own road from this repository ([Run](#run)).
 
@@ -73,9 +73,11 @@ Tab there opens [the hollow](https://krystofpe.github.io/Wander/creature/): a cr
 
 ## The creature
 
-`npm run creature` (or Tab from the road) opens the other mode: a small hooded creature that lives in a hollow at the foot of a great tree (a turf shelter in the open lands), at a hollow on his road, drawn in the same art. Its face is darkness; only its eyes glow, in the colour of its mood. Unlike the wanderer, it notices you. It forages berries, digs for small things, stacks stones into a cairn, chases butterflies and the toy you throw, hums, watches the stars, hides from the rain or dances in it, goes inside its tree to sleep at night with its lantern lit by the door, and now and then comes up to the glass: to say hello, to bring you something it found, to ask you a question, or to tap when you have been away too long. Its behaviour is never scripted: a small brain with needs (food, rest, fun, love), a personality fixed at birth and a bond with you picks what it does next. Its clock is yours: night falls when it is night where you are, under today's moon.
+`npm run creature` (or Tab from the road) opens the other mode: the deep beyond the creature's hollow, and the creature. It is a moth of the deep in a pale bone mask, frightening at a glance and very small and innocent: two glowing eyes in the mask's sockets, in the colour of its mood; feathery antennae; dusty wings folded over its back, each with a staring eyespot that flares when it waves; a curl of mist instead of legs, so it floats. Unlike the wanderer, it notices you. It forages the pale caps, digs for small things, stacks stones into a cairn, chases the moths and the toy you throw, hums, watches the specks of light in the stone, goes inside its tree to sleep at night with its lantern lit by the door, and now and then comes up to the glass: to say hello, to bring you something it found, to ask you a question, or to tap when you have been away too long. Its behaviour is never scripted: a small brain with needs (food, rest, fun, love), a personality fixed at birth and a bond with you picks what it does next. Its clock is yours: night falls when it is night where you are, under today's moon.
 
-![The creature by its great tree, at night, its lantern lit](docs/creature/nights/stars.jpg)
+The deep is after Skyrim's Blackreach ([the research](docs/research/blackreach-research.md)): a cavern under a sky of stone, giant mushrooms like jellyfish in ranks into the mist, their caps glowing underneath and trailing threads of light; stalagmites and crystal; motes drifting down through the dark; and one old lamp on its chain, left by people who are gone, the only warm thing but its own eyes and lantern. Teal while the sun is up above, violet at night; no weather but its mist.
+
+![The deep at night: the creature with its lantern among the glowing mushrooms, the old lamp far off](docs/creature/nights/stars.jpg)
 
 | Key or mouse | Does |
 |---|---|
@@ -98,15 +100,15 @@ With `ANTHROPIC_API_KEY` set, its words come from Claude (`mind: claude` in the 
 
 ### One world, two lives
 
-Its hollow stands in his world, at a hollow of his road in its own land; and whatever hollow his road passes, it is the creature's. On the road, he comes to the great tree or the turf shelter now and then, and usually sits a while by the door and smokes (not in heavy rain; on the live road, not when he is late for camp). By day it comes out, watches him come, waves, and sits beside him; at night only its eyes show in the dark of the doorway; late at night it is asleep and he sits alone; while it is off wandering nobody is home. In the hollow you see it from the other side: when his road comes by, he walks out from behind its home along the back of the clearing, sits on the ground by its door with his cigarette, and goes on across, and it goes to sit with him. Either way it keeps the visit: a line in its diary, and the next time you open the hollow it tells you he came. If he came while the window was closed, it finds the ash on the root by its door.
+Its hollow is a door: on his road, at a hollow in its own land (and whatever hollow his road passes, it is the creature's door), and beyond it, the deep. On the road, he comes to the great tree or the turf shelter now and then, and usually sits a while by the door and smokes (not in heavy rain; on the live road, not when he is late for camp). By day it comes out, watches him come, waves, and sits beside him; at night only its eyes show in the dark of the doorway; late at night it is asleep and he sits alone; while it is off wandering nobody is home. From the deep you see it from the other side: when his road comes by, its doorway fills with the light of his world, daylight or moonlight; while he sits there his ember glows on the threshold and his smoke drifts in, and it goes to sit at the door with him. Either way it keeps the visit: a line in its diary, and the next time you open the hollow it tells you he came. If he came while the window was closed, it finds the ash on the root by its door.
 
 Where he is, the hollow works out from his road: here his journey moved on since its last save at the pace he keeps while away (the same as his catch-up when you go back to the road, a while at each hollow's door included), so both modes agree on where he is; on the published page, the live road. To see him come by without waiting for his road: `npm run creature -- --passer sit` (or `?passer=12`, metres past its door), a look that is not saved.
 
-![He sits by the creature's door at dusk; it sits with him, its lantern and his ember the only warm lights](docs/creature/traveller/night.jpg)
+![He sits at its door above: from the deep, its doorway full of his world's daylight, and the creature sitting at the threshold](docs/creature/traveller/sits.jpg)
 
-Options (`npm run creature -- --biome tundra`): `--biome forest|meadow|tundra|swamp` (an existing creature moves), `--name NAME` and `--seed WORD` (a new one), `--new` (start over; the old one is kept as `creature.json.bak`), `--offline`, `--mute`, `--speed X`, `--hour H` and `--passer sit|M` (a look, not saved), `--no-browser`, `--port N`, `--save PATH`.
+Options (`npm run creature -- --biome tundra`): `--biome forest|meadow|tundra|swamp` (the land its door opens onto on his road; an existing creature moves), `--name NAME` and `--seed WORD` (a new one), `--new` (start over; the old one is kept as `creature.json.bak`), `--offline`, `--mute`, `--speed X`, `--hour H` and `--passer sit|M` (a look, not saved), `--no-browser`, `--port N`, `--save PATH`.
 
-More: [biomes](docs/creature/biomes-sheet.jpg) · [moments](docs/creature/moments-sheet.jpg) · [nights](docs/creature/nights-sheet.jpg) · [the traveller](docs/creature/traveller-sheet.jpg) · [weather](docs/creature/weather-sheet.jpg) · [you](docs/creature/you-sheet.jpg) · [its hollow on his road](docs/tour/landmarks/hollow-sitting.jpg)
+More: [the deep through the day](docs/creature/deep-sheet.jpg) · [moments](docs/creature/moments-sheet.jpg) · [nights](docs/creature/nights-sheet.jpg) · [the traveller](docs/creature/traveller-sheet.jpg) · [you](docs/creature/you-sheet.jpg) · [its hollow on his road](docs/tour/landmarks/hollow-sitting.jpg)
 
 ## What there is
 
@@ -158,7 +160,7 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 | `npm run live -- --hours 1000` | Lives the live road's hours one after another and checks that each ends where the next begins. |
 | `npm run site` | Builds the published page into `dist/`, both modes; `-- --serve` then serves it as GitHub Pages will, to look at locally. |
 | `npm run site:check` | Serves `dist/` as GitHub Pages would and checks it: the same wanderer as `src/live.ts`, the hour turning without a jump, the hollow kept in the browser and on the live road, Tab both ways, the last mode opening again, the traveller at its door, no requests for anything that is not there. |
-| `npm run creature:tour` | Pictures of the creature: every biome through the day, its moments, its nights, the traveller come by, the weather, you (`docs/creature/`). |
+| `npm run creature:tour` | Pictures of the creature: the deep through the day, its moments, its nights, the traveller come by, you (`docs/creature/`). |
 | `npm run creature:check` | The creature end to end through the real server: its first meeting, saving and reopening, days away, a terminal-era save moving in, Claude and when it fails, and one world, two lives: its hollow on his road, his visit kept, Tab both ways (`docs/creature/check.txt`). |
 | `npm run art:draw`, `npm run art` | Builds the hand-drawn sprites into Aseprite files, then exports the atlas. |
 

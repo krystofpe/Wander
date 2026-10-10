@@ -20,7 +20,7 @@ export const LINES = {
   petted: ['...', 'That is... all right.', 'Again. If you want.', 'Your hands are warm, {user}.'],
   pettedLove: ['Stay a little.', '♥', 'It is easier when you are here.'],
   pettedShy: ['Oh. ...all right.', '...hello.', '!'],
-  tooMuch: ['Enough.', 'I need a little room.', 'You are crushing my wings.'],
+  tooMuch: ['Enough.', 'I need a little room.', 'You are squashing my shadow.'],
   woken: ['Mm... what is it?', 'I was dreaming about {item}.', 'A little longer.'],
   wokenGrumpy: ["It's the middle of the night.", 'Hmph.', 'No.'],
   sleepTalk: ['mm... the fish were singing...', '...no, the other moon...', 'zz... {user}... zz', '...more {forage}...'],

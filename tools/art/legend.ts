@@ -59,9 +59,11 @@ export const LEGEND: Readonly<Record<string, number>> = {
   D: role('metal', 2),
   E: role('metal', 3),
   U: role('bone', 2),
-  // The creature's mask: bone, darkest to the U above.
+  // The creature's mask: bone, darkest to the U above; the marks painted on it, in the violet of flowers.
   z: role('bone', 0),
   '/': role('bone', 1),
+  '·': role('flower', 1),
+  '•': role('flower', 2),
   P: role('water', 2),
   Q: role('water', 3),
   F: role('firefly', 0),

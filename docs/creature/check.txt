@@ -2,10 +2,10 @@ PASS  the server starts offline without a key: "mind: local"
 PASS  a new creature arrives: Moss of the forest
 PASS  it asks what to call you, and the box to type in opens
 PASS  it keeps your name: Krystof
-PASS  the bar says mind: local — "Moss · newborn · content · food ■■■■· · rest ■■■■· · fun ■■■·· · love ■■··· · bond ■···· · 12:30 afternoon, a storm · mi…"
+PASS  the bar says mind: local — "Moss · newborn · content · food ■■■■· · rest ■■■■· · fun ■■■·· · love ■■··· · bond ■···· · 13:38 afternoon, partly cloud…"
 PASS  closing saved Moss, who calls you Krystof
 PASS  reopening finds the same Moss, no new arrival (greet)
-PASS  three days away are lived through: 72 hours, 7 things in its diary, and it went wandering
+PASS  three days away are lived through: 72 hours, 9 things in its diary, and it went wandering
 PASS  its diary: “A storm came through. I hid inside.” “Nobody came for days. I went wandering.”
 PASS  the terminal creature Ori moves in: the forest, cloak 3 (its slate), still calling you Krystof
 PASS  and remembers: “Left the shore, which is no more, for the forest.”
@@ -15,12 +15,12 @@ PASS  its words came from Claude: “The glass is warm where your hand was.”
 PASS  what you typed reached it (/v1/messages?beta=true, model claude-opus-5-5, effort low, json_schema, beta server-side-fallback-2026-07-01)
 PASS  what it learned about you is kept: ["likes tea"]
 PASS  and it does what it wished to: it dances
-PASS  a failing API (500): its own voice answered after 0.0 s — “...”
-PASS  a refused key (401): its own voice answered after 0.0 s — “Maybe. The stones would know.”
+PASS  a failing API (500): its own voice answered after 0.0 s — “Hello, glass. Hello, Krystof.”
+PASS  a refused key (401): its own voice answered after 0.0 s — “Yes. No. Both?”
 PASS  once the key is refused the bar says mind: local — "mind: local (no access)"
 PASS  with his journey beside it, its hollow stands on his road, at 28292 m
 PASS  he sits at its door, and it keeps the visit: “The traveller in the long coat came by. He sat by my door and smoked, and did not say much. Neither did I.”
 PASS  in its file: 1 visit
-PASS  Tab opens the road, him at the hollow's door (1.2 m past it); the server remembers: wander
+PASS  Tab opens the road, him at the hollow's door (1.3 m past it); the server remembers: wander
 PASS  and Tab again the hollow; the server remembers: creature
 25/25 passed

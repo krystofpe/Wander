@@ -6,6 +6,7 @@
 // mushrooms, his cigarette.
 import { BIOME_IDS } from '../../src/biomes.ts';
 import { BIOMES } from '../../src/creature/config.ts';
+import { DEEP_SEAT_PX } from '../../src/creature/game.ts';
 import type { Game } from '../../src/creature/game.ts';
 import { CREATURE, EYES_FRONT, EYES_SIDE, HAND, HEAD, LANTERN, MOOD_EYES, TREE } from '../../src/creature/look.ts';
 import type { EyeShape, PoseTag } from '../../src/creature/look.ts';
@@ -27,6 +28,8 @@ const NEAR = GROUND - 1;
 const MID = GROUND - 2;
 /** The layer the deep's lamp hangs in: the ridge, in front of the farthest rock. */
 const LAMP_LAYER = 3;
+/** In the deep, how far from its door (native px, on the open side) he sits when he comes down through it. */
+const SEAT_PX = DEEP_SEAT_PX;
 const COAT = role('coat', 0);
 const EYE = role('eye', 0);
 
@@ -109,6 +112,9 @@ export class Hollow {
   private puffs: { x: number; y: number; age: number; vx: number; life: number }[] = [];
   private smokeIn = 0;
   private lastTime = 0;
+  /** In the deep: since when he has sat beside its door, and when he went back up (null: not). */
+  private hisSince: number | null = null;
+  private hisLeft: number | null = null;
 
   /** Draws it all for the view at road distance `at` on his road (`worldSeed`); `time` real seconds. */
   draw(r: Renderer, atlas: Atlas, stage: Stage, game: Game, worldSeed: number, at: number, time: number): void {
@@ -147,7 +153,8 @@ export class Hollow {
 
     // Its home.
     const home = game.scene.layout.home;
-    const inside = game.body.inside && game.body.visible;
+    // Gone up to his fire, it is not at home: no lantern by the door, its doorway lit by his fire far above.
+    const inside = game.body.inside && game.body.visible && !game.awayAtFire;
     const dark = game.sky.daylight < 0.35;
     if (home.edge !== undefined) {
       const left = geo.leftOf(home);
@@ -164,7 +171,7 @@ export class Hollow {
         // By day its lantern hangs dark on its peg; at night it carries it, or, at home, it is lit by the door.
         const peg = TREE.peg;
         const px = flip ? left + base[2] - 1 - peg[0] - 2 : left + peg[0];
-        if (!dark) put(ground, px - 1, foot - base[3] + peg[1], sheets.carry.dark[0], flip);
+        if (!dark && !game.awayAtFire) put(ground, px - 1, foot - base[3] + peg[1], sheets.carry.dark[0], flip);
         if (lit) addLight(px + 1, foot - base[3] + peg[1] + 4, 34, 0.75 * (0.85 + 0.15 * flicker(time, 3)));
       });
     } else {
@@ -324,15 +331,41 @@ export class Hollow {
       const breathe = 0.9 + 0.1 * Math.sin(time * 0.8);
       later(home.z + 0.0004, () => put(ground, dx - (lightOf[2] >> 1), foot - lightOf[3], lightOf, false, Math.min(1, 0.25 + 0.6 * near) * breathe));
       addLight(dx, foot - 10, 18 + 22 * near, (0.2 + 0.5 * near) * breathe);
-      if (passer.sitting) {
-        // His ember on the threshold, brighter on the drag; his smoke drifting in now and then.
+      // When he sits down at its door up there, he comes down through it into the deep: he steps out of the light,
+      // sits on the root beside the door with his cigarette and it sits with him; when he goes on, he steps back into
+      // the light and is gone.
+      if (passer.sitting && this.hisSince === null) this.hisSince = time;
+      if (!passer.sitting && this.hisSince !== null) {
+        this.hisSince = null;
+        this.hisLeft = time;
+      }
+      const side = game.scene.layout.homeLeft ? 1 : -1;
+      const sx = dx + side * SEAT_PX;
+      const sheet = sheets.wanderer;
+      const flip = side < 0;
+      const left = (frame: readonly number[]): number => (flip ? sx - (frame[2] - 14) : sx - 14);
+      if (this.hisSince !== null) {
+        const t = time - this.hisSince;
         const drag = time % 23 < 1.4;
-        addLight(dx + 3, foot - 4, drag ? 8 : 5, drag ? 0.8 : 0.4);
-        this.smokeIn -= dt;
-        if (this.smokeIn <= 0) {
-          this.smokeIn = 1.6 + Math.random() * 1.6;
-          this.puffs.push({ x: dx + 2, y: foot - 8, age: 0, vx: (Math.random() - 0.3) * 4, life: 3.5 + Math.random() });
+        const frame = t < 1.4 ? sheet.stand[0] : sheet.sitsmoke0[drag ? 2 : time % 9.5 < 4 ? 1 : 0];
+        const x = t < 1.4 ? Math.round(dx + (sx - dx) * (t / 1.4)) : sx;
+        const lx = flip ? x - (frame[2] - 14) : x - 14;
+        later(home.z + 0.02, () => put(ground, lx, foot - 35, frame, flip, Math.min(1, t / 1.2)));
+        if (t >= 1.4) {
+          // His ember, brighter on the drag; his smoke drifting up now and then.
+          const ex = flip ? left(frame) + frame[2] - 22 : left(frame) + 22;
+          addLight(ex, foot - 10, drag ? 9 : 6, (drag ? 0.9 : 0.45) * (0.4 + 0.6 * night));
+          this.smokeIn -= dt;
+          if (this.smokeIn <= 0) {
+            this.smokeIn = 1.6 + Math.random() * 1.6;
+            this.puffs.push({ x: ex + 1, y: foot - 12, age: 0, vx: (Math.random() - 0.3) * 4, life: 3.5 + Math.random() });
+          }
         }
+      } else if (this.hisLeft !== null && time - this.hisLeft < 1.6) {
+        const t = (time - this.hisLeft) / 1.6;
+        const x = Math.round(sx + (dx - sx) * t);
+        const frame = sheet.stand[0];
+        later(home.z + 0.02, () => put(ground, flip ? x - (frame[2] - 14) : x - 14, foot - 35, frame, flip, 1 - t));
       }
     } else if (passer !== null) {
       const door = geo.door(home);
@@ -349,6 +382,17 @@ export class Hollow {
         later(0, () => put(ground, left, hy - 35, frame, flip));
         if (passer.sitting) addLight(flip ? left + frame[2] - 22 : left + 22, hy - 35 + 25, drag ? 9 : 6, (drag ? 0.9 : 0.45) * (0.4 + 0.6 * night));
       }
+    }
+
+    // Gone up to his fire: its doorway flickers with firelight from far above.
+    if (game.awayAtFire) {
+      const door = geo.door(home);
+      const dx = Math.round(geo.px(door.x));
+      const foot = Math.round(geo.footY(door.x, door.z));
+      const f = frameOf('doorlight', 'day');
+      const k = 0.35 + 0.15 * flicker(time, 5);
+      later(home.z + 0.0004, () => put(ground, dx - (f[2] >> 1), foot - f[3], f, false, k));
+      addLight(dx, foot - 10, 24, 0.35 + 0.15 * flicker(time, 7));
     }
 
     // His smoke, drifting in from the doorway and fading.
@@ -424,6 +468,7 @@ export class Hollow {
     const colour = MOOD_EYES.indexOf(game.eyeColour(glyphs));
     const swap = [COAT, role(`cloak${life.cloak}`, 0) - COAT, EYE, role('mood', Math.max(0, colour))];
     if (!b.visible) return;
+    if (b.inside && game.awayAtFire) return;
     if (b.inside) {
       // Only its eyes, in the dark of the doorway (none while it sleeps).
       const home = game.scene.layout.home;

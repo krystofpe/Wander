@@ -93,7 +93,7 @@ const api: Api = {
     if (data === null) return false;
     const life = revive(data);
     const how = (r as { how?: unknown }).how;
-    const kept = travellerCame(life, Date.now(), how === 'night' || how === 'asleep' ? how : 'day');
+    const kept = travellerCame(life, Date.now(), how === 'night' || how === 'asleep' || how === 'fire' ? how : 'day');
     if (kept) creatures.save(life);
     return kept;
   },

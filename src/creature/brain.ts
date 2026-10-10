@@ -93,6 +93,10 @@ export interface Ctx {
   traveller(): { readonly x: number; readonly sitting: boolean } | null;
   /** He sat down at its door: it keeps the visit. */
   travellerSat(): void;
+  /** Whether his evening fire is lit on the road above (the page follows his road). */
+  fireside(): boolean;
+  /** It has gone up through its door to his fire (true), or come home (false); going, it keeps the visit. */
+  atFire(on: boolean): void;
   /** Rings the bell, if allowed. */
   bell(): void;
 }
@@ -101,7 +105,7 @@ export type Script = Generator<void, void, number>;
 
 export const ACTIVITIES = [
   'idle', 'stroll', 'sit', 'nap', 'sleep', 'forage', 'eat', 'drink', 'chase', 'critter', 'play', 'stargaze', 'shelter',
-  'dance', 'ponder', 'dig', 'hum', 'stack', 'visit', 'knock', 'gift', 'ask', 'hide', 'wander', 'watch', 'traveller',
+  'dance', 'ponder', 'dig', 'hum', 'stack', 'visit', 'knock', 'gift', 'ask', 'hide', 'wander', 'watch', 'traveller', 'fireside',
 ] as const;
 export type ActivityName = (typeof ACTIVITIES)[number];
 export const REACTIONS = ['listen', 'petted', 'woken', 'startle', 'greet', 'arrive', 'return', 'go', 'wave', 'jump', 'spin'] as const;
@@ -621,7 +625,7 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       if (sat !== null && sat.sitting) {
         // Sit with him, a little way off, on its side of him.
         const side = sat.x < c.body.x ? 1 : -1;
-        yield* walkTo(c, Math.max(0.03, Math.min(0.97, sat.x + side * 0.03)), 0.04);
+        yield* walkTo(c, Math.max(0.03, Math.min(0.97, sat.x + side * 0.045)), 0.04);
         c.body.facing = side > 0 ? -1 : 1;
         c.body.pose = 'sit';
         c.body.gaze = null;
@@ -647,6 +651,25 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
         t += yield;
       }
       c.body.gaze = null;
+    },
+  },
+  // His fire is lit on the road above: it goes up through its door to sit with him, and comes home once he is asleep.
+  fireside: {
+    cooldown: 120,
+    score: (c) => (c.fireside() && c.body.visible && !c.body.inside && !c.life.asleep ? 6 : 0),
+    *run(c) {
+      c.body.pose = 'stand';
+      c.say('fireside');
+      yield* hush(c, 4);
+      yield* goIn(c);
+      c.atFire(true);
+      let t = 0;
+      while (c.fireside() && t < 1800) t += yield;
+      c.atFire(false);
+      yield* comeOut(c);
+      c.say('firesideBack');
+      c.feelings.joy = clamp01(c.feelings.joy + 0.25);
+      c.life.needs.love = clamp01(c.life.needs.love + 0.1);
     },
   },
   // When the visitor walks through the glow, it stops whatever it would do next and watches it go by,

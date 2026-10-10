@@ -94,6 +94,8 @@ add('nights', 'visitor', { now: String(visitMoment(seedOf(word))), weather: 'cle
 add('traveller', 'near', { hour: '10.5', weather: 'clear', passer: '-12', act: 'idle' }, 2);
 add('traveller', 'sits', { hour: '15.5', weather: 'clear', passer: 'sit', act: 'traveller' }, 24);
 add('traveller', 'night', { hour: '21.6', weather: 'clear', passer: 'sit', act: 'traveller' }, 24);
+// His evening fire is lit on the road above: it has gone up through its door to sit with him; the doorway flickers.
+add('traveller', 'fire', { hour: '20.5', weather: 'clear', fireside: '1', act: 'fireside' }, 32);
 
 add('you', 'talk', { hour: '15', weather: 'clear' }, 4, async (p) => {
   await p.keyboard.press('t');

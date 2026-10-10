@@ -10,7 +10,7 @@ import { addDiary, isNightFor, newLife } from '../../src/creature/life.ts';
 import type { Life } from '../../src/creature/life.ts';
 import type { Reply } from '../../src/creature/mind.ts';
 import { parseCreatureOptions } from '../../src/creature/options.ts';
-import { hollowBy, homeHollow, roadFrom, satBetween } from '../../src/creature/road.ts';
+import { firesideAt, hollowBy, homeHollow, roadFrom, satBetween } from '../../src/creature/road.ts';
 import type { Saved } from '../../src/creature/road.ts';
 import { travellerCame } from '../../src/creature/traveller.ts';
 import { catchUp, revive } from '../../src/creature/save.ts';
@@ -31,6 +31,7 @@ import { Renderer } from '../render.ts';
 import { loadAtlas } from '../sprites.ts';
 import { Stage } from '../stage.ts';
 import { Hollow } from './hollow.ts';
+import { comesToFire } from '../hollowmark.ts';
 import { modes } from '../modes.ts';
 import { CreatureUi } from './ui.ts';
 
@@ -146,11 +147,12 @@ async function journeyOf(): Promise<Saved | null> {
   if (site || !b.server) return null;
   try {
     const res = await fetch('/api/journey');
-    const j = ((await res.json()) as { journey?: { savedAt?: unknown; life?: { seed?: unknown; at?: unknown } } | null }).journey;
+    const j = ((await res.json()) as { journey?: { savedAt?: unknown; life?: { seed?: unknown; at?: unknown; clock?: unknown } } | null }).journey;
     const seed = j?.life?.seed;
     const at = j?.life?.at;
     const savedAt = j?.savedAt;
-    return typeof seed === 'number' && typeof at === 'number' && typeof savedAt === 'number' ? { seed, at, savedAt } : null;
+    const clock = j?.life?.clock;
+    return typeof seed === 'number' && typeof at === 'number' && typeof savedAt === 'number' ? { seed, at, savedAt, clock: typeof clock === 'number' ? clock : undefined } : null;
   } catch {
     return null;
   }
@@ -285,8 +287,11 @@ function passerAt(ms: number): { d: number; sitting: boolean; walking: boolean }
 let wasSitting = false;
 /** Follows his road: where he is for the creature and the drawing; when he sits down at its door, it keeps the visit. */
 function follow(): void {
-  const p = passerAt(game.worldNow());
+  const ms = game.worldNow();
+  const p = passerAt(ms);
   game.passer = p === null ? null : { ...p, dir };
+  // His evening fire on the road above: the live road's camp, or his journey's clock moved on here (pictures: ?fireside).
+  game.hisFire = params.has('fireside') || (site ? road.sim !== null && comesToFire(road.sim, null) : journey !== null && firesideAt(journey, ms));
   if (p?.sitting === true && !wasSitting) game.travellerSat();
   wasSitting = p?.sitting === true;
 }

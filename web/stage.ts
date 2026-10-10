@@ -14,7 +14,8 @@ import type { Weather } from '../src/sky.ts';
 import { loopFrame, walkFrame } from '../src/walker.ts';
 import { unit } from '../src/noise.ts';
 import { biomeAt, blended, groundHeight, isRealm, landmarksBetween, stretchAt } from '../src/world.ts';
-import { drawHollow } from './hollowmark.ts';
+import { awakeAt } from '../src/creature/traveller.ts';
+import { comesToFire, drawHollow, drawNeighbour } from './hollowmark.ts';
 import type { Neighbour } from './hollowmark.ts';
 import { ALBEDO_ROW, FOG_AFTER, paletteRow } from './render.ts';
 import type { Renderer, View } from './render.ts';
@@ -52,6 +53,13 @@ export class Stage {
   readonly around = new Around();
   /** Who lives in the hollows on his road: the creature, as its save says (null: a stranger's look). */
   neighbour: Neighbour | null = null;
+  /** The real time by the creature's clock (it keeps real hours; his days are faster): whether it is awake to visit. */
+  creatureClock: () => number = () => Date.now();
+  /** Since when (animation seconds) the creature has been at his fire, and when it left (null: not). */
+  private fireSince: number | null = null;
+  private fireLeft: number | null = null;
+  /** A still frame (pictures): what comes and goes is shown already there. */
+  private still = false;
   /** Where his head is on the native view this frame (for his thoughts). */
   headX = 0;
   headY = 0;
@@ -126,6 +134,7 @@ export class Stage {
     // The camera: him left of centre while he walks, eased toward the middle when he stops.
     this.sky(r, { seed: l.seed, at: l.at, clock: l.clock, framing: l.stage !== 'walk' ? 0.5 : HIM_X }, hour, natural, w, time, dt, still);
     if (atlas === null) return;
+    this.still = still;
     this.him(r, atlas, l, w, time, dt, pose);
   }
 
@@ -323,6 +332,46 @@ export class Stage {
 
     // The life around him and what moves at the landmarks (behind him on the playfield).
     this.around.update(r, atlas, v, l, { sun: m.elevation, night: this.grade.night, weather: w, time, dt, extra, camY: this.camY, himX: colOf(l.at) });
+
+    // In the evening, while he sits by his fire and until he is asleep, the creature comes up out of the dark from the
+    // deep and sits across the fire from him, its lantern set down beside it; then it goes home.
+    if (l.fire !== null) {
+      const here = comesToFire(l, this.neighbour);
+      // Asleep by its own clock (it keeps real hours), it dozes by his fire, its eyes shut.
+      const dozing = this.neighbour !== null && !awakeAt(this.neighbour.nightOwl, this.creatureClock());
+      if (here && this.fireSince === null) this.fireSince = this.still ? time - 10 : time;
+      if (!here && this.fireSince !== null) {
+        this.fireSince = null;
+        this.fireLeft = time;
+      }
+      const seat = l.fire.at + 1.25;
+      const foot = groundRow(seat);
+      const rows: [number, number, number] = [rowA, rowB, b.k];
+      if (this.fireSince !== null) {
+        // It walks in from the dark beyond the fire, then sits facing him and the fire.
+        const t = time - this.fireSince;
+        const walk = Math.max(0, 1 - t / 5);
+        const x = colOf(seat + 4.5 * walk);
+        const tag = walk > 0 ? 'walk' : 'sit';
+        drawNeighbour(r, atlas, x, foot, tag, true, this.neighbour, rows, dozing && walk === 0 ? 'shut' : l.stage === 'sleep' || l.stage === 'lie' ? 'happy' : 'open', time, Math.min(1, t / 1.5), 4.5 * walk * PX_PER_M);
+        if (this.grade.night > 0.4 && walk === 0) {
+          const lantern = atlas.sheets.carry.lantern[0];
+          r.ground.add(Math.round(x + 9), Math.round(foot - lantern[3]), lantern, rowA, rowB, b.k);
+          if (light.count < 6) {
+            const o = light.count * 4;
+            light.lights[o] = x + 11;
+            light.lights[o + 1] = foot - 4;
+            light.lights[o + 2] = 22;
+            light.lights[o + 3] = 0.5;
+            light.count++;
+          }
+        }
+      } else if (this.fireLeft !== null && time - this.fireLeft < 5) {
+        // Going home into the dark.
+        const t = (time - this.fireLeft) / 5;
+        drawNeighbour(r, atlas, colOf(seat + 4.5 * t), foot, 'walk', false, this.neighbour, rows, 'open', time, 1 - t, 4.5 * t * PX_PER_M);
+      }
+    } else this.fireSince = null;
 
     // The creature's hollow, when his road passes one: drawn before him, so he walks in front of its tree.
     for (const mark of landmarksBetween(l.seed, (v.camX - 120) / PX_PER_M, (v.camX + W + 120) / PX_PER_M)) {

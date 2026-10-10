@@ -85,6 +85,8 @@ export const LINES = {
   travellerBack: ['The traveller came while you were gone. He sat at my door.', 'He came by again, the one who walks. You missed him.', 'There was a man in a long coat here. He smoked. I think he is lonely too.'],
   traveller: ['I think about the one who walks. Where does he sleep?', 'The traveller never says where he is going. Maybe he does not know.', 'He leaves a little ash and a little quiet. I keep both.', 'If he comes again, I will show him the cairn.'],
   travellerHere: ['...it is him.', 'The one who walks.', 'Shh. He is resting.'],
+  fireside: ['His fire is lit up there. I will go and sit with him.', 'I can smell his fire through the door.', 'The traveller is camping. He should not be alone.'],
+  firesideBack: ['He is asleep. I kept his fire a while.', 'His fire was warm.', 'I sat with him. He did not mind.'],
 } as const;
 
 export type Topic = keyof typeof LINES;

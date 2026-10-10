@@ -4,6 +4,9 @@
 // sitting beside him while he smokes, watching him go; at night inside, only its eyes in the dark of the doorway (or
 // asleep, the lantern lit by the door); nobody at all while it is away wandering.
 import type { BiomeId } from '../src/biomes.ts';
+import { FIRESIDE } from '../src/creature/road.ts';
+import type { Life } from '../src/life.ts';
+import { hourOfDay } from '../src/sky.ts';
 import { CREATURE, EYES_FRONT, EYES_SIDE, HEAD, TREE } from '../src/creature/look.ts';
 import type { PoseTag } from '../src/creature/look.ts';
 import { FOOTPRINTS } from '../src/creature/scene.ts';
@@ -23,6 +26,18 @@ const EYE = role('eye', 0);
 const CONTENT = role('mood', 0);
 const FLICKER = 'mmnmmommommnonmmonqnmmo';
 const flicker = (time: number): number => (FLICKER.charCodeAt(Math.floor(time * 10 + 3) % FLICKER.length) - 97) / 12;
+
+/**
+ * Whether the creature is at his fire: he has made camp in the evening and sits by it, or has lain down (it goes home
+ * before the deep of the night), and it is not off wandering. It always comes; if it is asleep by its own clock it
+ * dozes there by the fire.
+ */
+export function comesToFire(l: Life, neighbour: Neighbour | null): boolean {
+  if (neighbour?.away === true || l.fire === null || l.act !== 'camp') return false;
+  if (l.stage !== 'campsit' && l.stage !== 'lie' && l.stage !== 'sleep') return false;
+  const h = hourOfDay(l.clock);
+  return h >= 12 && h < FIRESIDE.to;
+}
 
 /** How the creature met him, by his scene's light: outside by day, in the dark doorway, or asleep (or not at all). */
 export function meetingOf(night: number, neighbour: Neighbour | null): 'day' | 'night' | 'asleep' | null {
@@ -89,17 +104,28 @@ export function drawHollow(r: Renderer, atlas: Atlas, v: View, x: number, foot: 
     tag = 'frontwave';
     flip = false;
   }
+  drawNeighbour(r, atlas, cx, foot, tag, flip, neighbour, rows, passer.sitting ? 'happy' : 'open', time);
+}
+
+/**
+ * Draws the creature (its own wing colour, its eyes in its mask) with its feet at native (cx, foot) on the
+ * playfield batch, in a pose, turned left when `flip`, the eyes in a shape unless it blinks.
+ */
+export function drawNeighbour(r: Renderer, atlas: Atlas, cx: number, foot: number, tag: PoseTag, flip: boolean, neighbour: Neighbour | null, rows: readonly [number, number, number], eyes: 'open' | 'happy' | 'shut', time: number, alpha = 1, walked = 0): void {
+  const [ga, gb, gk] = rows;
+  const sheets = atlas.sheets;
+  const swap = [COAT, role(`cloak${neighbour?.cloak ?? 0}`, 0) - COAT, EYE, CONTENT];
   const frames = sheets.creature[tag];
-  const i = frames.length === 1 ? 0 : loopFrame(frames.map((f) => f[4]), time);
-  const top = foot - CREATURE.foot;
-  const left = cx - CREATURE.w / 2;
-  put(left, top, frames[i], flip, 1, swap);
+  const i = tag === 'walk' ? Math.floor(walked / 4) % frames.length : frames.length === 1 ? 0 : loopFrame(frames.map((f) => f[4]), time);
+  const top = Math.round(foot - CREATURE.foot);
+  const left = Math.round(cx - CREATURE.w / 2);
+  r.ground.add(left, top, frames[i], ga, gb, gk, flip, alpha, swap);
   const [hx, hy] = HEAD[tag][i];
-  const front = tag === 'frontwave';
+  const front = tag === 'front' || tag === 'frontwave';
   const [ex, ey] = front ? EYES_FRONT : EYES_SIDE;
   const mx = flip ? CREATURE.w - (ex + hx) - 5 : ex + hx;
   const blink = (time % 4.1) > 3.96;
-  put(left + mx, top + ey + hy, sheets.eyes[blink ? 'shut' : passer.sitting ? 'happy' : 'open'][0], flip, 1, swap);
+  r.ground.add(left + mx, top + ey + hy, sheets.eyes[blink ? 'shut' : eyes][0], ga, gb, gk, flip, alpha, swap);
 }
 
 function addLight(v: View, x: number, y: number, radius: number, strength: number): void {

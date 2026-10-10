@@ -6,6 +6,7 @@
 import { HOLLOW } from '../biomes.ts';
 import type { BiomeId } from '../biomes.ts';
 import { AWAY, awayAt } from '../journal.ts';
+import { hourOfDay } from '../sky.ts';
 import { landmarksBetween, stretchAt } from '../world.ts';
 import type { Landmark } from '../world.ts';
 import { BIOMES } from './config.ts';
@@ -14,8 +15,24 @@ import type { BiomeName } from './config.ts';
 /** How near (metres) to a hollow's door he is "coming by". */
 export const REACH = 42;
 
-/** His journey as the hollow knows it: his road's seed, where he was at the last save, and when. */
-export type Saved = { readonly seed: number; readonly at: number; readonly savedAt: number };
+/**
+ * His evening by his fire, by his clock's hour: while he sits by it and until he is well asleep, the creature goes up
+ * to sit with him (web/stage.ts draws it there; from the deep it goes up through its door).
+ */
+export const FIRESIDE = { from: 20, to: 22.5 } as const;
+
+/** His journey as the hollow knows it: his road's seed, where he was at the last save, and when; his clock then. */
+export type Saved = { readonly seed: number; readonly at: number; readonly savedAt: number; readonly clock?: number };
+
+/**
+ * Whether he sits by his evening fire at `ms`, from his journey's clock moved on (`daySec` real seconds to his day,
+ * an hour unless the road was opened with --day): the hours of FIRESIDE.
+ */
+export function firesideAt(journey: Saved, ms: number, daySec = 3600): boolean {
+  if (journey.clock === undefined) return false;
+  const h = hourOfDay(journey.clock + ((ms - journey.savedAt) / 1000) * (24 / daySec));
+  return h >= FIRESIDE.from && h < FIRESIDE.to;
+}
 
 /** The lands of its biome on his road: the forest is his pine or birch woods; the others his own. */
 function landsOf(biome: BiomeName): readonly BiomeId[] {

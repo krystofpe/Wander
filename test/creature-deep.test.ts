@@ -78,5 +78,6 @@ test('set in the deep: no rain, its own small lives, and his visits seen at its 
   const far = g.traveller();
   g.passer = { d: 3.5, sitting: true, walking: false, dir: 1 };
   const sat = g.traveller();
-  assert.ok(far !== null && sat !== null && Math.abs(far.x - door) < 0.05 && far.x === sat.x && sat.sitting, 'beyond its door: it watches the doorway');
+  assert.ok(far !== null && Math.abs(far.x - door) < 0.05, 'beyond its door: it watches the doorway');
+  assert.ok(sat !== null && sat.sitting && Math.abs(sat.x - door) < 0.05 && sat.x !== door, 'sitting, he has come down to sit on the root beside it');
 });

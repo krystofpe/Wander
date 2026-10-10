@@ -13,6 +13,9 @@ import type { EyeColour } from './look.ts';
 import { situationText } from './mind.ts';
 import { cameWhileAway, travellerCame } from './traveller.ts';
 import { PX_PER_M } from '../layers.ts';
+
+/** In the deep, how far from its door he sits when he comes down through it (native px; web/creature/hollow.ts). */
+export const DEEP_SEAT_PX = 20;
 import type { Reply, Situation } from './mind.ts';
 import { rng } from '../noise.ts';
 import type { Away } from './save.ts';
@@ -97,6 +100,7 @@ const DOING: Readonly<Record<string, string>> = {
   wander: 'wandering beyond the edge of your world',
   watch: 'watching something tall walk through the light at the end of the path',
   traveller: 'sitting with the traveller in the long coat, who rests at your door',
+  fireside: 'up on the road above, sitting across the traveller\'s fire',
   listen: 'at the glass, listening to them',
   greet: 'at the glass',
 };
@@ -142,6 +146,9 @@ export class Game implements Ctx {
   passer: { readonly d: number; readonly sitting: boolean; readonly walking: boolean; readonly dir: 1 | -1 } | null = null;
   /** Where its scene is set (see GameSetup.place). */
   readonly place: PlaceName;
+  /** His evening fire is lit on the road above (the page follows his road); and it has gone up to sit by it. */
+  hisFire = false;
+  awayAtFire = false;
   private worldMs: number;
   private readonly speed: number;
   private readonly rand: () => number;
@@ -332,9 +339,22 @@ export class Game implements Ctx {
     const p = this.passer;
     if (p === null) return null;
     const door = this.geo.door(this.scene.layout.home);
-    // In the deep he is beyond its door, up on his road: it watches the doorway, and goes to sit at the threshold.
-    if (this.place === 'deep') return { x: door.x + (this.scene.layout.homeLeft ? 0.035 : -0.035), sitting: p.sitting };
+    // In the deep he is beyond its door, up on his road: it watches the doorway; when he sits there, he comes down
+    // through it and sits on the root beside it (web/creature/hollow.ts), and it goes to sit with him.
+    if (this.place === 'deep') {
+      const side = this.scene.layout.homeLeft ? 1 : -1;
+      return { x: door.x + (side * (p.sitting ? DEEP_SEAT_PX : 0.035 * this.geo.w)) / this.geo.w, sitting: p.sitting };
+    }
     return { x: door.x + (p.dir * p.d * PX_PER_M) / this.geo.w, sitting: p.sitting };
+  }
+
+  fireside(): boolean {
+    return this.hisFire;
+  }
+
+  atFire(on: boolean): void {
+    this.awayAtFire = on;
+    if (on) travellerCame(this.life, this.worldMs, 'fire');
   }
 
   travellerSat(): void {

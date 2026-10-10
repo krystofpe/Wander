@@ -20,7 +20,7 @@ import { Renderer } from './render.ts';
 import { loadAtlas } from './sprites.ts';
 import { Stage } from './stage.ts';
 import { lastMode, modes } from './modes.ts';
-import { meetingOf } from './hollowmark.ts';
+import { comesToFire, meetingOf } from './hollowmark.ts';
 import type { Neighbour } from './hollowmark.ts';
 import { revive } from '../src/creature/save.ts';
 import { travellerCame } from '../src/creature/traveller.ts';
@@ -213,9 +213,9 @@ async function neighbourOf(): Promise<Neighbour | null> {
 }
 stage.neighbour = await neighbourOf();
 
-/** He sat down by the hollow's door: the creature keeps the visit (in its file, or in this browser). */
-function visitHollow(): void {
-  const how = meetingOf(stage.grade.night, stage.neighbour);
+/** He sat down by the hollow's door, or it came to his fire: the creature keeps the visit (its file, or this browser). */
+function visitHollow(fire = false): void {
+  const how = fire ? 'fire' : meetingOf(stage.grade.night, stage.neighbour);
   if (how === null || stage.neighbour === null) return;
   if (site) {
     try {
@@ -443,6 +443,7 @@ const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
 
 function note(e: LifeEvent): void {
   if (e.type === 'stage' && e.stage === 'sit' && sim.what === 'hollow') visitHollow();
+  if (e.type === 'stage' && e.stage === 'campsit' && comesToFire(sim, stage.neighbour)) visitHollow(true);
   if (status.events.length < 400 && e.type !== 'drag' && e.type !== 'exhale') {
     const what = e.type === 'stage' ? e.stage : e.type === 'act' ? e.act : e.type === 'biome' ? e.id : e.type === 'landmark' ? e.kind : '';
     status.events.push(`${sim.clock.toFixed(2)} ${e.type}:${what}`);

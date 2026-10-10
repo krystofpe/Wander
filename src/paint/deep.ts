@@ -423,3 +423,138 @@ export function blooms(seed: number, height: number): Stamp {
     return s;
   });
 }
+
+const BARK = [role('bark', 0), role('bark', 1), role('bark', 2), role('bark', 3)];
+const LEAF = [role('leaf', 0), role('leaf', 1), role('leaf', 2), role('leaf', 3), role('leaf', 4)];
+const PALE_STEM = [role('bone', 0), role('bone', 1), role('bone', 2)];
+
+/**
+ * An old tree of the hollow, `height` px from its roots to the top of its crown: a thick dark trunk, a little
+ * gnarled, lit faintly on its left; roots flaring out over the ground with moss on them; a knot or two; branches
+ * reaching up and out into clumps of leaves at the top, which the canopy closes over.
+ */
+export function oldTree(seed: number, height: number): Stamp {
+  return cached(`oldtree:${seed}:${height}`, () => {
+    const random = rng(seed);
+    const h = Math.max(30, Math.round(height));
+    const tw = Math.max(4, Math.round(h * (0.08 + 0.04 * random())));
+    const crownW = Math.round(h * (0.55 + 0.25 * random()));
+    const w = Math.max(crownW, tw * 4) + 6;
+    const s = newStamp(w, h + 1, w >> 1);
+    const cx = s.ax;
+    const crownH = Math.round(h * 0.3);
+    // The trunk: from the roots up into the crown, its edges wandering a little, wider at the foot.
+    const edgeL: number[] = [];
+    const edgeR: number[] = [];
+    for (let y = crownH - 4; y <= h; y++) {
+      const t = (y - crownH) / Math.max(1, h - crownH);
+      const wob = Math.round(Math.sin(y * 0.21 + seed) * 0.8 + Math.sin(y * 0.07 + seed * 3) * 1.2);
+      const flare = t > 0.82 ? Math.round(((t - 0.82) / 0.18) ** 2 * tw * 1.6) : 0;
+      const half = tw / 2 + flare;
+      const x0 = Math.round(cx - half + wob);
+      const x1 = Math.round(cx + half + wob);
+      edgeL.push(x0);
+      edgeR.push(x1);
+      for (let x = x0; x <= x1; x++) {
+        const u = (x - x0) / Math.max(1, x1 - x0);
+        // Furrows: long dark streaks up the bark.
+        const furrow = (x * 7 + Math.floor(y / 9) * 3 + seed) % 5 === 0;
+        const b = u < 0.22 ? 2 : u < 0.5 ? 1 : 0;
+        put(s, x, y, BARK[furrow ? 0 : b], FLAG.RIM);
+      }
+    }
+    // Roots spreading over the ground either side, moss on their tops.
+    for (const dir of [-1, 1]) {
+      const len = Math.round(tw * (1.4 + random()));
+      for (let k = 0; k < len; k++) {
+        const x = Math.round(cx + dir * (tw / 2 + tw * 0.6 + k));
+        const y = h - Math.round(Math.max(0, (1 - k / len) * 3));
+        put(s, x, y, BARK[1], FLAG.RIM);
+        put(s, x, h, BARK[0], FLAG.RIM);
+        if (random() < 0.5) put(s, x, y - 1, MOSS[1 + Math.floor(random() * 2)], 0);
+      }
+    }
+    // A knot or two: a dark hollow ring on the bark.
+    const knots = 1 + Math.floor(random() * 2);
+    for (let i = 0; i < knots; i++) {
+      const ky = Math.round(crownH + (h - crownH) * (0.25 + 0.45 * random()));
+      const kx = Math.round(cx + (random() - 0.5) * tw * 0.4);
+      put(s, kx, ky, BARK[0]);
+      put(s, kx + 1, ky, BARK[0]);
+      put(s, kx, ky - 1, BARK[2]);
+    }
+    // Branches reaching up and out from the top of the trunk into the crown.
+    const branches = 3 + Math.floor(random() * 3);
+    for (let i = 0; i < branches; i++) {
+      const dir = (i / (branches - 1)) * 2 - 1;
+      const by = crownH + Math.round(random() * crownH * 0.6);
+      const ex = Math.round(cx + dir * crownW * (0.3 + 0.18 * random()));
+      const ey = Math.round(crownH * (0.2 + 0.5 * random()));
+      const steps = Math.max(Math.abs(ex - cx), Math.abs(ey - by));
+      for (let k = 0; k <= steps; k++) {
+        const t = k / Math.max(1, steps);
+        const x = Math.round(cx + (ex - cx) * t + Math.sin(t * 3 + i) * 1.5);
+        const y = Math.round(by + (ey - by) * t);
+        put(s, x, y, BARK[t < 0.5 ? 1 : 0], FLAG.RIM);
+        if (t < 0.4) put(s, x + 1, y, BARK[0], FLAG.RIM);
+      }
+    }
+    // Clumps of leaves at the top: rounded masses, lit on their upper left, swaying a little.
+    const clumps = 5 + Math.floor(crownW / 9);
+    for (let i = 0; i < clumps; i++) {
+      const ccx = Math.round(cx + (random() - 0.5) * crownW * 0.95);
+      const ccy = Math.round(crownH * (0.15 + 0.7 * random()));
+      const r = Math.max(3, Math.round(crownW * (0.1 + 0.08 * random())));
+      for (let dy = -r; dy <= r; dy++)
+        for (let dx = -r; dx <= r; dx++) {
+          const d = Math.sqrt(dx * dx + dy * dy * 1.3);
+          if (d > r + (((dx * 5 + dy * 3 + seed) % 3) - 1) * 0.6) continue;
+          const lit = (-dx - dy * 1.2) / r;
+          const rim = d > r - 1.2;
+          const b = rim && lit > 0.45 ? 2 : rim && lit < -0.3 ? 0 : 1;
+          put(s, ccx + dx, ccy + dy, LEAF[b], FLAG.RIM | Math.min(7, 2 + Math.round((1 - (ccy + dy) / crownH) * 3)));
+        }
+    }
+    cleanup(s);
+    return s;
+  });
+}
+
+/**
+ * A glowing toadstool of the hollow, `height` px tall, maybe with a smaller one or two beside it: a pale stem, a
+ * round cap glowing cyan with pale spots on it, its underside darker, the light brightest on its crown.
+ */
+export function toadstool(seed: number, height: number): Stamp {
+  return cached(`toadstool:${seed}:${height}`, () => {
+    const random = rng(seed);
+    const h = Math.max(5, Math.round(height));
+    const w = Math.max(9, Math.round(h * 1.5));
+    const s = newStamp(w, h + 1, w >> 1);
+    const one = (cx: number, th: number): void => {
+      const r = Math.max(2, Math.round(th * (0.38 + 0.1 * random())));
+      const capH = Math.max(2, Math.round(r * 0.75));
+      const top = h - th;
+      const sw = Math.max(1, Math.round(r * 0.45));
+      // The stem, pale, a little wider at its foot.
+      for (let y = top + capH; y <= h; y++) {
+        const foot = y > h - 2 ? 1 : 0;
+        for (let x = cx - Math.floor(sw / 2) - foot; x <= cx + Math.ceil(sw / 2) - 1 + foot; x++) put(s, x, y, PALE_STEM[x < cx ? 2 : 1], FLAG.RIM);
+      }
+      // The cap: a dome glowing cyan, brightest on its crown, darker at its underside, pale spots on it.
+      for (let dy = 0; dy <= capH; dy++) {
+        const half = Math.round(r * Math.sqrt(Math.max(0, 1 - ((capH - dy) / (capH + 0.5)) ** 2)) + (dy === capH ? 1 : 0));
+        for (let dx = -half; dx <= half; dx++) {
+          const g = dy === capH ? 0 : dy <= capH * 0.35 && Math.abs(dx) < half * 0.7 ? 2 : 1;
+          put(s, cx + dx, top + dy, GLOW[g]);
+        }
+      }
+      const spots = 1 + Math.floor(r / 2);
+      for (let i = 0; i < spots; i++) put(s, cx + Math.round((random() - 0.5) * r * 1.3), top + 1 + Math.floor(random() * Math.max(1, capH - 1)), PALE_STEM[2]);
+    };
+    const cx = s.ax;
+    if (h >= 9 && random() < 0.6) one(cx + (random() < 0.5 ? -1 : 1) * Math.round(w * 0.3), Math.round(h * (0.4 + 0.2 * random())));
+    one(cx, h);
+    if (h >= 12 && random() < 0.4) one(cx + (random() < 0.5 ? -1 : 1) * Math.round(w * 0.36), Math.round(h * 0.3));
+    return s;
+  });
+}

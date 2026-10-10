@@ -164,6 +164,86 @@ void main() {
  * final pass dithers them); the sun's disc, the moon in its phase and the stars are pixel art on the native grid
  * (research: Light §9–17, HD §14–15).
  */
+/** The canopy's edge (the hollow's sky and its near canopy share it): wants hash, smoothNoise, u_view, u_seed. */
+const CANOPY_GLSL = `
+// How far a canopy of leaves hangs down at column x (native px from the top): a scalloped lower edge of rounded leaf
+// clumps, two sizes of them, lower towards the sides of the view so the leaves frame it. 'rank' picks the far or
+// the near canopy.
+float canopy(float x, float rank, float base, float sides) {
+  float k = rank * 31.0 + u_seed;
+  float side = abs(x - u_view.x * 0.5) / (u_view.x * 0.5);
+  float line = base + sides * pow(side, 2.2) + 8.0 * smoothNoise(vec2(x / 37.0, k));
+  float drop = 0.0;
+  for (int o = 0; o < 3; o++) {
+    float w = o == 0 ? 23.0 + 9.0 * rank : o == 1 ? 11.0 + 3.0 * rank : 5.0;
+    float off = hash(vec2(float(o), k)) * 7.0;
+    float cell = floor(x / w + off);
+    float u = fract(x / w + off) - 0.5;
+    float h = hash(vec2(cell, k + float(o) * 7.0));
+    float r = (o == 0 ? 10.0 + 9.0 * rank : o == 1 ? 6.0 + 2.0 * rank : 3.0) * (0.3 + 0.9 * h);
+    // Now and then a mass of leaves hanging deep.
+    if (o == 0 && h > 0.82) r *= 1.8;
+    drop = max(drop, r * sqrt(max(0.0, 1.0 - 4.0 * u * u)));
+  }
+  return line + drop;
+}
+`;
+
+/**
+ * The hollow's near canopy, drawn over everything after the last layer: dark masses of leaves across the top of the
+ * view, hanging lower at its sides so they frame it, their lower edge catching a little light; strands hanging from
+ * them, swaying, a dim bead of light on the odd one. The far trees rise into it and are lost.
+ */
+export const CANOPY_FS = `#version 300 es
+precision highp float;
+uniform vec3 u_dark;
+uniform vec3 u_edge;
+uniform float u_scale;
+uniform vec2 u_view;
+uniform vec4 u_viewport;
+uniform float u_time;
+uniform float u_seed;
+out vec4 o_color;
+
+float hash(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+float smoothNoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 q = fract(p);
+  vec2 u = q * q * (3.0 - 2.0 * q);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+${CANOPY_GLSL}
+void main() {
+  vec2 screen = vec2(gl_FragCoord.x - u_viewport.x, u_viewport.w - (gl_FragCoord.y - u_viewport.y));
+  vec2 n = floor(screen / u_scale);
+  float mott = smoothNoise(n / vec2(5.0, 4.0) + u_seed) * 0.6 + smoothNoise(n / vec2(2.0, 2.0) + 9.0) * 0.4;
+  float edge = canopy(n.x, 1.0, 6.0, 70.0);
+  if (n.y < edge) {
+    vec3 c = u_dark * (0.45 + 0.4 * mott);
+    if (n.y >= edge - 2.0 && hash(n + 3.1) < 0.45) c = mix(c, u_edge, 0.3);
+    o_color = vec4(c, 1.0);
+    return;
+  }
+  // Strands hanging from it, dark, swaying a little; a dim bead of light on the odd one.
+  float vx = n.x + floor(1.2 * sin(u_time * 0.4 + n.y * 0.06 + hash(vec2(floor(n.x / 2.0), 3.0)) * 6.0));
+  if (hash(vec2(vx, 23.0)) < 0.16) {
+    float vlen = 8.0 + 46.0 * hash(vec2(vx, 29.0));
+    float below = n.y - canopy(vx, 1.0, 6.0, 70.0);
+    if (below >= 0.0 && below < vlen) {
+      vec3 c = mix(u_dark * 0.6, vec3(0.03, 0.14, 0.13), 0.5);
+      if (mod(below + vx * 7.0, 15.0) < 1.0 && hash(vec2(vx, below)) < 0.4) c = mix(c, u_edge, 0.55);
+      o_color = vec4(c, 1.0);
+      return;
+    }
+  }
+  discard;
+}`;
+
 export const SKY_FS = `#version 300 es
 precision highp float;
 uniform vec3 u_zenith;
@@ -202,57 +282,30 @@ float smoothNoise(vec2 p) {
   return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
 }
 
-// How far the roof hangs down at column x (native px from the top): a ragged line with stalactites, narrow and
-// pointed, a few long. 'rank' picks the far or the near row.
-float hang(float x, float rank, float base) {
-  float k = rank * 31.0 + u_seed;
-  float line = base + 10.0 * smoothNoise(vec2(x / 23.0, k)) + 5.0 * smoothNoise(vec2(x / 7.0, k + 3.0));
-  float r = 1.0 - abs(smoothNoise(vec2(x / (5.0 + 4.0 * rank), k + 7.0)) * 2.0 - 1.0) * 2.4;
-  float spike = pow(max(0.0, r), 3.0) * (26.0 + 30.0 * rank) * (0.4 + 0.9 * smoothNoise(vec2(x / 40.0, k + 11.0)));
-  return line + spike;
-}
-
-// The deep's sky: a roof of stone, near black overhead and lit from below by the mist; mottled rock; two ranks of
-// stalactites, the far one hazed into the mist and the near one dark and huge; sparse dim specks; a fall of glowing
-// water far off.
+${CANOPY_GLSL}
+// The hollow's sky: a wood all round. Misty teal, darker overhead; far off low in the middle, the light at the end
+// of the wood, and faint shafts of it slanting down from gaps in the leaves; a far canopy hazed into the mist,
+// hanging lower at the sides. (The near canopy is drawn over everything, CANOPY_FS.)
 vec3 cave(vec2 f, vec2 n) {
   float t = clamp(f.y / u_horizonRow, 0.0, 1.0);
-  vec3 c = mix(u_zenith, u_horizon, pow(t, 1.25));
-  float mott = smoothNoise(n / vec2(19.0, 8.0) + u_seed) * 0.6 + smoothNoise(n / vec2(6.0, 4.0) + 5.0) * 0.4;
-  c *= 0.8 + 0.4 * mott * (1.0 - t * 0.7);
-  // A fall of glowing water from a cleft in the roof, far off, flowing.
-  float fx = floor(u_view.x * 0.17 + 40.0 * (hash(vec2(u_seed, 2.0)) - 0.5));
-  if (abs(n.x - fx) <= 1.0 && f.y < u_horizonRow * 1.1) {
-    float flow = fract((n.y - u_time * 14.0) / 9.0 + hash(vec2(n.x, 4.0)));
-    float k = (n.x == fx ? 0.38 : 0.2) * (0.6 + 0.4 * step(0.4, flow)) * smoothstep(0.0, 0.25, t);
-    c = mix(c, vec3(0.35, 0.85, 0.9), k);
-  }
-  // Specks of light in the stone, like stars that are not, slowly breathing.
-  float h = hash(n * 1.37 + 21.0);
-  if (h < 0.004 * (1.0 - t)) {
-    float b = hash(n + 9.1);
-    float br = 0.35 + 0.35 * b + 0.2 * sin(u_time * (0.3 + 0.5 * b) + h * 700.0);
-    c = mix(c, b < 0.7 ? vec3(0.3, 0.6, 0.85) : vec3(0.55, 0.45, 0.9), clamp(br * 0.6, 0.0, 0.6));
-  }
-  // The far rank of stalactites, hazed toward the mist.
-  float farHang = hang(n.x, 0.0, 34.0);
-  if (n.y < farHang) c = mix(u_zenith, u_horizon, 0.28) * (0.85 + 0.25 * mott);
-  // The near rank, dark, its tips catching a glint of the light below.
-  float nearHang = hang(n.x, 1.0, 10.0) + 34.0 * pow(max(0.0, 1.0 - abs(smoothNoise(vec2(n.x / 13.0, u_seed + 41.0)) * 2.0 - 1.0) * 1.8), 2.5);
-  if (n.y < nearHang) {
-    c = u_zenith * 0.55;
-    if (n.y >= nearHang - 1.0) c = mix(c, u_horizon, 0.45);
-  }
-  // Vines hanging from it, dark and lush, swaying a little, a dim bead of light on the odd one.
-  float vx = n.x + floor(1.2 * sin(u_time * 0.4 + n.y * 0.06 + hash(vec2(floor(n.x / 2.0), 3.0)) * 6.0));
-  float vh = hash(vec2(vx, 23.0));
-  if (vh < 0.22) {
-    float vlen = 12.0 + 70.0 * hash(vec2(vx, 29.0));
-    float below = n.y - hang(vx, 1.0, 10.0);
-    if (below >= 0.0 && below < vlen) {
-      c = mix(u_zenith * 0.6, vec3(0.03, 0.12, 0.1), 0.6);
-      if (mod(below + vx * 7.0, 17.0) < 1.0 && hash(vec2(vx, below)) < 0.5) c = vec3(0.25, 0.5, 0.55);
-    }
+  vec3 c = mix(u_zenith, u_horizon, pow(t, 1.15));
+  float cx = u_view.x * 0.5;
+  float dx = (f.x - cx) / (u_view.x * 0.2);
+  float dy = (f.y - u_horizonRow * 0.95) / (u_horizonRow * 0.5);
+  float far = exp(-dx * dx - dy * dy);
+  vec3 light = mix(u_horizon, vec3(0.6, 0.97, 0.95), 0.5);
+  c = mix(c, light, clamp(far * 0.95, 0.0, 1.0));
+  // Shafts of light, slanting, strongest near the light far off.
+  float s = smoothNoise(vec2((f.x + f.y * 0.5) / 11.0, u_seed + 3.0));
+  float shaft = pow(max(0.0, s - 0.58) / 0.42, 2.0) * smoothstep(0.1, 0.55, t) * (0.25 + 0.75 * far);
+  c = mix(c, light, shaft * 0.22);
+  // Leaves on leaves: a soft mottle for the canopies.
+  float mott = smoothNoise(n / vec2(5.0, 4.0) + u_seed) * 0.6 + smoothNoise(n / vec2(2.0, 2.0) + 9.0) * 0.4;
+  // The far canopy, hazed toward the mist, its edge catching a little of the light.
+  float farEdge = canopy(n.x, 0.0, 30.0, 34.0);
+  if (n.y < farEdge) {
+    c = mix(u_zenith, u_horizon, 0.3 + 0.25 * far) * (0.8 + 0.35 * mott);
+    if (n.y >= farEdge - 1.0) c = mix(c, light, 0.18);
   }
   return c;
 }

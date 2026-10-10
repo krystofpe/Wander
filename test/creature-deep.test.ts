@@ -25,7 +25,7 @@ test('a realm is one place all the way along, with no landmarks; a road never is
   for (const seed of [1, 2, 3, 99]) for (let d = 0; d < 400000; d += 1500) assert.notEqual(stretchAt(seed, d).biome, 'deep');
 });
 
-test('the deep has its colours, teal by day and violet by night under a sky of stone', () => {
+test('the hollow has its colours: teal mist by day, a deeper blue-teal by night, dark overhead under its canopy', () => {
   assert.ok(DAYLIGHT.deep.length > 0);
   const day = newMoment();
   day.elevation = 40;
@@ -33,10 +33,11 @@ test('the deep has its colours, teal by day and violet by night under a sky of s
   night.elevation = -30;
   const d = gradeOf(day, newGrade(), true);
   const n = gradeOf(night, newGrade(), true);
-  // Oklab: the roof near black either way; the mist teal (a < 0) by day and toward violet (b < 0, a lifted) at night.
-  assert.ok(d.zenith[0] < 0.2 && n.zenith[0] < 0.2, 'a roof of stone overhead');
-  assert.ok(d.fog[1] < 0 && d.fog[2] < 0.02, 'teal mist by day');
-  assert.ok(n.fog[2] < -0.05 && n.fog[1] > d.fog[1], 'indigo mist at night');
+  // Oklab: dark overhead either way; the mist teal (a < 0, b about 0 or below) by day, darker and bluer at night.
+  assert.ok(d.zenith[0] < 0.25 && n.zenith[0] < 0.2, 'dark under the canopy');
+  assert.ok(d.fog[1] < -0.02 && Math.abs(d.fog[2]) < 0.06, 'teal mist by day');
+  assert.ok(n.fog[0] < d.fog[0] && n.fog[2] < d.fog[2], 'a darker, bluer mist at night');
+  assert.ok(d.horizon[0] > d.zenith[0] + 0.15, 'the mist far off much lighter than overhead');
   // No weather but the mist: rain and storm leave the deep's grade alone.
   const wet = newMoment();
   wet.elevation = 40;

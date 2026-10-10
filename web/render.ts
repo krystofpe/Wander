@@ -14,7 +14,7 @@ import { paintClouds } from '../src/paint/clouds.ts';
 import { stretchesBetween, WORLD } from '../src/world.ts';
 import { Gpu, QUAD_VS } from './gl.ts';
 import type { Program } from './gl.ts';
-import { COMPOSITE_FS, DOWN_FS, FINAL_FS, FOG_FS, GLOWADD_FS, RAIN_FS, RESOLVE_FS, SKY_FS, UP_FS } from './shaders.ts';
+import { CANOPY_FS, COMPOSITE_FS, DOWN_FS, FINAL_FS, FOG_FS, GLOWADD_FS, RAIN_FS, RESOLVE_FS, SKY_FS, UP_FS } from './shaders.ts';
 import { NO_LIGHT, SpriteBatch } from './sprites.ts';
 import type { Atlas, Light } from './sprites.ts';
 
@@ -136,6 +136,7 @@ export class Renderer {
   private readonly final: Program;
   private readonly glowAdd: Program;
   private readonly fog: Program;
+  private readonly canopy: Program;
   private readonly rain: Program;
   private readonly down: Program;
   private readonly up: Program;
@@ -193,6 +194,7 @@ export class Renderer {
     this.ground = this.batches[GROUND];
     this.glowAdd = prog(GLOWADD_FS, 'glow');
     this.fog = prog(FOG_FS, 'fog');
+    this.canopy = prog(CANOPY_FS, 'canopy');
     this.rain = prog(RAIN_FS, 'rain');
     this.down = prog(DOWN_FS, 'down');
     this.up = prog(UP_FS, 'up');
@@ -595,6 +597,20 @@ export class Renderer {
         batch.draw(this.atlas, this.paletteTex, this.scale, [vx, vy, vw, vh], this.canvasW, this.canvasH, v.rim, v.rimSide, near ? v.rimStrength : v.rimStrength / l.def.z, near ? v.light : NO_LIGHT);
       }
       this.air(v, l.index, [vx, vy, vw, vh]);
+    }
+    // In the hollow, the near canopy over everything.
+    if (v.cave > 0.5) {
+      gl.useProgram(this.canopy.program);
+      gl.bindVertexArray(this.quad);
+      gl.uniform4f(this.canopy.u('u_rect'), -1, -1, 1, 1);
+      gl.uniform3fv(this.canopy.u('u_dark'), labToRgb(g.zenith));
+      gl.uniform3fv(this.canopy.u('u_edge'), labToRgb(g.horizon));
+      gl.uniform1f(this.canopy.u('u_scale'), this.scale);
+      gl.uniform2f(this.canopy.u('u_view'), this.nativeW, this.nativeH);
+      gl.uniform4f(this.canopy.u('u_viewport'), vx, vy, vw, vh);
+      gl.uniform1f(this.canopy.u('u_time'), v.time % 100000);
+      gl.uniform1f(this.canopy.u('u_seed'), (v.seed % 997) / 97);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
     gl.bindVertexArray(this.quad);
     gl.disable(gl.BLEND);

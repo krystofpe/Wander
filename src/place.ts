@@ -47,7 +47,9 @@ export type Species =
   | 'crystal'
   | 'glowcap'
   | 'glowfern'
-  | 'bloom';
+  | 'bloom'
+  | 'oldtree'
+  | 'toadstool';
 
 /** A class of things on one layer of one biome: how dense (per 100 layer px), how big (px), clumped in groves. */
 type Flora = {
@@ -172,35 +174,30 @@ export const FLORA: Readonly<Record<BiomeId, readonly Flora[]>> = {
   // After Blackreach and the Underdark, made lush and alive: ranks of giant glowing mushrooms of several kinds into the
   // mist, ferns and glowing flowers everywhere underneath, coral shelves, torch-caps, tube fungi, violet crystal,
   // glowing bulbs and purple coral on the floor; a few stalagmites, a broken pillar or two of a people who are gone.
+  // The hollow, a wood: old trees in ranks into the mist, the near ones huge and dark; glowing toadstools under
+  // them, ferns, violet flowers, mossy stones; no path.
   deep: [
-    f('cap', ['hills'], 0.9, [50, 100], 0.6),
-    f('palecap', ['hills', 'mid'], 1.1, [50, 110], 0.6),
-    f('glowfern', ['hills', 'mid', 'near'], 2.5, [14, 26], 0.4),
-    f('torch', ['mid'], 0.5, [20, 40], 0.6),
-    f('stalag', ['hills', 'mid'], 0.4, [24, 70], 0.5),
-    f('cap', ['mid'], 0.8, [70, 140], 0.7),
-    f('pillar', ['mid'], 0.12, [40, 80], 0.8),
-    f('shelf', ['mid', 'near'], 0.6, [26, 54], 0.6),
-    f('bloom', ['mid', 'near'], 1.6, [8, 16], 0.5),
-    f('palecap', ['near'], 0.6, [80, 150], 0.7),
-    f('torch', ['near'], 0.5, [24, 46], 0.6),
-    f('amethyst', ['near', 'ground'], 0.5, [8, 18], 0.6),
-    f('tubes', ['near', 'ground'], 0.6, [10, 24], 0.6),
-    f('cap', ['ground'], 0.14, [110, 170], 0.85),
-    f('torch', ['ground'], 0.25, [18, 34], 0.6),
-    f('shelf', ['ground'], 0.35, [18, 34], 0.6),
-    f('glowfern', ['ground'], 3, [12, 22], 0.4),
-    f('bloom', ['ground'], 3, [6, 13], 0.5),
-    f('bulbs', ['ground'], 0.9, [5, 11], 0.6),
-    f('coral', ['ground'], 0.9, [7, 16], 0.6),
-    f('glowcap', ['ground'], 2.5, [4, 9], 0.6),
-    f('rock', ['ground'], 0.3, [8, 18], 0.3),
-    // Right at the front, dark against the light behind: ferns, flowers, coral, bulbs, small caps.
-    f('glowfern', ['fore'], 2.5, [20, 34], 0.4),
-    f('bloom', ['fore'], 1.6, [12, 20], 0.5),
-    f('coral', ['fore'], 1.4, [12, 26], 0.5),
-    f('bulbs', ['fore'], 1.2, [8, 14], 0.5),
-    f('glowcap', ['fore'], 1.6, [6, 12], 0.5),
+    f('oldtree', ['hills'], 1, [170, 220], 0.3),
+    f('oldtree', ['mid'], 0.6, [220, 280], 0.4),
+    f('fern', ['hills', 'mid'], 2, [10, 18], 0.4),
+    f('toadstool', ['hills', 'mid'], 0.9, [6, 14], 0.6),
+    f('bloom', ['mid'], 1, [6, 12], 0.5),
+    f('oldtree', ['near'], 0.3, [280, 340], 0.5),
+    f('bush', ['near'], 0.8, [14, 26], 0.5),
+    f('glowfern', ['near'], 1.6, [14, 24], 0.4),
+    f('toadstool', ['near'], 0.8, [10, 22], 0.6),
+    f('toadstool', ['ground'], 1.3, [10, 30], 0.6),
+    f('glowcap', ['ground'], 1.4, [4, 9], 0.6),
+    f('bloom', ['ground'], 0.9, [6, 13], 0.6),
+    f('glowfern', ['ground'], 2.2, [12, 22], 0.4),
+    f('tuft', ['ground'], 2, [6, 12], 0.3),
+    f('rock', ['ground'], 0.35, [8, 18], 0.3),
+    f('stump', ['ground'], 0.12, [10, 16], 0.5),
+    // Right at the front, dark against the light behind: ferns, toadstools, flowers, grass.
+    f('glowfern', ['fore'], 2.2, [20, 34], 0.4),
+    f('toadstool', ['fore'], 0.45, [22, 40], 0.6),
+    f('bloom', ['fore'], 1.1, [12, 20], 0.5),
+    f('tuft', ['fore'], 1.6, [12, 20], 0.3),
   ],
 };
 
@@ -244,6 +241,8 @@ const SPACING: Readonly<Record<Species, number>> = {
   glowcap: 7,
   glowfern: 9,
   bloom: 8,
+  oldtree: 30,
+  toadstool: 10,
 };
 
 export type Placed = {

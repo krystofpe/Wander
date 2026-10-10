@@ -49,7 +49,7 @@ export const HORIZON: Readonly<Record<BiomeId, number>> = {
 };
 
 type Style = 'round' | 'ridged' | 'mesa' | 'dune' | 'sea' | 'spires';
-type Cover = 'none' | 'conifer' | 'broad' | 'birch' | 'dead' | 'stones' | 'ruins' | 'poles' | 'reeds';
+type Cover = 'none' | 'conifer' | 'broad' | 'birch' | 'dead' | 'stones' | 'ruins' | 'poles' | 'reeds' | 'trunks';
 /** One land layer of one biome: amplitude (px at that layer), feature width (layer px), style and what crowns it. */
 type Form = readonly [number, number, Style, Cover];
 
@@ -69,9 +69,8 @@ const FORMS: Readonly<Record<BiomeId, readonly [Form, Form, Form, Form, Form]>> 
   stones: [[46, 260, 'round', 'none'], [36, 200, 'round', 'none'], [28, 150, 'round', 'stones'], [22, 120, 'round', 'none'], [18, 100, 'round', 'stones']],
   ruins: [[40, 260, 'round', 'none'], [30, 200, 'round', 'ruins'], [26, 150, 'round', 'ruins'], [22, 110, 'round', 'broad'], [18, 90, 'round', 'ruins']],
   rail: [[46, 260, 'round', 'none'], [32, 200, 'round', 'none'], [26, 150, 'round', 'broad'], [20, 120, 'round', 'poles'], [16, 100, 'round', 'none']],
-  // Far rock into the mist, a far forest of giant mushrooms before it (their crowns as domes), a dark lake across the
-  // middle distance (as the Underdark's Ebonlake), low banks before it.
-  deep: [[150, 120, 'ridged', 'none'], [90, 120, 'round', 'broad'], [0, 160, 'sea', 'none'], [0, 90, 'sea', 'none'], [12, 90, 'round', 'none']],
+  // The hollow: old trunks in ranks fading into the mist, rising into the canopy; the forest floor rolling a little.
+  deep: [[0, 200, 'round', 'none'], [6, 170, 'round', 'trunks'], [8, 150, 'round', 'trunks'], [8, 120, 'round', 'none'], [6, 100, 'round', 'none']],
 };
 
 /** Which of the five land layers a layer is (by depth), or −1. */
@@ -166,14 +165,14 @@ function coverAt(seed: number, layer: LayerDef, u: number): Cover {
 function crown(seed: number, cover: Cover, z: number, u: number, salt: number): number {
   if (cover === 'none') return 0;
   const scale = Math.min(1.6, 4 / z + 0.25);
-  const cell = Math.max(2, Math.round((cover === 'conifer' ? 3 : cover === 'birch' ? 3 : cover === 'broad' ? 6 : cover === 'reeds' ? 2 : 9) * scale));
+  const cell = Math.max(2, Math.round((cover === 'conifer' ? 3 : cover === 'birch' ? 3 : cover === 'broad' ? 6 : cover === 'reeds' ? 2 : cover === 'trunks' ? 14 : 9) * scale));
   const k = Math.floor(u / cell);
   let h = 0;
   // A thing per cell, maybe; neighbours overlap.
   for (let j = k - 2; j <= k + 2; j++) {
     const r = unit(j, seed ^ salt);
     const grove = fbm1(j * cell / 140, seed ^ salt ^ 0x31, 2, 0.5);
-    const present = cover === 'conifer' || cover === 'broad' || cover === 'birch' ? r < 0.75 + grove * 0.6 : cover === 'reeds' ? r < 0.6 : r < 0.18;
+    const present = cover === 'conifer' || cover === 'broad' || cover === 'birch' ? r < 0.75 + grove * 0.6 : cover === 'reeds' ? r < 0.6 : cover === 'trunks' ? r < 0.22 + grove * 0.3 : r < 0.18;
     if (!present) continue;
     const cx = j * cell + Math.floor(unit(j * 7 + 3, seed ^ salt) * cell);
     const size = (0.6 + 0.8 * unit(j * 13 + 5, seed ^ salt)) * scale;
@@ -212,6 +211,13 @@ function crown(seed: number, cover: Cover, z: number, u: number, salt: number): 
       case 'poles':
         t = dx === 0 ? 14 * size : 0;
         break;
+      case 'trunks': {
+        // Old trees far off: a trunk rising into the canopy, a flare of roots at its foot.
+        const tw = Math.round(size * (0.8 + 2.4 * unit(j * 23 + 1, seed ^ salt)));
+        const tall = 130 + 70 * unit(j * 17 + 9, seed ^ salt);
+        t = dx <= tw ? tall : dx <= tw + 2 ? 3 * size * (tw + 3 - dx) / 3 : 0;
+        break;
+      }
     }
     h = Math.max(h, t);
   }

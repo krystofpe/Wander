@@ -132,6 +132,62 @@ Columns: 8
  17  14  13	boot 0
  34  30  27	boot 1
 205 198 182	cig 0
+ 16  13  28	cloak0 0
+ 29  24  48	cloak0 1
+ 44  37  71	cloak0 2
+ 62  53  97	cloak0 3
+ 86  73 125	cloak0 4
+ 11  20  16	cloak1 0
+ 20  35  28	cloak1 1
+ 32  56  43	cloak1 2
+ 47  79  60	cloak1 3
+ 70 107  82	cloak1 4
+ 23  13  11	cloak2 0
+ 42  22  18	cloak2 1
+ 66  33  26	cloak2 2
+ 92  48  36	cloak2 3
+122  69  50	cloak2 4
+ 13  16  23	cloak3 0
+ 22  28  40	cloak3 1
+ 35  44  61	cloak3 2
+ 51  63  85	cloak3 3
+ 74  88 115	cloak3 4
+ 20  12  22	cloak4 0
+ 36  20  39	cloak4 1
+ 56  32  59	cloak4 2
+ 78  45  82	cloak4 3
+106  65 109	cloak4 4
+ 22  18  11	cloak5 0
+ 40  32  19	cloak5 1
+ 62  50  30	cloak5 2
+ 87  71  43	cloak5 3
+117  97  62	cloak5 4
+255 210 123	mood 0
+255 240 160	mood 1
+240 216 160	mood 2
+159 240 255	mood 3
+160 136  80	mood 4
+255 176  96	mood 5
+200 192 160	mood 6
+156 184 255	mood 7
+255 112  80	mood 8
+255 255 255	mood 9
+255 143 200	mood 10
+127 178 255	mood 11
+ 31 111 115	shroom 0
+ 79 196 191	shroom 1
+181 255 242	shroom 2
+ 61  15  24	berry 0
+122  31  44	berry 1
+194  59  72	berry 2
+ 79 184 221	toy 0
+200 246 255	toy 1
+255 127 176	heart 0
+255 224 138	note 0
+255 244 192	spark 0
+ 90  78 102	wing 0
+154 139 166	wing 1
+217 207 217	wing 2
 255   0 255	unused
 255   0   0	unused
 255   0   1	unused
@@ -205,59 +261,3 @@ Columns: 8
 255   0  69	unused
 255   0  70	unused
 255   0  71	unused
-255   0  72	unused
-255   0  73	unused
-255   0  74	unused
-255   0  75	unused
-255   0  76	unused
-255   0  77	unused
-255   0  78	unused
-255   0  79	unused
-255   0  80	unused
-255   0  81	unused
-255   0  82	unused
-255   0  83	unused
-255   0  84	unused
-255   0  85	unused
-255   0  86	unused
-255   0  87	unused
-255   0  88	unused
-255   0  89	unused
-255   0  90	unused
-255   0  91	unused
-255   0  92	unused
-255   0  93	unused
-255   0  94	unused
-255   0  95	unused
-255   0  96	unused
-255   0  97	unused
-255   0  98	unused
-255   0  99	unused
-255   0 100	unused
-255   0 101	unused
-255   0 102	unused
-255   0 103	unused
-255   0 104	unused
-255   0 105	unused
-255   0 106	unused
-255   0 107	unused
-255   0 108	unused
-255   0 109	unused
-255   0 110	unused
-255   0 111	unused
-255   0 112	unused
-255   0 113	unused
-255   0 114	unused
-255   0 115	unused
-255   0 116	unused
-255   0 117	unused
-255   0 118	unused
-255   0 119	unused
-255   0 120	unused
-255   0 121	unused
-255   0 122	unused
-255   0 123	unused
-255   0 124	unused
-255   0 125	unused
-255   0 126	unused
-255   0 127	unused

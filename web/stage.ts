@@ -21,6 +21,12 @@ import { Around } from './around.ts';
 
 type Puff = { x: number; y: number; vx: number; vy: number; age: number; life: number; big: boolean; splash: boolean };
 
+/**
+ * Where the camera stands for the sky and the air: a place on the road (metres), the world clock (hours, for the
+ * aurora's nights), his share of the screen width, and the moon's phase when it is not the road's own.
+ */
+export type Place = { readonly seed: number; readonly at: number; readonly clock: number; readonly framing: number; readonly moon?: number };
+
 /** Quake's "flicker" light style: base brightness, popping upward now and then, read at 10 Hz (research: Light §6). */
 const FLICKER = 'mmnmmommommnonmmonqnmmo';
 const flicker = (time: number, offset: number): number => (FLICKER.charCodeAt(Math.floor(time * 10 + offset) % FLICKER.length) - 97) / 12;
@@ -112,6 +118,18 @@ export class Stage {
    * animation; `dt` real seconds since the last frame (0 when frozen); `still` snaps the camera (frozen shots).
    */
   update(r: Renderer, atlas: Atlas | null, l: Life, hour: number, natural: boolean, w: Weather, time: number, dt: number, still: boolean, pose: string | null): void {
+    // The camera: him left of centre while he walks, eased toward the middle when he stops.
+    this.sky(r, { seed: l.seed, at: l.at, clock: l.clock, framing: l.stage !== 'walk' ? 0.5 : HIM_X }, hour, natural, w, time, dt, still);
+    if (atlas === null) return;
+    this.him(r, atlas, l, w, time, dt, pose);
+  }
+
+  /**
+   * The sky and the air over a place: the camera, the grade of the hour, the sun and the moon, the rim light, the
+   * Milky Way and the aurora, the glints on water, the clouds, fog veils, rain and snow. Clears the sprite batches
+   * and the local lights for the frame. The hollow (web/creature) uses this as it is, with a camera that never moves.
+   */
+  sky(r: Renderer, l: Place, hour: number, natural: boolean, w: Weather, time: number, dt: number, still: boolean): void {
     const v = this.view;
     const m = this.moment;
     const W = r.nativeW;
@@ -125,15 +143,13 @@ export class Stage {
     m.time = time;
     const ax = arcX(shownHour(hour, natural));
     m.side = Math.max(-1, Math.min(1, ax * 2 - 1));
-    v.moonPhase = roadMoon(l.clock, this.moonStart);
+    v.moonPhase = l.moon ?? roadMoon(l.clock, this.moonStart);
     m.moonlight = 1 - Math.abs(v.moonPhase - 0.5) * 2;
     m.flash = flashAt(time, l.seed, w) ? 1 : 0;
     v.flash = m.flash;
     gradeOf(m, this.grade);
 
-    // The camera: him left of centre while he walks, eased toward the middle when he stops.
-    const stopped = l.stage !== 'walk';
-    const want = stopped ? 0.5 : HIM_X;
+    const want = l.framing;
     this.framing = still ? want : this.framing + (want - this.framing) * Math.min(1, dt / 5);
     const groundY = groundHeight(l.seed, l.at) * PX_PER_M;
     if (Number.isNaN(this.camY) || still) this.camY = groundY;
@@ -224,10 +240,22 @@ export class Stage {
     v.rainColor[2] = Math.min(1, v.fogColor[2] * 0.6 + 0.45);
 
     for (const b of r.batches) b.clear();
-    const light = v.light;
-    light.count = 0;
+    v.light.count = 0;
     v.bloom = 0.35 + 0.55 * this.grade.night;
-    if (atlas === null) return;
+  }
+
+  /** The screen row of the ground's top at a distance on the road (native px), with the camera as it is. */
+  groundRow(r: Renderer, seed: number, d: number): number {
+    return WALK_Y + r.nativeH - VIEW_H + this.camY - groundHeight(seed, d) * PX_PER_M;
+  }
+
+  /** His fire and its smoke, the life around him, him in the pose of his stage, his ember, the rain's splashes. */
+  private him(r: Renderer, atlas: Atlas, l: Life, w: Weather, time: number, dt: number, pose: string | null): void {
+    const v = this.view;
+    const m = this.moment;
+    const W = r.nativeW;
+    const extra = r.nativeH - VIEW_H;
+    const light = v.light;
     const b = biomeAt(l.seed, l.at);
     const rowA = paletteRow(GROUND, BIOME_IDS.indexOf(b.a));
     const rowB = paletteRow(GROUND, BIOME_IDS.indexOf(b.b));

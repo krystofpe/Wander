@@ -65,6 +65,23 @@ const FAMILIES: readonly Family[] = [
   { name: 'stick', steps: 2 },
   { name: 'boot', steps: 2 },
   { name: 'cig', steps: 1 },
+  // The creature (web/creature): six cloaks, drawn in the coat's roles and moved to its own by the sprite's role
+  // swap; its eyes, glowing in the colour of its mood; its glowing mushrooms, berries, toy, hearts, notes, sparks;
+  // the wings of butterflies and moths.
+  { name: 'cloak0', steps: 5 },
+  { name: 'cloak1', steps: 5 },
+  { name: 'cloak2', steps: 5 },
+  { name: 'cloak3', steps: 5 },
+  { name: 'cloak4', steps: 5 },
+  { name: 'cloak5', steps: 5 },
+  { name: 'mood', steps: 12, glow: true },
+  { name: 'shroom', steps: 3, glow: true },
+  { name: 'berry', steps: 3 },
+  { name: 'toy', steps: 2, glow: true },
+  { name: 'heart', steps: 1, glow: true },
+  { name: 'note', steps: 1, glow: true },
+  { name: 'spark', steps: 1, glow: true },
+  { name: 'wing', steps: 3 },
 ];
 
 export type RoleInfo = {
@@ -234,6 +251,22 @@ const BASE: Colours = {
   stick: ['#281e14', '#463524'],
   boot: ['#110e0d', '#221e1b'],
   cig: ['#cdc6b6'],
+  // Indigo, moss, rust, slate, plum, ochre: the terminal creature's six cloaks, darkened into this world.
+  cloak0: ['#100d1c', '#1d1830', '#2c2547', '#3e3561', '#56497d'],
+  cloak1: ['#0b1410', '#14231c', '#20382b', '#2f4f3c', '#466b52'],
+  cloak2: ['#170d0b', '#2a1612', '#42211a', '#5c3024', '#7a4532'],
+  cloak3: ['#0d1017', '#161c28', '#232c3d', '#333f55', '#4a5873'],
+  cloak4: ['#140c16', '#241427', '#38203b', '#4e2d52', '#6a416d'],
+  cloak5: ['#16120b', '#282013', '#3e321e', '#57472b', '#75613e'],
+  // Content, joyful, calm, curious, sleepy, hungry, bored, lonely, grumpy, scared, love, sad (src/creature/look.ts).
+  mood: ['#ffd27a', '#fff0a0', '#f0d8a0', '#9ff0ff', '#a08850', '#ffb060', '#c8c0a0', '#9cb8ff', '#ff7050', '#ffffff', '#ff8fc8', '#7fb2ff'],
+  shroom: ['#1f6f73', '#4fc4bf', '#b5fff2'],
+  berry: ['#3d0f18', '#7a1f2c', '#c23b48'],
+  toy: ['#4fb8dd', '#c8f6ff'],
+  heart: ['#ff7fb0'],
+  note: ['#ffe08a'],
+  spark: ['#fff4c0'],
+  wing: ['#5a4e66', '#9a8ba6', '#d9cfd9'],
 };
 
 /** What each biome changes from the base. */

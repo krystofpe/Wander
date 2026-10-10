@@ -1007,7 +1007,18 @@
   },
   {
    "seed": "wander",
-   "at": "1184",
+   "at": "18890",
+   "hour": "14.84",
+   "weather": "clear",
+   "pose": "sitsmoke",
+   "t": "3.1",
+   "thought": "The pines have been talking all afternoon. Not to me.",
+   "group": "poses",
+   "name": "thought"
+  },
+  {
+   "seed": "wander",
+   "at": "24009",
    "hour": "18",
    "weather": "clear",
    "t": "3.1",
@@ -1117,6 +1128,36 @@
   },
   {
    "seed": "wander",
+   "at": "1184",
+   "hour": "14.84",
+   "weather": "clear",
+   "t": "3.1",
+   "show": "",
+   "group": "landmarks",
+   "name": "hollow"
+  },
+  {
+   "seed": "wander",
+   "at": "1192",
+   "hour": "14.84",
+   "weather": "clear",
+   "pose": "sitsmoke",
+   "t": "3.1",
+   "group": "landmarks",
+   "name": "hollow-sitting"
+  },
+  {
+   "seed": "wander",
+   "at": "1192",
+   "hour": "18",
+   "weather": "clear",
+   "pose": "sitsmoke",
+   "t": "3.1",
+   "group": "landmarks",
+   "name": "hollow-blue"
+  },
+  {
+   "seed": "wander",
    "at": "6847",
    "hour": "6.68",
    "weather": "clear",
@@ -1212,7 +1253,7 @@
   },
   {
    "seed": "wander",
-   "at": "1184",
+   "at": "24009",
    "hour": "18",
    "weather": "clear",
    "group": "4k",

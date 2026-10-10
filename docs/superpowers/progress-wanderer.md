@@ -12,7 +12,7 @@ The brief is `~/wander-ambient-prompt.md`. Read this file first after a restart,
 | 4 | Tour at 1080p and 4K, every biome/blend/hour/weather beautiful; docs/tour committed; README shows the best | done | docs/tour/ (155 frames, sheets), README gallery; looked at every sheet, fixed coast, swamp, plateau, stones, blends, fog, fox, deer |
 | 5 | Smooth motion: no shimmer, jitter or popping | done | docs/soak/motion-slits.png: 240 frames 1/60 s apart across a border, clean diagonals |
 | 6 | Steady 60 fps at 1080p and 4K, in-page bench p50/p99 | done | docs/soak/bench.json: 8 runs × 30 s, interval p50 16.7 / p99 16.8 ms, 1 late frame in 14 400 |
-| 7 | Soaks: 48 in-world h at speed; 2 real h at normal speed in background; heap/GPU/frame time flat | fast done; 2 h running on the final code | docs/soak/fast-48h.json; docs/soak/normal-2h.json |
+| 7 | Soaks: 48 in-world h at speed; 2 real h at normal speed in background; heap/GPU/frame time flat | done | docs/soak/README.md: fast 48 world h no errors, heap 23–26 MB; 2 h at speed 1 (20 min hidden) no errors, frames 16.7/16.8, GPU constant, heap 26–28 MB in hour 2 |
 | 8 | Same seed + distance → same place (tested) | done | test/world.test.ts, test/landmarks.test.ts |
 | 9 | Close and reopen continues; time away moves him on | done | `npm run check` (docs/soak/check.txt), test/journal.test.ts |
 | 10 | Offline works (`mind: local`); with a key, Claude thoughts and `mind: claude`; slow API never blocks | done | `npm run check`: local, claude through the real SDK to a stand-in API, slow/500/401 fall back at 60 fps |
@@ -71,9 +71,7 @@ The brief is `~/wander-ambient-prompt.md`. Read this file first after a restart,
 
 ## Next
 
-1. Wait for the 2-hour soak (docs/soak/normal-2h.json) and the fast soak on the final code; commit them; put the
-   numbers in the README and the PR.
-2. The final report.
+All items done except the branch deletion (owner). Final report posted.
 
 ## Open problems
 

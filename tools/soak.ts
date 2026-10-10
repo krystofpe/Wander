@@ -2,8 +2,11 @@
 // Leaves the road running in headless Chromium and samples it every minute: in-world hours walked, the JS heap
 // (after a collection), the GPU textures, buffers and their bytes alive, frame time p50/p99 over the minute, the
 // sound's live voices, and any error. `--hours` stops after that many in-world hours; `--minutes` after that much
-// real time. `--hidden MIN` hides the page behind another tab for the first MIN minutes, to show the road and its
-// sound go on in a background window. Writes the samples as JSON with a summary of each series' trend.
+// real time. `--hidden MIN` hides the page for the first MIN minutes, to show the road and its sound go on in a
+// background window. (Headless Chromium never hides a page, not even behind another tab or minimised, so the page
+// is hidden the way a browser hides it: the document reports `hidden`, and animation-frame callbacks wait, queued,
+// until it is shown again; timers and the worker clock run on.) Writes the samples as JSON with a summary of each
+// series' trend.
 import { writeFileSync } from 'node:fs';
 import { flags, open, session } from './headless.ts';
 
@@ -34,6 +37,8 @@ type Sample = {
   stage: string;
   biome: string;
   weather: string;
+  /** Footsteps the sound has played so far (they go on while the page is hidden). */
+  steps: number;
 };
 
 type Probe = { soak(): Omit<Sample, 't' | 'visible'>; error: string | null };
@@ -49,28 +54,49 @@ try {
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text());
   });
-  // A second tab in front hides the road's page from the browser (rAF stops; the worker clock goes on).
-  const cover = hidden > 0 ? await s.browser.newPage() : null;
-  if (cover !== null) await cover.bringToFront();
+  let isHidden = false;
+  if (hidden > 0) {
+    await page.evaluate(() => {
+      const w = window as unknown as { requestAnimationFrame: typeof requestAnimationFrame; __show?: () => void };
+      const raf = window.requestAnimationFrame.bind(window);
+      const waiting: FrameRequestCallback[] = [];
+      w.requestAnimationFrame = (cb: FrameRequestCallback): number => {
+        waiting.push(cb);
+        return 0;
+      };
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+      w.__show = () => {
+        delete (document as unknown as Record<string, unknown>).hidden;
+        delete (document as unknown as Record<string, unknown>).visibilityState;
+        w.requestAnimationFrame = raf;
+        document.dispatchEvent(new Event('visibilitychange'));
+        for (const cb of waiting.splice(0)) raf(cb);
+      };
+    });
+    isHidden = true;
+  }
   const start = Date.now();
   let startHours = -1;
   for (;;) {
     await new Promise((r) => setTimeout(r, every * 1000));
     const t = (Date.now() - start) / 60000;
-    if (cover !== null && t >= hidden) {
-      await page.bringToFront();
-      await cover.close();
+    if (isHidden && t >= hidden) {
+      await page.evaluate(() => (window as unknown as { __show(): void }).__show());
+      isHidden = false;
     }
     const probe = (await page.evaluate(() => {
       const w = (window as unknown as { __wander: Probe }).__wander;
-      return { sample: w.soak(), error: w.error, visible: document.visibilityState };
+      const sound = (w as unknown as { sound(): { body?: { step?: number } } | null }).sound();
+      return { sample: { ...w.soak(), steps: sound?.body?.step ?? 0 }, error: w.error, visible: document.visibilityState };
     })) as { sample: Omit<Sample, 't' | 'visible'>; error: string | null; visible: string };
     if (probe.error !== null) errors.push(probe.error);
     if (startHours < 0) startHours = probe.sample.worldHours;
     const sample: Sample = { t: Math.round(t * 10) / 10, visible: probe.visible, ...probe.sample };
     samples.push(sample);
     process.stdout.write(
-      `${sample.t} min · ${(sample.worldHours - startHours).toFixed(1)} world h · ${sample.km} km · heap ${sample.heapMB} MB · tex ${sample.textures} (${sample.textureMB} MB) buf ${sample.buffers} fb ${sample.framebuffers} · frame p50 ${sample.p50} p99 ${sample.p99} ms (${sample.frames}) · voices ${sample.voices} · ${sample.visible} · ${sample.stage} ${sample.biome} ${sample.weather}${errors.length ? ` · ERRORS ${errors.length}` : ''}\n`,
+      `${sample.t} min · ${(sample.worldHours - startHours).toFixed(1)} world h · ${sample.km} km · heap ${sample.heapMB} MB · tex ${sample.textures} (${sample.textureMB} MB) buf ${sample.buffers} fb ${sample.framebuffers} · frame p50 ${sample.p50} p99 ${sample.p99} ms (${sample.frames}) · voices ${sample.voices} · steps ${sample.steps} · ${sample.visible} · ${sample.stage} ${sample.biome} ${sample.weather}${errors.length ? ` · ERRORS ${errors.length}` : ''}\n`,
     );
     writeFileSync(out, `${JSON.stringify({ speed, size: `${w}×${h}`, hidden, samples, errors }, null, 1)}\n`);
     if (worldHours !== null && sample.worldHours - startHours >= worldHours) break;

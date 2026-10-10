@@ -26,7 +26,7 @@ async function mockApi(mode: Mode): Promise<{ url: string; calls: Record<string,
     let body = '';
     req.on('data', (c: Buffer) => (body += c.toString()));
     req.on('end', () => {
-      calls.push({ path: req.url, ...(JSON.parse(body || '{}') as Record<string, unknown>) });
+      calls.push({ path: req.url, beta: req.headers['anthropic-beta'], ...(JSON.parse(body || '{}') as Record<string, unknown>) });
       const send = (status: number, value: unknown): void => {
         if (res.destroyed) return;
         res.writeHead(status, { 'content-type': 'application/json', 'request-id': `req_mock_${calls.length}` });
@@ -122,7 +122,9 @@ try {
     const moved = await wander(later);
     const walked = moved.life.at - now.life.at;
     ok(walked > 6000 && walked < 7000, `after three hours away he has walked on ${walked.toFixed(0)} m (0.62 m/s average, capped at 20 km), the clock ${(moved.life.clock - now.life.clock).toFixed(1)} world hours on, ${moved.life.log.length - now.life.log.length} places logged on the way`);
-    const word = (await later.evaluate(() => document.getElementById('log')?.textContent ?? ''));
+    // The bar and the log are refreshed twice a second.
+    await later.waitForTimeout(1200);
+    const word = await later.evaluate(() => document.getElementById('log')?.textContent ?? '');
     ok(word.includes(now.word), `the log of places names the same road (“${now.word}”)`);
     await later.close();
     w.proc.kill();
@@ -141,11 +143,11 @@ try {
     const seconds = (Date.now() - t0) / 1000;
     const fps = (s.frames - f0) / seconds;
     const b1 = await bar(page);
-    const call = api.calls[0] as { model?: string; output_config?: unknown; betas?: unknown; path?: string } | undefined;
+    const call = api.calls[0] as { model?: string; output_config?: unknown; beta?: unknown; path?: string } | undefined;
     if (mode === 'ok') {
       ok(w.out.join('').includes('mind: claude'), `with a key the server says "${w.out.join('').trim().split('\n')[1]?.trim()}"`);
       ok(b0.includes('mind: claude'), `the bar says mind: claude — "${b0}"`);
-      ok(s.thoughts[0] === MOCK_THOUGHT, `his thought came from the API: "${s.thoughts[0]}" (request: ${call?.path} model ${call?.model}, output_config ${JSON.stringify(call?.output_config)?.slice(0, 60)}…, betas ${JSON.stringify(call?.betas)})`);
+      ok(s.thoughts[0] === MOCK_THOUGHT, `his thought came from the API: "${s.thoughts[0]}" (request: ${call?.path} model ${call?.model}, output_config ${JSON.stringify(call?.output_config)?.slice(0, 60)}…, anthropic-beta: ${String(call?.beta)})`);
     } else {
       ok(s.thoughts[0] !== MOCK_THOUGHT && s.thoughts[0].length > 0, `${mode === 'slow' ? 'a slow API (60 s)' : mode === 'fail' ? 'a failing API (500)' : 'a refused key (401)'}: his own voice answered after ${seconds.toFixed(1)} s — "${s.thoughts[0]}"; frames kept coming at ${fps.toFixed(0)} fps meanwhile`);
       if (mode === 'auth') ok(b1.includes('mind: local'), `once the key is refused the bar says mind: local — "${b1}"`);

@@ -33,8 +33,8 @@ The same options work on the command line (`npm start -- --seed moss --speed 20`
 
 | Option | Does |
 |---|---|
-| `--seed WORD` | Walk the road made from this word. The same seed and distance always give the same place. |
-| `--new` | Start a new road (the old save is kept as `journey.json.bak`). |
+| `--seed WORD` | Walk the road made from this word. The same seed and distance always give the same place. Over a saved road of another word this is only a look, and the saved road stays as it was. |
+| `--new` | Start a new road, from `--seed` if given (the old save is kept as `journey.json.bak`). |
 | `--speed X` | Everything runs X times faster. |
 | `--day MIN` | Real minutes in a day (60 by default). |
 | `--realclock` | Follow the local time of day, with the natural sun. |

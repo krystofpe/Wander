@@ -1,9 +1,10 @@
 // npm start [-- --seed moss --speed 20 --day 30 --realclock --hour 18 --biome coast --offline --new]
 // npm run creature [-- --biome forest --name Ori --seed moss --speed 20 --hour 21 --offline --new --mute]
-// Starts the server, then opens Wander (or, with --creature, the creature in its hollow) in its own Chromium window,
-// full screen, sound allowed. Closing the window ends it; if the page stops answering, the window is opened again.
-// Extra flags: --no-browser, --port N, --save PATH.
-import { argvToQuery, parseOptions } from '../src/options.ts';
+// Starts the server for both modes, the endless walk and the creature's hollow, then opens one of them (the one used
+// last; the hollow with --creature) in its own Chromium window, full screen, sound allowed. Tab goes from one to the
+// other. Closing the window ends it; if the page stops answering, the window is opened again. Extra flags:
+// --no-browser, --port N, --save PATH (the mode's file; the other mode's file beside it).
+import { argvToQuery } from '../src/options.ts';
 import { creatureQuery } from '../src/creature/options.ts';
 import { findChromium, openApp } from './browser.ts';
 import type { ChildProcess } from 'node:child_process';
@@ -11,6 +12,8 @@ import { CreatureStore, connectCreatureMind, defaultCreaturePath } from './creat
 import { JourneyStore, defaultJourneyPath } from './journey.ts';
 import { connectThinker } from './mind.ts';
 import { startServer } from './server.ts';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import type { Api } from './server.ts';
 import { ROOT } from './root.ts';
 
@@ -23,7 +26,20 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === '--port' || a === '--save') own.set(a.slice(2), argv[++i] ?? '');
   else rest.push(a);
 }
-const creature = own.has('creature');
+// Which mode opens: the creature with --creature (npm run creature), the walk when it is given its options, otherwise
+// the one used last (the pages tell the server when you switch with Tab).
+const modeFile = (dir: string): string => join(dir, 'mode');
+const saveDir = dirname(own.get('save') ?? defaultJourneyPath());
+const lastMode = (): Mode => {
+  try {
+    return readFileSync(modeFile(saveDir), 'utf8').trim() === 'creature' ? 'creature' : 'wander';
+  } catch {
+    return 'wander';
+  }
+};
+type Mode = 'wander' | 'creature';
+const mode: Mode = own.has('creature') ? 'creature' : rest.length > 0 ? 'wander' : lastMode();
+const creature = mode === 'creature';
 
 let query: URLSearchParams;
 try {
@@ -38,53 +54,44 @@ const waiting: (() => void)[] = [];
 const saved = (): void => {
   for (const done of waiting.splice(0)) done();
 };
-const beat = (): void => {
-  lastBeat = performance.now();
-};
 
-let api: Api;
-let about: string;
-if (creature) {
-  // The creature in its hollow: its save (the terminal creature's own file), its Claude voice.
-  const store = new CreatureStore(own.get('save') ?? defaultCreaturePath());
-  if (query.has('new')) store.fresh();
-  const mind = await connectCreatureMind(query.has('offline'));
-  api = {
-    loadJourney: async () => null,
-    saveJourney: async () => {},
-    thought: async () => null,
-    mind: () => 'local',
-    beat,
-    loadCreature: async () => store.load(),
-    saveCreature: async (life) => {
-      store.save(life);
-      saved();
-    },
-    creatureSay: async (r) => (mind === null ? null : mind.ask(r as Record<string, unknown>)),
-    creatureMind: () => ({ mind: mind?.status() ?? 'local', model: mind?.model ?? null }),
-  };
-  about = `  mind: ${mind === null ? 'local' : `claude (${mind.model})`}\n  creature: ${store.path}\n`;
-} else {
-  const opts = parseOptions((k) => query.get(k));
-  const store = new JourneyStore(own.get('save') ?? defaultJourneyPath());
-  if (opts.fresh) store.fresh();
-  const thinker = await connectThinker(opts.offline);
-  api = {
-    loadJourney: async () => store.load(),
-    saveJourney: async (j) => {
-      store.save(j);
-      saved();
-    },
-    thought: async (ctx) => {
-      if (thinker === null) return null;
-      const text = await thinker.think(ctx as Record<string, unknown>);
-      return text === null ? null : { text };
-    },
-    mind: () => thinker?.status() ?? 'local',
-    beat,
-  };
-  about = `  mind: ${thinker === null ? 'local' : `claude (${thinker.model})`}\n  road: ${store.path}\n`;
-}
+// Both lives at once: his road and the creature's hollow, each in its file. With --save, the other one keeps its file
+// beside it, so a run with a save of its own never touches the real ones.
+const save = own.get('save');
+const journeys = new JourneyStore(save !== undefined && !creature ? save : save !== undefined ? join(dirname(save), 'journey.json') : defaultJourneyPath());
+const creatures = new CreatureStore(save !== undefined && creature ? save : save !== undefined ? join(dirname(save), 'creature.json') : defaultCreaturePath());
+if (query.has('new')) (creature ? creatures : journeys).fresh();
+const offline = query.has('offline');
+const thinker = await connectThinker(offline);
+const mind = await connectCreatureMind(offline);
+const api: Api = {
+  loadJourney: async () => journeys.load(),
+  saveJourney: async (j) => {
+    journeys.save(j);
+    saved();
+  },
+  thought: async (ctx) => {
+    if (thinker === null) return null;
+    const text = await thinker.think(ctx as Record<string, unknown>);
+    return text === null ? null : { text };
+  },
+  mind: () => thinker?.status() ?? 'local',
+  beat: () => {
+    lastBeat = performance.now();
+  },
+  loadCreature: async () => creatures.load(),
+  saveCreature: async (life) => {
+    creatures.save(life);
+    saved();
+  },
+  creatureSay: async (r) => (mind === null ? null : mind.ask(r as Record<string, unknown>)),
+  creatureMind: () => ({ mind: mind?.status() ?? 'local', model: mind?.model ?? null }),
+  setMode: async (m) => {
+    mkdirSync(saveDir, { recursive: true });
+    writeFileSync(modeFile(saveDir), m === 'creature' ? 'creature\n' : 'wander\n');
+  },
+};
+const about = `  mind: ${thinker === null ? 'local' : `claude (${thinker.model})`}\n  road: ${journeys.path}\n  creature: ${creatures.path}\n`;
 
 const running = await startServer(ROOT, api, Number(own.get('port') ?? 0));
 

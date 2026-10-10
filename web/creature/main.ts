@@ -25,10 +25,14 @@ import { Renderer } from '../render.ts';
 import { loadAtlas } from '../sprites.ts';
 import { Stage } from '../stage.ts';
 import { Hollow } from './hollow.ts';
+import { modes } from '../modes.ts';
 import { CreatureUi } from './ui.ts';
 
 const params = new URLSearchParams(location.search);
 const opts = parseCreatureOptions((k) => params.get(k));
+/** The published page: no server; each visitor's creature lives in their own browser, with its own voice. */
+const site = document.documentElement.hasAttribute('data-site');
+const STORE = 'wander.creature';
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const renderer = new Renderer(canvas, false);
@@ -83,7 +87,14 @@ async function born(): Promise<{ life: Life; away: Away | null; first: boolean; 
   let mind = 'local';
   let model: string | null = null;
   let server = false;
-  try {
+  if (site) {
+    try {
+      const raw = localStorage.getItem(STORE);
+      saved = raw === null ? null : (JSON.parse(raw) as unknown);
+    } catch {
+      saved = null;
+    }
+  } else try {
     const res = await fetch('/api/creature');
     if (res.ok) {
       const body = (await res.json()) as { life?: unknown; mind?: unknown; model?: unknown };
@@ -245,10 +256,24 @@ Object.assign(status, {
 // ── Saving and the heartbeat ───────────────────────────────────────────────
 
 function save(beacon: boolean): void {
-  if (ephemeral || !b.server) return;
+  if (ephemeral) return;
+  if (site) {
+    // In this browser only.
+    try {
+      localStorage.setItem(STORE, JSON.stringify(game.snapshot()));
+    } catch {
+      // Private window or blocked storage: it lives until the page closes.
+    }
+    return;
+  }
+  if (!b.server) return;
   const body = JSON.stringify(game.snapshot());
   if (beacon) navigator.sendBeacon('/api/creature', new Blob([body], { type: 'application/json' }));
   else void fetch('/api/creature', { method: 'PUT', body }).catch(() => {});
+}
+if (site && !opts.manual) {
+  setInterval(() => save(false), SAVE_EVERY_SEC * 1000);
+  addEventListener('pagehide', () => save(true));
 }
 if (b.server && !opts.manual) {
   setInterval(() => save(false), SAVE_EVERY_SEC * 1000);
@@ -290,6 +315,9 @@ canvas.addEventListener('pointerdown', (e) => {
   const p = nativeAt(e);
   game.click(p.x, p.y);
 });
+// The other mode, the endless road: Tab, or the dim line that shows with the bar and when the mouse moves (not while
+// you type to it).
+if (!opts.manual) modes('creature', site, () => game.showHud || performance.now() < cursorUntil, () => game.mode !== 'talk' && game.mode !== 'name');
 addEventListener('focus', () => game.focus(true));
 addEventListener('blur', () => game.focus(false));
 document.addEventListener('visibilitychange', () => game.focus(document.visibilityState === 'visible'));

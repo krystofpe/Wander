@@ -19,11 +19,17 @@ import { Ui } from './ui.ts';
 import { Renderer } from './render.ts';
 import { loadAtlas } from './sprites.ts';
 import { Stage } from './stage.ts';
+import { lastMode, modes } from './modes.ts';
 
 const params = new URLSearchParams(location.search);
 const opts = parseOptions((k) => params.get(k));
 /** The published page: plain files, no server behind it (tools/site.ts marks its copy of the page). */
 const site = document.documentElement.hasAttribute('data-site');
+// On the published page, a visitor who was last in their hollow goes back to it.
+if (site && params.toString() === '' && lastMode() === 'creature') {
+  location.replace(new URL('creature/', location.href).href);
+  await new Promise(() => {});
+}
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const renderer = new Renderer(canvas, false);
@@ -373,6 +379,8 @@ let hintUntil = performance.now() + 15_000;
 addEventListener('pointermove', () => {
   hintUntil = Math.max(hintUntil, performance.now() + 4000);
 });
+// The other mode, the creature's hollow: Tab, or the dim line that shows with the bar and when the mouse moves.
+if (!tool) modes('wander', site, () => ui.barOn || performance.now() < hintUntil);
 let drawnAt = anim;
 let uiAt = 0;
 

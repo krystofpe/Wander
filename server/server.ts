@@ -38,6 +38,8 @@ export type Api = {
   /** Its words from Claude for a moment, or null (no credentials, too soon, failure); and whose words they are. */
   creatureSay?(request: unknown): Promise<unknown>;
   creatureMind?(): { mind: 'claude' | 'local'; model: string | null };
+  /** The mode you are in, so the next start opens it (the pages say when you switch). */
+  setMode?(mode: string): Promise<void>;
 };
 
 export type Running = {
@@ -144,6 +146,11 @@ export function startServer(root: string, api: Api, port = 0): Promise<Running> 
         return json(res, 200, { thought: reply?.text ?? null, mind: api.mind() });
       }
       if (route === 'GET /api/mind') return json(res, 200, { mind: api.mind() });
+      if (route === 'POST /api/mode' && api.setMode !== undefined) {
+        const m = (JSON.parse(await body(req)) as { mode?: unknown }).mode;
+        await api.setMode(typeof m === 'string' ? m : 'wander');
+        return json(res, 200, { ok: true });
+      }
       if (route === 'POST /api/beat') {
         api.beat?.();
         return json(res, 200, { ok: true });

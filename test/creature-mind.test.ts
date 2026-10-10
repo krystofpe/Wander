@@ -15,8 +15,8 @@ test('the system prompt says who it is', () => {
   assert.match(p, /You are Moss/);
   assert.match(p, /swamp/);
   assert.match(p, /JSON/);
-  assert.match(p, /turf shelter/);
-  assert.match(systemPrompt(newLife(4, 0, { biome: 'forest' })), /foot of a great tree/, 'under the canopy it lives in the great tree');
+  assert.match(p, /the deep/);
+  assert.match(systemPrompt(newLife(4, 0, { biome: 'forest' })), /foot of a great tree/, 'it lives in the hollow at the foot of the great tree');
 });
 
 test('the situation carries the moment and the state of things', () => {

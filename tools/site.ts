@@ -1,11 +1,15 @@
 // npm run site -- [--out DIR]
 // Builds the published page (GitHub Pages): plain files with no server behind them. The TypeScript of web/ and src/
 // with its types stripped (as the local server does) and its imports pointed at .js, the page marked as the site
-// (the live road: one wanderer for everyone, nothing saved), the style, the font and its licence, the sprite atlas.
+// (the live road: one wanderer for everyone, nothing saved) and counted by Google Analytics, the style, the font and
+// its licence, the sprite atlas.
 import { stripTypeScriptTypes } from 'node:module';
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { flags } from './headless.ts';
+
+// The Google Analytics stream of the published page.
+const GA = 'G-J854CYPC2N';
 
 const root = join(import.meta.dirname, '..');
 const out = join(root, flags(process.argv.slice(2)).get('out') ?? 'dist');
@@ -35,10 +39,21 @@ for (const rel of [...files('web'), ...files('src')]) {
     put(rel, readFileSync(join(root, rel)));
   }
 }
-// The page: marked as the site, its script the built one.
+// The page: marked as the site, its script the built one, Google Analytics counting who comes (only here, not locally).
 const html = readFileSync(join(root, 'web', 'index.html'), 'utf8');
-const page = html.replace('<html lang="en">', '<html lang="en" data-site>').replace('src="web/main.ts"', 'src="web/main.js"');
-if (!page.includes('data-site') || !page.includes('web/main.js')) throw new Error('web/index.html: could not mark the page');
+const analytics = `<script async src="https://www.googletagmanager.com/gtag/js?id=${GA}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA}');
+</script>
+</head>`;
+const page = html
+  .replace('<html lang="en">', '<html lang="en" data-site>')
+  .replace('src="web/main.ts"', 'src="web/main.js"')
+  .replace('</head>', analytics);
+if (!page.includes('data-site') || !page.includes('web/main.js') || !page.includes(`id=${GA}`)) throw new Error('web/index.html: could not mark the page');
 put('index.html', page);
 for (const name of ['atlas.png', 'atlas.json']) put(join('assets', name), readFileSync(join(root, 'assets', name)));
 put('.nojekyll', '');

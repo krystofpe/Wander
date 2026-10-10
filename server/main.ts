@@ -31,12 +31,17 @@ const store = new JourneyStore(own.get('save') ?? defaultJourneyPath());
 if (opts.fresh) store.fresh();
 const thinker = await connectThinker(opts.offline);
 let lastBeat = 0;
+/** Who waits for the next save (shutdown, after asking the page to save). */
+const waiting: (() => void)[] = [];
 
 const running = await startServer(
   ROOT,
   {
     loadJourney: async () => store.load(),
-    saveJourney: async (j) => store.save(j),
+    saveJourney: async (j) => {
+      store.save(j);
+      for (const done of waiting.splice(0)) done();
+    },
     thought: async (ctx) => {
       if (thinker === null) return null;
       const text = await thinker.think(ctx as Record<string, unknown>);
@@ -59,7 +64,30 @@ let closing = false;
 async function shutdown(code = 0): Promise<void> {
   if (closing) return;
   closing = true;
-  browser?.kill();
+  // Ask the page to save the road now, and wait for it (two and a half seconds at most).
+  if (running.listeners() > 0) {
+    await new Promise<void>((done) => {
+      const timer = setTimeout(done, 2500);
+      waiting.push(() => {
+        clearTimeout(timer);
+        done();
+      });
+      running.tell('save');
+    });
+  }
+  // Let the browser close its window gracefully (SIGTERM), so the page saves the road as it goes, and keep
+  // listening until it has, or for three seconds at most.
+  const proc = browser;
+  if (proc !== null && proc.exitCode === null) {
+    await new Promise<void>((done) => {
+      const timer = setTimeout(done, 3000);
+      proc.once('exit', () => {
+        clearTimeout(timer);
+        done();
+      });
+      proc.kill('SIGTERM');
+    });
+  }
   await running.close();
   process.exit(code);
 }

@@ -190,7 +190,13 @@ function save(beacon: boolean): void {
   else void fetch('/api/journey', { method: 'PUT', body }).catch(() => {});
 }
 if (!tool) {
-  setInterval(() => save(false), 30_000);
+  setInterval(() => save(false), 15_000);
+  // The server asks for a save when it is about to stop (Ctrl-C in the terminal, the session ending).
+  try {
+    new EventSource('/api/events').addEventListener('save', () => save(false));
+  } catch {
+    // No server to listen to.
+  }
   setInterval(() => void fetch('/api/beat', { method: 'POST' }).catch(() => {}), 15_000);
   addEventListener('pagehide', () => save(true));
   // Keep the screen awake while he walks (asked again whenever the page is shown).

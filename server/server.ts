@@ -34,7 +34,15 @@ export type Api = {
   beat?(): void;
 };
 
-export type Running = { readonly url: string; readonly server: Server; close(): Promise<void> };
+export type Running = {
+  readonly url: string;
+  readonly server: Server;
+  /** Pages listening on the event stream. */
+  listeners(): number;
+  /** Sends an event to every page listening (`save`: save the road now). */
+  tell(event: string): void;
+  close(): Promise<void>;
+};
 
 const LIMIT = 1 << 20;
 
@@ -89,11 +97,20 @@ async function serveFile(root: string, path: string, res: ServerResponse): Promi
 
 /** Starts the server on 127.0.0.1 (port 0 picks a free one). */
 export function startServer(root: string, api: Api, port = 0): Promise<Running> {
+  /** Open event streams to pages (server-sent events), so the server can ask a page to save before it stops. */
+  const streams = new Set<ServerResponse>();
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     const route = `${req.method} ${url.pathname}`;
     const handle = async (): Promise<void> => {
       if (route === 'GET /' || route === 'GET /index.html') return serveFile(root, 'web/index.html', res);
+      if (route === 'GET /api/events') {
+        res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
+        res.write(': listening\n\n');
+        streams.add(res);
+        req.on('close', () => streams.delete(res));
+        return;
+      }
       if (route === 'GET /api/journey') return json(res, 200, { journey: await api.loadJourney(), mind: api.mind() });
       if (route === 'PUT /api/journey' || route === 'POST /api/journey') {
         await api.saveJourney(JSON.parse(await body(req)));
@@ -123,7 +140,17 @@ export function startServer(root: string, api: Api, port = 0): Promise<Running> 
       resolve({
         url: `http://127.0.0.1:${p}/`,
         server,
-        close: () => new Promise<void>((done) => server.close(() => done())),
+        listeners: () => streams.size,
+        tell: (event) => {
+          for (const r of streams) r.write(`event: ${event}\ndata: \n\n`);
+        },
+        close: () =>
+          new Promise<void>((done) => {
+            for (const r of streams) r.end();
+            streams.clear();
+            server.close(() => done());
+            server.closeAllConnections();
+          }),
       });
     });
   });

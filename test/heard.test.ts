@@ -35,7 +35,7 @@ test('every biome has its sound', () => {
   for (const id of BIOME_IDS) {
     const h = HEARD[id];
     assert.ok(h.mode.length >= 5, id);
-    for (const v of [h.trees, h.leaves, h.whistle, h.crickets, h.birds, h.owls, h.surf, h.water, h.train]) assert.ok(v >= 0 && v <= 1, id);
+    for (const v of [h.trees, h.leaves, h.whistle, h.crickets, h.birds, h.owls, h.surf, h.water]) assert.ok(v >= 0 && v <= 1, id);
   }
 });
 

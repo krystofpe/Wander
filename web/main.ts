@@ -5,7 +5,7 @@ import { catchUp, newJourney, reviveJourney, roadWord } from '../src/journal.ts'
 import type { Journey } from '../src/journal.ts';
 import { groundAt, stepLife, thoughtContext, weatherOf } from '../src/life.ts';
 import type { Env, Life, LifeEvent, Stage as LifeStage } from '../src/life.ts';
-import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, msOfStep, stepAt, stepLive } from '../src/live.ts';
+import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, msOfStep, nightStart, stepAt, stepLive } from '../src/live.ts';
 import { rng, squirrel } from '../src/noise.ts';
 import { parseOptions, seedOf } from '../src/options.ts';
 import { PX_PER_M } from '../src/layers.ts';
@@ -19,11 +19,22 @@ import { Ui } from './ui.ts';
 import { Renderer } from './render.ts';
 import { loadAtlas } from './sprites.ts';
 import { Stage } from './stage.ts';
+import { lastMode, modes } from './modes.ts';
+import type { Neighbour } from './neighbour.ts';
+import { revive } from '../src/creature/save.ts';
+import { travellerCame } from '../src/creature/traveller.ts';
+import type { Meeting } from '../src/creature/traveller.ts';
+import { VISIT } from '../src/creature/visit.ts';
 
 const params = new URLSearchParams(location.search);
 const opts = parseOptions((k) => params.get(k));
 /** The published page: plain files, no server behind it (tools/site.ts marks its copy of the page). */
 const site = document.documentElement.hasAttribute('data-site');
+// On the published page, a visitor who was last with their creature goes back to it.
+if (site && params.toString() === '' && lastMode() === 'creature') {
+  location.replace(new URL('creature/', location.href).href);
+  await new Promise(() => {});
+}
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const renderer = new Renderer(canvas, false);
@@ -84,7 +95,7 @@ const env: Env = shared
     };
 const dayLength = shared ? LIVE.day : opts.day * 60;
 /** Runs that bend time or only take pictures are not saved, and nor is the live road. */
-const ephemeral = shared || opts.frozen || opts.manual || opts.speed !== 1 || opts.hour !== null || opts.bench !== null || opts.at !== null;
+const ephemeral = shared || opts.frozen || opts.manual || opts.speed !== 1 || opts.hour !== null || opts.bench !== null || opts.at !== null || opts.visit;
 
 /** The live road's moment for a performance.now() time: now (or `?now`, run at `?speed`). */
 let offset = Date.now() - performance.now();
@@ -106,6 +117,9 @@ const remember = (l: Life, text: string): void => {
   if (l.thoughts.length > 8) l.thoughts.shift();
 };
 
+/** The live road's step the page's life was lived up to (it goes on from there, whatever the clock says by then). */
+let liveFrom = 0;
+
 /**
  * The road: the saved one (caught up on the time away), or a new one. `keep` says whether this run may write over
  * the saved road: not when it only looks at another seed's road, nor when the save could not be read.
@@ -113,7 +127,8 @@ const remember = (l: Life, text: string): void => {
 async function road(): Promise<{ journey: Journey; mind: string; keep: boolean }> {
   if (shared) {
     // The hour's camp, lived up to now; the thoughts he had on the way are thought too, so the next ones come alike.
-    const life = liveAt(LIVE_SEED, stepAt(liveMs(performance.now())), env, (l, evs, n) => {
+    liveFrom = stepAt(liveMs(performance.now()));
+    const life = liveAt(LIVE_SEED, liveFrom, env, (l, evs, n) => {
       for (const e of evs) if (e.type === 'thought') remember(l, liveThought(l, n));
     });
     return { journey: { version: 2, word: LIVE.word, moonStart: LIVE.moon, startedAt: LIVE.epoch, savedAt: Date.now(), life }, mind: 'local', keep: false };
@@ -132,11 +147,20 @@ async function road(): Promise<{ journey: Journey; mind: string; keep: boolean }
       // No server (opened as a plain file): a road of its own, unsaved.
     }
   }
+  if (opts.visit) {
+    // ?visit (--visit): a look at a road's second night, him asleep by his fire a little before the creature comes.
+    const j = newJourney(opts.seed ?? roadWord(Math.random()), Date.now(), moonPhase(Date.now()));
+    j.life = nightStart(j.life.seed, 1);
+    j.life.clock = 24 + VISIT.from - 0.2;
+    return { journey: j, mind, keep: false };
+  }
   if (saved !== null && !opts.fresh) {
     try {
       const j = reviveJourney(saved);
       if (opts.seed === null || opts.seed === j.word) {
         catchUp(j, Date.now(), dayLength);
+        // ?at: a look further along this road (not saved), walking from there.
+        if (opts.at !== null) Object.assign(j.life, { at: opts.at, act: 'walk', stage: 'walk', target: null, fire: null, smoking: -1 });
         return { journey: j, mind, keep };
       }
       // Another seed's road, for a look: the saved one stays as it is (add --new to make this one the road).
@@ -163,12 +187,53 @@ let mind = started.mind;
 /** The life that is stepped. On the live road it steps in fixed half seconds, and `life`, what is drawn and heard, is
  * a copy of it in between the last two steps; elsewhere they are one and the same. */
 let sim = journey.life;
-let simStep = shared ? stepAt(liveMs(performance.now())) : 0;
+let simStep = shared ? liveFrom : 0;
 const life: Life = shared ? { ...sim } : sim;
 journey.life = life;
 status.life = life;
 (status as unknown as { mind: string }).mind = mind;
 const stage = new Stage(life.seed, journey.moonStart);
+// The creature that comes through its portal to his camp at night: yours, from its save (its file here, this browser
+// on the published page), or a stranger's look when there is none yet.
+async function neighbourOf(): Promise<Neighbour | null> {
+  let data: unknown = null;
+  if (site) {
+    try {
+      data = JSON.parse(localStorage.getItem('wander.creature') ?? 'null') as unknown;
+    } catch {
+      data = null;
+    }
+  } else if (!tool) {
+    try {
+      const res = await fetch('/api/creature');
+      if (res.ok) data = ((await res.json()) as { life?: unknown }).life ?? null;
+    } catch {
+      data = null;
+    }
+  }
+  if (data === null) return null;
+  try {
+    const c = revive(data);
+    return { name: c.name, cloak: c.cloak, away: c.away, nightOwl: c.traits.nightOwl };
+  } catch {
+    return null;
+  }
+}
+stage.neighbour = await neighbourOf();
+
+/** It came through its portal and sat by his fire: the creature keeps the visit (its file, or this browser). */
+let keptNight = -1;
+function keepVisit(how: Meeting): void {
+  if (stage.neighbour === null) return;
+  if (site) {
+    try {
+      const c = revive(JSON.parse(localStorage.getItem('wander.creature') ?? 'null') as unknown);
+      if (travellerCame(c, Date.now(), how)) localStorage.setItem('wander.creature', JSON.stringify(c));
+    } catch {
+      // No creature in this browser, or no storage: nothing to keep.
+    }
+  } else if (!ephemeral) void fetch('/api/creature/visit', { method: 'POST', body: JSON.stringify({ how }) }).catch(() => {});
+}
 // Still pictures may ask for life to be put in the frame (?show=deer,flock).
 if (opts.frozen && params.get('show') !== null) stage.around.show = new Set((params.get('show') ?? '').split(','));
 renderer.atlas = await loadAtlas(renderer.gpu);
@@ -358,7 +423,8 @@ function logLines(): string[] {
   const out: string[] = [shared ? 'the live road' : `the road from “${journey.word}”`];
   for (let i = life.log.length - 1; i >= 0 && out.length < 32; i--) {
     const e = life.log[i];
-    const what = e.kind === 'camp' ? `a night's camp, ${e.name}` : e.kind === 'landmark' ? `a ${e.name}` : e.name;
+    // Landmarks are logged by name ("the lone tree"); an older save may hold a bare kind.
+    const what = e.kind === 'camp' ? `a night's camp, ${e.name}` : e.kind === 'landmark' && !e.name.startsWith('the ') ? `a ${e.name}` : e.name;
     out.push(`day ${e.day}, ${clockText(e.hour)}   ${what}`);
   }
   return out;
@@ -373,6 +439,8 @@ let hintUntil = performance.now() + 15_000;
 addEventListener('pointermove', () => {
   hintUntil = Math.max(hintUntil, performance.now() + 4000);
 });
+// The other mode, the creature's deep: Tab, or the dim line that shows with the bar and when the mouse moves.
+if (!tool) modes('wander', site, () => ui.barOn || performance.now() < hintUntil);
 let drawnAt = anim;
 let uiAt = 0;
 
@@ -452,7 +520,12 @@ function step(now: number): void {
   const hour = env.hourAt(life.clock);
   stage.update(renderer, renderer.atlas, life, hour, opts.realClock, weatherOf(life, env), anim, opts.frozen ? 0 : Math.min(0.1, anim - drawnAt), opts.frozen, null);
   drawnAt = anim;
-  if (stage.around.trainStarted !== null) sound?.train(stage.around.trainStarted);
+  // The creature came through its portal and sits with him: it keeps the visit, once a night.
+  const visit = stage.visit;
+  if (visit !== null && visit.phase === 'with' && visit.night !== keptNight) {
+    keptNight = visit.night;
+    keepVisit(visit.woke ? 'woke' : 'slept');
+  }
   // Text sits in CSS pixels: one art pixel is scale / devicePixelRatio of them.
   const css = renderer.scale / devicePixelRatio;
   ui.setScale(css);
@@ -533,6 +606,8 @@ const percentile = (a: Float32Array, n: number, q: number): number => {
 Object.assign(status, {
   /** The live road's last step, for the tools to check against live.ts. */
   liveStep: () => ({ step: simStep, at: sim.at, stage: sim.stage, clock: sim.clock, drawnAt: life.at, waiting: sound?.waiting ?? null }),
+  /** The creature's visit to his camp this frame, or null. */
+  visit: () => stage.visit,
   bench: null as unknown,
   /** One sample for the soak: the road, the JS heap after a collection, GPU resources alive, frame times. */
   soak: () => {

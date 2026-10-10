@@ -1,18 +1,21 @@
-// npm run site -- [--out DIR]
+// npm run site -- [--out DIR] [--serve [PORT]]
 // Builds the published page (GitHub Pages): plain files with no server behind them. The TypeScript of web/ and src/
-// with its types stripped (as the local server does) and its imports pointed at .js, the page marked as the site
-// (the live road: one wanderer for everyone, nothing saved) and counted by Google Analytics, the style, the font and
-// its licence, the sprite atlas.
+// with its types stripped (as the local server does) and its imports pointed at .js, both pages marked as the site
+// (the road: the live road, one wanderer for everyone, nothing saved; the hollow at creature/: each visitor's own
+// creature, kept in their browser) and counted by Google Analytics, the style, the font and its licence, the sprite
+// atlas. With --serve, it then serves them as Pages will, to look at here first.
 import { stripTypeScriptTypes } from 'node:module';
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { flags } from './headless.ts';
+import { pagesServer } from './pages.ts';
 
 // The Google Analytics stream of the published page.
 const GA = 'G-J854CYPC2N';
 
 const root = join(import.meta.dirname, '..');
-const out = join(root, flags(process.argv.slice(2)).get('out') ?? 'dist');
+const f = flags(process.argv.slice(2));
+const out = join(root, f.get('out') ?? 'dist');
 rmSync(out, { recursive: true, force: true });
 
 const files = (dir: string): string[] =>
@@ -35,12 +38,12 @@ for (const rel of [...files('web'), ...files('src')]) {
     if (left !== null) throw new Error(`${rel}: an import still ends in .ts: ${left[0]}`);
     put(rel.replace(/\.ts$/, '.js'), code);
     scripts++;
-  } else if (rel !== join('web', 'index.html')) {
+  } else if (rel !== join('web', 'index.html') && rel !== join('web', 'creature', 'index.html')) {
     put(rel, readFileSync(join(root, rel)));
   }
 }
-// The page: marked as the site, its script the built one, Google Analytics counting who comes (only here, not locally).
-const html = readFileSync(join(root, 'web', 'index.html'), 'utf8');
+// The pages: marked as the site, their scripts the built ones, Google Analytics counting who comes (only here, not
+// locally); the hollow at creature/, as the local server has it.
 const analytics = `<script async src="https://www.googletagmanager.com/gtag/js?id=${GA}"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -49,13 +52,21 @@ gtag('js', new Date());
 gtag('config', '${GA}');
 </script>
 </head>`;
-const page = html
-  .replace('<html lang="en">', '<html lang="en" data-site>')
-  .replace('src="web/main.ts"', 'src="web/main.js"')
-  .replace('</head>', analytics);
-if (!page.includes('data-site') || !page.includes('web/main.js') || !page.includes(`id=${GA}`)) throw new Error('web/index.html: could not mark the page');
-put('index.html', page);
+for (const [from, to, script] of [['web/index.html', 'index.html', 'web/main'], ['web/creature/index.html', 'creature/index.html', 'web/creature/main']] as const) {
+  const html = readFileSync(join(root, from), 'utf8');
+  const page = html
+    .replace('<html lang="en">', '<html lang="en" data-site>')
+    .replace(`${script}.ts"`, `${script}.js"`)
+    .replace('</head>', analytics);
+  if (!page.includes('data-site') || !page.includes(`${script}.js"`) || !page.includes(`id=${GA}`)) throw new Error(`${from}: could not mark the page`);
+  put(to, page);
+}
 for (const name of ['atlas.png', 'atlas.json']) put(join('assets', name), readFileSync(join(root, 'assets', name)));
 put('.nojekyll', '');
-const size = files(relative(root, out)).reduce((n, f) => n + statSync(join(root, f)).size, 0);
+const size = files(relative(root, out)).reduce((n, file) => n + statSync(join(root, file)).size, 0);
 process.stdout.write(`${relative(root, out)}: ${scripts} scripts, ${(size / 1048576).toFixed(1)} MB\n`);
+if (f.has('serve')) {
+  const port = Number(f.get('serve'));
+  const s = await pagesServer(out, Number.isInteger(port) && port > 0 ? port : 8090);
+  process.stdout.write(`the published page, as GitHub Pages will serve it: ${s.base} (the hollow: ${s.base}creature/); Ctrl+C to stop\n`);
+}

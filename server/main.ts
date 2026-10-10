@@ -1,12 +1,22 @@
-// npm start [-- --seed moss --speed 20 --day 30 --realclock --hour 18 --biome coast --offline --new]
-// Starts the server, then opens Wander in its own Chromium window, full screen, sound allowed. Closing the window
-// ends it; if the page stops answering, the window is opened again. Extra flags: --no-browser, --port N, --save PATH.
-import { argvToQuery, parseOptions } from '../src/options.ts';
+// npm start [-- --seed moss --speed 20 --day 30 --realclock --hour 18 --biome coast --visit --offline --new]
+// npm run creature [-- --name Ori --seed moss --speed 20 --hour 21 --visit --offline --new --mute]
+// Starts the server for both modes, the endless walk and the creature's hollow, then opens one of them (the one used
+// last; the hollow with --creature) in its own Chromium window, full screen, sound allowed. Tab goes from one to the
+// other. Closing the window ends it; if the page stops answering, the window is opened again. Extra flags:
+// --no-browser, --port N, --save PATH (the mode's file; the other mode's file beside it).
+import { argvToQuery } from '../src/options.ts';
+import { creatureQuery } from '../src/creature/options.ts';
 import { findChromium, openApp } from './browser.ts';
 import type { ChildProcess } from 'node:child_process';
+import { CreatureStore, connectCreatureMind, defaultCreaturePath } from './creature.ts';
 import { JourneyStore, defaultJourneyPath } from './journey.ts';
 import { connectThinker } from './mind.ts';
 import { startServer } from './server.ts';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import type { Api } from './server.ts';
+import { revive } from '../src/creature/save.ts';
+import { travellerCame } from '../src/creature/traveller.ts';
 import { ROOT } from './root.ts';
 
 const argv = process.argv.slice(2);
@@ -14,51 +24,92 @@ const own = new Map<string, string>();
 const rest: string[] = [];
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === '--no-browser') own.set('no-browser', '1');
+  if (a === '--no-browser' || a === '--creature') own.set(a.slice(2), '1');
   else if (a === '--port' || a === '--save') own.set(a.slice(2), argv[++i] ?? '');
   else rest.push(a);
 }
+// Which mode opens: the creature with --creature (npm run creature), the walk when it is given its options, otherwise
+// the one used last (the pages tell the server when you switch with Tab).
+const modeFile = (dir: string): string => join(dir, 'mode');
+const saveDir = dirname(own.get('save') ?? defaultJourneyPath());
+const lastMode = (): Mode => {
+  try {
+    return readFileSync(modeFile(saveDir), 'utf8').trim() === 'creature' ? 'creature' : 'wander';
+  } catch {
+    return 'wander';
+  }
+};
+type Mode = 'wander' | 'creature';
+const mode: Mode = own.has('creature') ? 'creature' : rest.length > 0 ? 'wander' : lastMode();
+const creature = mode === 'creature';
 
 let query: URLSearchParams;
 try {
-  query = argvToQuery(rest);
+  query = creature ? creatureQuery(rest) : argvToQuery(rest);
 } catch (err) {
   process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
   process.exit(2);
 }
-const opts = parseOptions((k) => query.get(k));
-const store = new JourneyStore(own.get('save') ?? defaultJourneyPath());
-if (opts.fresh) store.fresh();
-const thinker = await connectThinker(opts.offline);
 let lastBeat = 0;
 /** Who waits for the next save (shutdown, after asking the page to save). */
 const waiting: (() => void)[] = [];
+const saved = (): void => {
+  for (const done of waiting.splice(0)) done();
+};
 
-const running = await startServer(
-  ROOT,
-  {
-    loadJourney: async () => store.load(),
-    saveJourney: async (j) => {
-      store.save(j);
-      for (const done of waiting.splice(0)) done();
-    },
-    thought: async (ctx) => {
-      if (thinker === null) return null;
-      const text = await thinker.think(ctx as Record<string, unknown>);
-      return text === null ? null : { text };
-    },
-    mind: () => thinker?.status() ?? 'local',
-    beat: () => {
-      lastBeat = performance.now();
-    },
+// Both lives at once: his road and the creature's hollow, each in its file. With --save, the other one keeps its file
+// beside it, so a run with a save of its own never touches the real ones.
+const save = own.get('save');
+const journeys = new JourneyStore(save !== undefined && !creature ? save : save !== undefined ? join(dirname(save), 'journey.json') : defaultJourneyPath());
+const creatures = new CreatureStore(save !== undefined && creature ? save : save !== undefined ? join(dirname(save), 'creature.json') : defaultCreaturePath());
+if (query.has('new')) (creature ? creatures : journeys).fresh();
+const offline = query.has('offline');
+const thinker = await connectThinker(offline);
+const mind = await connectCreatureMind(offline);
+const api: Api = {
+  loadJourney: async () => journeys.load(),
+  saveJourney: async (j) => {
+    journeys.save(j);
+    saved();
   },
-  Number(own.get('port') ?? 0),
-);
+  thought: async (ctx) => {
+    if (thinker === null) return null;
+    const text = await thinker.think(ctx as Record<string, unknown>);
+    return text === null ? null : { text };
+  },
+  mind: () => thinker?.status() ?? 'local',
+  beat: () => {
+    lastBeat = performance.now();
+  },
+  loadCreature: async () => creatures.load(),
+  saveCreature: async (life) => {
+    creatures.save(life);
+    saved();
+  },
+  creatureSay: async (r) => (mind === null ? null : mind.ask(r as Record<string, unknown>)),
+  creatureMind: () => ({ mind: mind?.status() ?? 'local', model: mind?.model ?? null }),
+  creatureVisit: async (r) => {
+    const data = creatures.load();
+    if (data === null) return false;
+    const life = revive(data);
+    const how = (r as { how?: unknown }).how;
+    const kept = travellerCame(life, Date.now(), how === 'woke' ? 'woke' : 'slept');
+    if (kept) creatures.save(life);
+    return kept;
+  },
+  setMode: async (m) => {
+    mkdirSync(saveDir, { recursive: true });
+    writeFileSync(modeFile(saveDir), m === 'creature' ? 'creature\n' : 'wander\n');
+  },
+};
+const about = `  mind: ${thinker === null ? 'local' : `claude (${thinker.model})`}\n  road: ${journeys.path}\n  creature: ${creatures.path}\n`;
 
-// --new is done once, here (the old road kept as .bak); the page must not start yet another road on each reload.
+const running = await startServer(ROOT, api, Number(own.get('port') ?? 0));
+
+// --new is done once, here (the old one kept as .bak); the page must not start yet another on each reload.
 query.delete('new');
-const url = `${running.url}${query.toString() === '' ? '' : `?${query.toString()}`}`;
-process.stdout.write(`Wander is walking at ${url}\n  mind: ${thinker === null ? 'local' : `claude (${thinker.model})`}\n  road: ${store.path}\n`);
+const url = `${running.url}${creature ? 'creature' : ''}${query.toString() === '' ? '' : `?${query.toString()}`}`;
+process.stdout.write(`${creature ? 'The creature lives' : 'Wander is walking'} at ${url}\n${about}`);
 
 let browser: ChildProcess | null = null;
 let closing = false;

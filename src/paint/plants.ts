@@ -46,7 +46,7 @@ export function cleanup(s: Stamp, keep: (r: number) => boolean = () => false): v
 }
 
 /** A Bresenham line of one role. */
-function line(s: Stamp, x0: number, y0: number, x1: number, y1: number, r: number, flags = 0): void {
+export function line(s: Stamp, x0: number, y0: number, x1: number, y1: number, r: number, flags = 0): void {
   x0 = Math.round(x0);
   y0 = Math.round(y0);
   x1 = Math.round(x1);
@@ -72,7 +72,7 @@ function line(s: Stamp, x0: number, y0: number, x1: number, y1: number, r: numbe
 }
 
 /** Sway weight (0..7) for a row of a plant of height h, rising toward the top. */
-const sway = (y: number, h: number, max = 7): number => Math.max(0, Math.min(max, Math.round(max * Math.pow(1 - y / h, 1.6))));
+export const sway = (y: number, h: number, max = 7): number => Math.max(0, Math.min(max, Math.round(max * Math.pow(1 - y / h, 1.6))));
 
 // ── Conifers ───────────────────────────────────────────────────────────────
 
@@ -201,7 +201,7 @@ function colonise(random: () => number, cx: number, cy: number, rx: number, ry: 
 }
 
 /** A leaf clump: a disc banded into light from the upper left, its rim ragged by chance. */
-function clump(s: Stamp, random: () => number, cx: number, cy: number, rad: number, roles: readonly number[], darker: number, h: number): void {
+export function clump(s: Stamp, random: () => number, cx: number, cy: number, rad: number, roles: readonly number[], darker: number, h: number): void {
   const R = Math.ceil(rad);
   for (let y = -R; y <= R; y++)
     for (let x = -R; x <= R; x++) {

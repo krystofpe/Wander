@@ -34,8 +34,14 @@ pal.forEach((c, i) => gpl.push(`${String(c[0]).padStart(3)} ${String(c[1]).padSt
 writeFileSync(join(dir, 'palette.gpl'), `${gpl.join('\n')}\n`);
 
 const names = readdirSync(join(ROOT, 'tools', 'art', 'sprites')).filter((f) => f.endsWith('.ts')).map((f) => f.replace(/\.ts$/, ''));
-for (const name of names) {
-  const sheet = ((await import(`./sprites/${name}.ts`)) as { SHEET: Sheet }).SHEET;
+// A module holds one sheet (SHEET), and maybe more of other sizes (MORE); each becomes art/<its name>.aseprite.
+const sheets: Sheet[] = [];
+for (const file of names) {
+  const mod = (await import(`./sprites/${file}.ts`)) as { SHEET: Sheet; MORE?: readonly Sheet[] };
+  sheets.push(mod.SHEET, ...(mod.MORE ?? []));
+}
+for (const sheet of sheets) {
+  const name = sheet.name;
   check(sheet);
   const lua: string[] = [];
   lua.push(`local spr = Sprite(${sheet.w}, ${sheet.h}, ColorMode.INDEXED)`);

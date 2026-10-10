@@ -3,7 +3,7 @@
 // clock) he is asleep by the fire at that night's camp, and where each night's camp lies is fixed in advance, so
 // anyone can start from the last one and live the hour up to now in fixed steps: everyone sees him in the same place
 // doing the same thing. Through the day a plan (life.ts) brings him to the next camp by nightfall. Pure.
-import { BIOMES } from './biomes.ts';
+import { BIOMES, MARK_NAMES } from './biomes.ts';
 import { freshMemory } from './brain.ts';
 import { newLife, stepLife } from './life.ts';
 import type { Env, Life, LifeEvent, LogEntry, Plan } from './life.ts';
@@ -96,7 +96,7 @@ function history(seed: number, k: number, days = 10): LogEntry[] {
     const day = dayOf(24 * (j + 1) + 1);
     const when = (d: number): number => shownHour(5 + (12 * (d - from)) / Math.max(1, to.at - from));
     for (const s of stretchesBetween(seed, from, to.at)) if (s.start > from) out.push({ at: s.start, day, hour: when(s.start), kind: 'biome', name: BIOMES[s.biome].title });
-    for (const m of landmarksBetween(seed, from, to.at)) if (m.at > from && m.at <= to.at) out.push({ at: m.at, day, hour: when(m.at), kind: 'landmark', name: m.kind });
+    for (const m of landmarksBetween(seed, from, to.at)) if (m.at > from && m.at <= to.at) out.push({ at: m.at, day, hour: when(m.at), kind: 'landmark', name: MARK_NAMES[m.kind] });
     out.push({ at: to.at, day, hour: shownHour(LIVE.aim), kind: 'camp', name: to.what });
   }
   out.sort((a, b) => a.at - b.at);
@@ -130,7 +130,7 @@ export function nightStart(seed: number, k: number): Life {
   const last = marks[marks.length - 1];
   if (last !== undefined) {
     l.lastMark = last.cell;
-    l.sinceName = `the ${last.kind === 'circle' ? 'stone circle' : last.kind}`;
+    l.sinceName = MARK_NAMES[last.kind];
   }
   l.log = history(seed, k);
   return l;

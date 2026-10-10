@@ -49,6 +49,9 @@ const DEGREES: Readonly<Record<Voice, readonly number[]>> = {
 
 const LEVEL = { pluck: 0.11, bell: 0.035, pad: 0.035, drone: 0.05, motif: 0.09 } as const;
 
+/** The landmarks that have a motif: the lone tree, the stone arch, the waterfall. */
+const MOTIF_PLACES: ReadonlySet<string> = new Set(['lonetree', 'arch', 'waterfall']);
+
 const ROOTS = [38, 40, 41, 43, 45];
 
 const hz = (midi: number): number => 440 * 2 ** ((midi - 69) / 12);
@@ -127,7 +130,7 @@ export class Music {
       this.count[s.voice]++;
     }
     // A place with a motif of its own: it sounds once, slowed and dim, as he comes near (after Kentucky Route Zero).
-    const motif = m.landmark === 'circle' || m.landmark === 'shrine' || m.landmark === 'chapel' ? `${m.landmark}${m.place}` : null;
+    const motif = m.landmark !== null && MOTIF_PLACES.has(m.landmark) ? `${m.landmark}${m.place}` : null;
     if (motif !== null && motif !== this.motifFor && presence > 0.3) {
       this.motifFor = motif;
       const tune = [0, 4, 2, 7, 4, 0];

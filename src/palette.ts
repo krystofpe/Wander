@@ -65,6 +65,27 @@ const FAMILIES: readonly Family[] = [
   { name: 'stick', steps: 2 },
   { name: 'boot', steps: 2 },
   { name: 'cig', steps: 1 },
+  // The creature (web/creature): six cloaks, drawn in the coat's roles and moved to its own by the sprite's role
+  // swap; its eyes, glowing in the colour of its mood; its glowing mushrooms, berries, toy, hearts, notes, sparks;
+  // the wings of butterflies and moths.
+  { name: 'cloak0', steps: 5 },
+  { name: 'cloak1', steps: 5 },
+  { name: 'cloak2', steps: 5 },
+  { name: 'cloak3', steps: 5 },
+  { name: 'cloak4', steps: 5 },
+  { name: 'cloak5', steps: 5 },
+  { name: 'mood', steps: 12, glow: true },
+  { name: 'shroom', steps: 3, glow: true },
+  { name: 'berry', steps: 3 },
+  { name: 'toy', steps: 2, glow: true },
+  { name: 'heart', steps: 1, glow: true },
+  { name: 'note', steps: 1, glow: true },
+  { name: 'spark', steps: 1, glow: true },
+  { name: 'wing', steps: 3 },
+  // The deep's growth after the Underdark (src/paint/deep.ts): violet crystal, amber torch-caps, coral shelves.
+  { name: 'amethyst', steps: 3, glow: true },
+  { name: 'amber', steps: 3, glow: true },
+  { name: 'coral', steps: 4 },
 ];
 
 export type RoleInfo = {
@@ -234,6 +255,26 @@ const BASE: Colours = {
   stick: ['#281e14', '#463524'],
   boot: ['#110e0d', '#221e1b'],
   cig: ['#cdc6b6'],
+  // Six mosses for the creature, in the hollow's colours: teal, deep green, blue-green, sea-green, olive, and a dusk
+  // moss with violet in it (the terminal creature's six cloaks, by their order).
+  cloak0: ['#10261f', '#21473a', '#336d52', '#4b9472', '#6fc096'],
+  cloak1: ['#122417', '#22412c', '#376543', '#4f8d5c', '#76b77a'],
+  cloak2: ['#0e2229', '#1c4048', '#2d656c', '#438f92', '#62bab4'],
+  cloak3: ['#102825', '#1f4a42', '#327264', '#4a9c86', '#6ac8a8'],
+  cloak4: ['#1d2410', '#36401a', '#55642a', '#768a3a', '#9fb558'],
+  cloak5: ['#1b1a28', '#303346', '#475266', '#627a8a', '#86a2a8'],
+  // Content, joyful, calm, curious, sleepy, hungry, bored, lonely, grumpy, scared, love, sad (src/creature/look.ts).
+  mood: ['#ffd27a', '#fff0a0', '#f0d8a0', '#9ff0ff', '#a08850', '#ffb060', '#c8c0a0', '#9cb8ff', '#ff7050', '#ffffff', '#ff8fc8', '#7fb2ff'],
+  shroom: ['#1f6f73', '#4fc4bf', '#b5fff2'],
+  berry: ['#3d0f18', '#7a1f2c', '#c23b48'],
+  toy: ['#4fb8dd', '#c8f6ff'],
+  heart: ['#ff7fb0'],
+  note: ['#ffe08a'],
+  spark: ['#fff4c0'],
+  wing: ['#5a4e66', '#9a8ba6', '#d9cfd9'],
+  amethyst: ['#3b1f6e', '#8a4fd6', '#d9b8ff'],
+  amber: ['#4a220e', '#a8602e', '#e8a872'],
+  coral: ['#22090f', '#4a1a22', '#7a2e30', '#a5504a'],
 };
 
 /** What each biome changes from the base. */
@@ -302,23 +343,33 @@ const BIOME_COLOURS: Readonly<Record<BiomeId, Colours>> = {
   saltflat: {
     land: ['#3d3746', '#5a5262', '#7e7584', '#a59ca8', '#cbc4cb'],
     salt: ['#a8a59f', '#d1cec5', '#eeebe2'],
-    metal: ['#2b201c', '#4a3227', '#6c482f', '#8b623f'],
   },
+  // A moor the ice left strewn with boulders: heather-brown grass, the boulders grey with lichen.
   stones: {
     land: ['#262620', '#3b3a2e', '#5a5640', '#5a5640', '#8d8763'],
     grass: ['#262219', '#3d3727', '#575032', '#756d46', '#958e62'],
-    stone: ['#26272d', '#3e4046', '#5c5d5d', '#82827c'],
+    rock: ['#212422', '#363b37', '#525850', '#6b7166', '#8c8c7a'],
     flower: ['#4a3346', '#6b4a62', '#8d6c80'],
   },
-  ruins: {
-    land: ['#262a30', '#3a4047', '#565d62', '#7a8080', '#a2a59f'],
-    leaf: ['#16231c', '#24362a', '#38503a', '#556b49', '#7b8a5f'],
-    stone: ['#2b2b2f', '#444449', '#626260', '#878580'],
-  },
-  rail: {
-    land: ['#272c33', '#3d454b', '#5a6466', '#7e8783', '#a6ab9f'],
-    grass: ['#29291e', '#413f2c', '#5e5a3b', '#807a50', '#a39c6c'],
-    path: ['#38332e', '#544c43', '#716759'],
+  // The hollow, the world under the world: the world still living. Moss and leaf in living greens under a teal mist,
+  // pale trees, soft stone; toadstools glowing a quiet sea-green, violet for flowers and eyes; never neon.
+  deep: {
+    land: ['#0c1612', '#16261e', '#22382c', '#33503e', '#4a6c54'],
+    rock: ['#10171a', '#1c2628', '#2a3838', '#3e5050', '#586c68'],
+    soil: ['#0c100c', '#161c14', '#22291e', '#30382a'],
+    grass: ['#0e1c10', '#18301a', '#264828', '#38643a', '#52824e'],
+    leaf: ['#0c1a10', '#16301c', '#24482a', '#36643a', '#508250'],
+    needle: ['#0c1812', '#162a1e', '#22402c', '#30563a'],
+    bark: ['#141410', '#222018', '#332f24', '#474134'],
+    birch: ['#34443c', '#71867a', '#a9bdae', '#d6e4d8'],
+    stone: ['#141c1c', '#222c2c', '#344040', '#4c5a58'],
+    water: ['#08140f', '#10241c', '#1c3a2e', '#6aa890'],
+    shroom: ['#1c5a52', '#4aa898', '#b0e4d4'],
+    wing: ['#3c3a5a', '#7a74a8', '#cac4e4'],
+    flower: ['#3a3450', '#6c6496', '#aca2cc'],
+    bone: ['#6a7a6e', '#a8b8a8', '#d8e4d4'],
+    smoke: ['#3f6a70', '#7ea6a6', '#bfe0da'],
+    dry: ['#1a2418', '#28361f', '#384a2a', '#4c6236'],
   },
 };
 
@@ -403,6 +454,17 @@ const MORNING: readonly Key[] = EVENING.map((k) => {
   return { ...k, ...(swap[k.e] ?? {}) };
 });
 
+// The hollow's keys: a world under the world, its roof dark overhead and its mist a living green-teal by day, warmer
+// at dusk, dark teal at night; `glow` is the light of the world above as it shows through the openings in its roof
+// at his hour (pale day, warm dusk, moonlight), which the sky shader draws; no glow lobe.
+const DEEP: readonly Key[] = [
+  { e: -90, lift: 0.015, gain: 0.55, boost: 0, light: '#6a8aa8', warm: 0.05, ambient: '#0e1c22', cool: 0.5, sat: 0.9, zenith: '#04080a', horizon: '#14262a', glow: '#2c3a62', glowStrength: 0, glowWidth: 0.1, fog: '#152a2c', haze: 0.9 },
+  { e: -12, lift: 0.015, gain: 0.57, boost: 0, light: '#6a8aa8', warm: 0.05, ambient: '#0e1e22', cool: 0.5, sat: 0.9, zenith: '#05090b', horizon: '#16292c', glow: '#34446e', glowStrength: 0, glowWidth: 0.1, fog: '#172c2e', haze: 0.9 },
+  { e: -4, lift: 0.012, gain: 0.62, boost: 0.01, light: '#c0a080', warm: 0.2, ambient: '#1a2a28', cool: 0.45, sat: 0.95, zenith: '#070d0e', horizon: '#2c4440', glow: '#d89a70', glowStrength: 0, glowWidth: 0.1, fog: '#2a403c', haze: 0.95 },
+  { e: 6, lift: 0.01, gain: 0.68, boost: 0.02, light: '#cfe4c0', warm: 0.12, ambient: '#20382e', cool: 0.42, sat: 1, zenith: '#0b1513', horizon: '#4e7a66', glow: '#9cc0d8', glowStrength: 0, glowWidth: 0.1, fog: '#46705e', haze: 1 },
+  { e: 90, lift: 0.01, gain: 0.72, boost: 0.03, light: '#dcecc8', warm: 0.12, ambient: '#223c32', cool: 0.42, sat: 1, zenith: '#0d1816', horizon: '#5a8a72', glow: '#a8cce4', glowStrength: 0, glowWidth: 0.1, fog: '#4f7c66', haze: 1 },
+];
+
 type KeyLab = {
   e: number;
   lift: number;
@@ -433,6 +495,7 @@ const toLabKey = (k: Key): KeyLab => ({
 });
 const EVENING_LAB = EVENING.map(toLabKey);
 const MORNING_LAB = MORNING.map(toLabKey);
+const DEEP_LAB = DEEP.map(toLabKey);
 
 /** Everything the palette and the sky need about one moment. Plain numbers, reused without allocation. */
 export type Moment = {
@@ -496,9 +559,12 @@ const OVERCAST_SKY = hexToLab('#9aa3a8');
 const STORM_SKY = hexToLab('#5d656f');
 const FOG_DAY = hexToLab('#a7adb0');
 
-/** Fills `g` with the grade of a moment: keys interpolated by elevation, then the weather. No allocation. */
-export function gradeOf(m: Moment, g: Grade): Grade {
-  const keys = m.morning ? MORNING_LAB : EVENING_LAB;
+/**
+ * Fills `g` with the grade of a moment: keys interpolated by elevation, then the weather. No allocation. In the deep
+ * (`deep`) its own keys follow the sun above, and it has no weather but its mist.
+ */
+export function gradeOf(m: Moment, g: Grade, deep = false): Grade {
+  const keys = deep ? DEEP_LAB : m.morning ? MORNING_LAB : EVENING_LAB;
   let i = 1;
   while (i < keys.length - 1 && keys[i].e < m.elevation) i++;
   const a = keys[i - 1];
@@ -522,6 +588,12 @@ export function gradeOf(m: Moment, g: Grade): Grade {
   lerpLab(g.fog, a.fog, b.fog, k);
   g.night = Math.min(1, Math.max(0, (-m.elevation - 2) / 12));
   g.side = m.side * (1 - g.night);
+  if (deep) {
+    // Under stone: no sun's side, no cloud, rain or moon; the mist only thickens the haze.
+    g.side = 0;
+    g.haze *= 1 + 0.8 * m.fog;
+    return g;
+  }
 
   // Weather: cloud flattens the light and greys the sky; fog thickens the haze; storms darken.
   const day = Math.min(1, Math.max(0, (m.elevation + 6) / 18));

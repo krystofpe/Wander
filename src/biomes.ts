@@ -1,5 +1,6 @@
 // The biomes of the road: what each one is, where it sits in the climate, how its weather leans, the shape of
-// its ground and far land, and what grows and stands in it. Colours live in palette.ts.
+// its ground and far land, and what grows and stands in it. Colours live in palette.ts. And one place off the road:
+// the hollow where the creature lives, an old wood under a canopy (web/creature; see `realm` in world.ts).
 
 export const BIOME_IDS = [
   'pine',
@@ -14,19 +15,21 @@ export const BIOME_IDS = [
   'swamp',
   'saltflat',
   'stones',
-  'ruins',
-  'rail',
+  'deep',
 ] as const;
 export type BiomeId = (typeof BIOME_IDS)[number];
 
+/** The biomes his road passes through: all but the hollow ('deep'), where the creature lives, never on the road. */
+export const ROAD_BIOMES: readonly BiomeId[] = BIOME_IDS.filter((id) => id !== 'deep');
+
 /** What a step sounds like. */
-export type Ground = 'grass' | 'gravel' | 'snow' | 'sand' | 'wood' | 'mud' | 'leaves' | 'salt';
+export type Ground = 'grass' | 'gravel' | 'snow' | 'sand' | 'mud' | 'leaves' | 'salt';
 
 export type Biome = {
   readonly title: string;
   /** Where it sits in the climate: temperature and moisture, −1..1. */
   readonly climate: readonly [number, number];
-  /** An odd, makeshift place: rarer. */
+  /** An odd, bare place: rarer. */
   readonly odd: boolean;
   /** Weather chances (see sky.ts Tendency). */
   readonly weather: { readonly wet: number; readonly snow: number; readonly fog: number; readonly storm: number; readonly cloud: number; readonly wind: number };
@@ -151,7 +154,7 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     cold: false,
   },
   stones: {
-    title: 'field of standing stones',
+    title: 'moor of boulders',
     climate: [-0.35, 0.5],
     odd: true,
     weather: { wet: 0.35, snow: 0.2, fog: 0.5, storm: 0.1, cloud: 0.7, wind: 0.65 },
@@ -160,42 +163,53 @@ export const BIOMES: Readonly<Record<BiomeId, Biome>> = {
     air: { haze: 0.047, mist: 0.7 },
     cold: false,
   },
-  ruins: {
-    title: 'ruins of a town',
-    climate: [0.2, 0.4],
+  // Where the creature lives: the hollow, an old wood under a canopy, lit by the mist far off and what glows there;
+  // no weather but its mist.
+  deep: {
+    title: 'the hollow',
+    climate: [0, 0],
     odd: true,
-    weather: { wet: 0.28, snow: 0.1, fog: 0.35, storm: 0.15, cloud: 0.6, wind: 0.3 },
-    ground: { amp: 2, wave: 150, step: 'gravel' },
-    far: { height: 40, rough: 0.3, mesa: 0, ridged: 0 },
-    air: { haze: 0.047, mist: 0.45 },
-    cold: false,
-  },
-  rail: {
-    title: 'rail embankment',
-    climate: [0.0, -0.15],
-    odd: true,
-    weather: { wet: 0.22, snow: 0.15, fog: 0.3, storm: 0.2, cloud: 0.5, wind: 0.5 },
-    ground: { amp: 1.5, wave: 260, step: 'gravel' },
-    far: { height: 45, rough: 0.3, mesa: 0, ridged: 0 },
-    air: { haze: 0.036, mist: 0.4 },
+    weather: { wet: 0, snow: 0, fog: 0.7, storm: 0, cloud: 0, wind: 0 },
+    ground: { amp: 1.2, wave: 90, step: 'gravel' },
+    far: { height: 120, rough: 0.6, mesa: 0, ridged: 1 },
+    air: { haze: 0.075, mist: 1 },
     cold: false,
   },
 };
 
-export const LANDMARK_KINDS = ['house', 'chapel', 'lighthouse', 'mast', 'car', 'bridge', 'train', 'circle', 'shrine', 'skeleton', 'camp'] as const;
+/**
+ * The rare sights of his road, all of them made by nothing but time and weather: something huge, long dead, half in
+ * the ground; a lone ancient tree on a rise; an arch worn through a hill; a great boulder the ice left behind; a
+ * fallen giant with its roots in the air; a tor of stacked stone; a waterfall off a cliff; stacks of rock standing in
+ * the sea; spires of banded rock; a dead tree drowned in a pool. Every biome of the road has at least two of them.
+ */
+export const LANDMARK_KINDS = ['skeleton', 'lonetree', 'arch', 'erratic', 'fallen', 'tor', 'waterfall', 'stacks', 'spires', 'snag'] as const;
 export type LandmarkKind = (typeof LANDMARK_KINDS)[number];
 
 /** Where each landmark may stand, with a weight per biome. */
 export const LANDMARK_HOMES: Readonly<Record<LandmarkKind, Partial<Record<BiomeId, number>>>> = {
-  house: { meadow: 3, birch: 2, autumn: 3, plateau: 1, coast: 1, tundra: 1, ruins: 1, stones: 1 },
-  chapel: { meadow: 2, autumn: 2, plateau: 1, stones: 2, ruins: 2, coast: 1 },
-  lighthouse: { coast: 6 },
-  mast: { plateau: 3, autumn: 2, meadow: 1, rail: 2, saltflat: 2, tundra: 1 },
-  car: { desert: 2, saltflat: 2, ruins: 3, rail: 1, plateau: 1, meadow: 1, birch: 1 },
-  bridge: { pine: 2, birch: 2, meadow: 2, autumn: 2, swamp: 2, pass: 2, rail: 2 },
-  train: { rail: 6, plateau: 2, saltflat: 2, meadow: 1 },
-  circle: { stones: 6, plateau: 2, tundra: 1, autumn: 1 },
-  shrine: { pass: 3, pine: 2, birch: 1, autumn: 1, swamp: 1 },
-  skeleton: { desert: 4, saltflat: 3, tundra: 2, plateau: 1 },
-  camp: { pine: 2, birch: 2, meadow: 1, autumn: 1, pass: 1, coast: 1, desert: 1, swamp: 1, tundra: 1 },
+  skeleton: { desert: 3, saltflat: 4, tundra: 2, plateau: 1 },
+  lonetree: { meadow: 5, autumn: 3, birch: 2, plateau: 1, stones: 1 },
+  arch: { desert: 3, coast: 3, plateau: 3 },
+  erratic: { pine: 3, birch: 2, meadow: 2, autumn: 1, pass: 2, tundra: 3, swamp: 1, stones: 4 },
+  fallen: { pine: 3, birch: 2, autumn: 3, swamp: 2 },
+  tor: { plateau: 3, pass: 2, tundra: 2, stones: 4 },
+  waterfall: { pass: 4 },
+  stacks: { coast: 4 },
+  spires: { desert: 4, saltflat: 3 },
+  snag: { swamp: 4 },
+};
+
+/** What he calls each landmark once he has passed it, in the log and in his thoughts. */
+export const MARK_NAMES: Readonly<Record<LandmarkKind, string>> = {
+  skeleton: 'the skeleton',
+  lonetree: 'the lone tree',
+  arch: 'the stone arch',
+  erratic: 'the great boulder',
+  fallen: 'the fallen giant',
+  tor: 'the tor',
+  waterfall: 'the waterfall',
+  stacks: 'the sea stacks',
+  spires: 'the rock spires',
+  snag: 'the drowned tree',
 };

@@ -15,7 +15,7 @@ const ctx = {
   near: null,
   day: 3,
   cigarettes: 2,
-  since: 'the bridge',
+  since: 'the waterfall',
   moon: 0.4,
   recent: ['A fire makes a room out of nothing.'],
 };

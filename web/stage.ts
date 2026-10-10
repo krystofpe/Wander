@@ -13,13 +13,24 @@ import { arcX, flashAt, moonAt, roadMoon, shownHour, sunElevation } from '../src
 import type { Weather } from '../src/sky.ts';
 import { loopFrame, walkFrame } from '../src/walker.ts';
 import { unit } from '../src/noise.ts';
-import { biomeAt, blended, groundHeight } from '../src/world.ts';
+import { biomeAt, blended, groundHeight, isRealm, landmarksBetween, stretchAt } from '../src/world.ts';
+import { awakeAt } from '../src/creature/traveller.ts';
+import { camping, crossing, portalOpen, sitsUp, visitAt } from '../src/creature/visit.ts';
+import type { Visit } from '../src/creature/visit.ts';
+import { drawNeighbour } from './neighbour.ts';
+import type { Neighbour } from './neighbour.ts';
 import { ALBEDO_ROW, FOG_AFTER, paletteRow } from './render.ts';
 import type { Renderer, View } from './render.ts';
 import type { Atlas } from './sprites.ts';
 import { Around } from './around.ts';
 
 type Puff = { x: number; y: number; vx: number; vy: number; age: number; life: number; big: boolean; splash: boolean };
+
+/**
+ * Where the camera stands for the sky and the air: a place on the road (metres), the world clock (hours, for the
+ * aurora's nights), his share of the screen width, and the moon's phase when it is not the road's own.
+ */
+export type Place = { readonly seed: number; readonly at: number; readonly clock: number; readonly framing: number; readonly moon?: number; readonly lift?: number };
 
 /** Quake's "flicker" light style: base brightness, popping upward now and then, read at 10 Hz (research: Light §6). */
 const FLICKER = 'mmnmmommommnonmmonqnmmo';
@@ -42,6 +53,12 @@ export class Stage {
   private readonly bytes = new Uint8Array(3);
   readonly moonStart: number;
   readonly around = new Around();
+  /** The creature that comes to his camp at night, as its save says (null: a stranger's look). */
+  neighbour: Neighbour | null = null;
+  /** The real time by the creature's clock (it keeps real hours; his days are faster): whether it is awake to visit. */
+  creatureClock: () => number = () => Date.now();
+  /** The creature's visit to his camp this frame (src/creature/visit.ts), or null. */
+  visit: Visit | null = null;
   /** Where his head is on the native view this frame (for his thoughts). */
   headX = 0;
   headY = 0;
@@ -69,6 +86,7 @@ export class Stage {
       rim: new Float32Array(3),
       milky: 0,
       aurora: 0,
+      cave: 0,
       shine: new Float32Array(3),
       shineX: 0,
       sunUp: 0,
@@ -112,6 +130,18 @@ export class Stage {
    * animation; `dt` real seconds since the last frame (0 when frozen); `still` snaps the camera (frozen shots).
    */
   update(r: Renderer, atlas: Atlas | null, l: Life, hour: number, natural: boolean, w: Weather, time: number, dt: number, still: boolean, pose: string | null): void {
+    // The camera: him left of centre while he walks, eased toward the middle when he stops.
+    this.sky(r, { seed: l.seed, at: l.at, clock: l.clock, framing: l.stage !== 'walk' ? 0.5 : HIM_X }, hour, natural, w, time, dt, still);
+    if (atlas === null) return;
+    this.him(r, atlas, l, w, time, dt, pose);
+  }
+
+  /**
+   * The sky and the air over a place: the camera, the grade of the hour, the sun and the moon, the rim light, the
+   * Milky Way and the aurora, the glints on water, the clouds, fog veils, rain and snow. Clears the sprite batches
+   * and the local lights for the frame. The hollow (web/creature) uses this as it is, with a camera that never moves.
+   */
+  sky(r: Renderer, l: Place, hour: number, natural: boolean, w: Weather, time: number, dt: number, still: boolean): void {
     const v = this.view;
     const m = this.moment;
     const W = r.nativeW;
@@ -125,17 +155,19 @@ export class Stage {
     m.time = time;
     const ax = arcX(shownHour(hour, natural));
     m.side = Math.max(-1, Math.min(1, ax * 2 - 1));
-    v.moonPhase = roadMoon(l.clock, this.moonStart);
+    v.moonPhase = l.moon ?? roadMoon(l.clock, this.moonStart);
     m.moonlight = 1 - Math.abs(v.moonPhase - 0.5) * 2;
-    m.flash = flashAt(time, l.seed, w) ? 1 : 0;
+    // The hollow, where the creature lives (a realm, world.ts): its own keys, no weather but its mist, a canopy.
+    const deep = isRealm(l.seed);
+    m.flash = !deep && flashAt(time, l.seed, w) ? 1 : 0;
     v.flash = m.flash;
-    gradeOf(m, this.grade);
+    gradeOf(m, this.grade, deep);
+    v.cave = deep ? 1 : 0;
 
-    // The camera: him left of centre while he walks, eased toward the middle when he stops.
-    const stopped = l.stage !== 'walk';
-    const want = stopped ? 0.5 : HIM_X;
+    const want = l.framing;
     this.framing = still ? want : this.framing + (want - this.framing) * Math.min(1, dt / 5);
-    const groundY = groundHeight(l.seed, l.at) * PX_PER_M;
+    // The hollow lowers its gaze a little (`lift` pixels): more of the ground before it, less of the sky.
+    const groundY = groundHeight(l.seed, l.at) * PX_PER_M - (l.lift ?? 0);
     if (Number.isNaN(this.camY) || still) this.camY = groundY;
     else this.camY += (groundY - this.camY) * Math.min(1, dt * 0.8);
     v.camX = l.at * PX_PER_M - this.framing * W;
@@ -166,14 +198,14 @@ export class Stage {
     v.rim[1] = (this.bytes[1] / 255) * (1 - k) + 0.5 * k;
     v.rim[2] = (this.bytes[2] / 255) * (1 - k) + 0.62 * k;
 
-    // The Milky Way on clear, dark nights, washed out by a bright moon and by the lights of towns and ruins; aurora
-    // over the cold lands on some clear nights.
+    // The Milky Way on clear, dark nights, washed out by a bright moon; aurora over the cold lands on some clear
+    // nights.
     const dark = Math.max(0, (this.grade.night - 0.5) * 2) * (1 - Math.min(1, w.cloud * 1.6)) * (1 - w.fog);
     const here = biomeAt(l.seed, l.at);
     v.here[0] = BIOME_IDS.indexOf(here.a);
     v.here[1] = BIOME_IDS.indexOf(here.b);
     v.here[2] = here.k;
-    v.milky = dark * (1 - 0.6 * m.moonlight * v.moonUp) * (1 - 0.5 * blended(here, (id) => (id === 'ruins' || id === 'rail' ? 1 : 0)));
+    v.milky = dark * (1 - 0.6 * m.moonlight * v.moonUp);
     const cold = blended(here, (id) => (id === 'tundra' ? 1 : id === 'pass' ? 0.7 : id === 'coast' || id === 'saltflat' ? 0.35 : 0));
     const which = Math.floor(l.clock / 24 + 0.5);
     v.aurora = cold * dark * (unit(which, l.seed ^ 0xa0a0) < 0.6 ? 1 : 0);
@@ -196,7 +228,7 @@ export class Stage {
     }
 
     // The air: clouds, fog veils and valley mist, rain or snow.
-    v.cover = w.cloud;
+    v.cover = deep ? 0 : w.cloud;
     v.cloudDrift += dt * (1.2 + 5 * w.wind);
     this.drift += dt * (2 + 7 * w.wind);
     // Fog is lit by the sky: a little lighter than the haze, so a veil never darkens the ground it lies on.
@@ -206,7 +238,7 @@ export class Stage {
     v.fogColor[2] = this.bytes[2] / 255;
     const e = m.elevation;
     // Mist gathers after a clear night, is thickest just after sunrise, burns off by mid-morning (research: Depth §13).
-    const mistTime = m.morning ? Math.max(0.12, Math.min(1, (e + 14) / 12) * (1 - Math.min(1, Math.max(0, (e - 8) / 20)))) : 0.1 + 0.25 * this.grade.night;
+    const mistTime = deep ? 0.75 : m.morning ? Math.max(0.12, Math.min(1, (e + 14) / 12) * (1 - Math.min(1, Math.max(0, (e - 8) / 20)))) : 0.1 + 0.25 * this.grade.night;
     const mist = blended(biomeAt(l.seed, l.at), (id) => BIOMES[id].air.mist);
     const yh = v.horizon;
     for (let i = 0; i < FOG_AFTER.length; i++) {
@@ -223,11 +255,46 @@ export class Stage {
     v.rainColor[1] = Math.min(1, v.fogColor[1] * 0.6 + 0.38);
     v.rainColor[2] = Math.min(1, v.fogColor[2] * 0.6 + 0.45);
 
+    if (deep) {
+      // Under the world: no sun, moon, stars, Milky Way or aurora (the sun's place is kept out of the way, up in the
+      // roof); the light from the openings rims what stands in it, softly.
+      v.sunX = Math.round(W * 0.64);
+      v.sunY = extra + 58;
+      v.sunUp = 0;
+      v.moonUp = 0;
+      v.milky = 0;
+      v.aurora = 0;
+      v.clear = 0;
+      v.shine.fill(0);
+      v.rimSide = 0;
+      v.rimStrength = 0.25;
+      v.rim[0] = 0.62;
+      v.rim[1] = 0.8;
+      v.rim[2] = 0.7;
+      // Motes drifting down through the light from above (the rain pass, as slow snow: web/render.ts).
+      v.rain = 0.03;
+      v.snow = true;
+      v.rainColor[0] = 0.5;
+      v.rainColor[1] = 0.92;
+      v.rainColor[2] = 0.95;
+    }
     for (const b of r.batches) b.clear();
+    v.light.count = 0;
+    v.bloom = deep ? 0.45 + 0.3 * this.grade.night : 0.35 + 0.55 * this.grade.night;
+  }
+
+  /** The screen row of the ground's top at a distance on the road (native px), with the camera as it is. */
+  groundRow(r: Renderer, seed: number, d: number): number {
+    return WALK_Y + r.nativeH - VIEW_H + this.camY - groundHeight(seed, d) * PX_PER_M;
+  }
+
+  /** His fire and its smoke, the life around him, him in the pose of his stage, his ember, the rain's splashes. */
+  private him(r: Renderer, atlas: Atlas, l: Life, w: Weather, time: number, dt: number, pose: string | null): void {
+    const v = this.view;
+    const m = this.moment;
+    const W = r.nativeW;
+    const extra = r.nativeH - VIEW_H;
     const light = v.light;
-    light.count = 0;
-    v.bloom = 0.35 + 0.55 * this.grade.night;
-    if (atlas === null) return;
     const b = biomeAt(l.seed, l.at);
     const rowA = paletteRow(GROUND, BIOME_IDS.indexOf(b.a));
     const rowB = paletteRow(GROUND, BIOME_IDS.indexOf(b.b));
@@ -264,9 +331,58 @@ export class Stage {
     // The life around him and what moves at the landmarks (behind him on the playfield).
     this.around.update(r, atlas, v, l, { sun: m.elevation, night: this.grade.night, weather: w, time, dt, extra, camY: this.camY, himX: colOf(l.at) });
 
+    // At night at his camp a portal opens beyond his fire, and the creature comes through to sit by the fire with
+    // him until the small hours (src/creature/visit.ts); then it goes back and the portal closes.
+    const visit = l.fire !== null && camping(l) ? visitAt(l.clock, l.seed) : null;
+    this.visit = visit;
+    if (visit !== null && l.fire !== null) {
+      const rows: [number, number, number] = [rowA, rowB, b.k];
+      const gate = l.fire.at + 3.4;
+      const seat = l.fire.at + 1.3;
+      const gx = colOf(gate);
+      const gy = groundRow(gate);
+      // Its way up: a ring of its mushrooms coming up beyond his fire, the earth inside parting on the hollow's light,
+      // motes of it rising; at the end the moss closes over it. The far half first, its near rim after the creature.
+      const sheet = atlas.sheets.portal;
+      const open = portalOpen(visit);
+      const ringFrame = (front: boolean): readonly number[] =>
+        open < 1 ? (front ? sheet.openfront : sheet.open)[Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length))] : (front ? sheet.loopfront : sheet.loop)[Math.floor(time * 8) % sheet.loop.length];
+      const ring = (front: boolean): void => {
+        const f = ringFrame(front);
+        r.ground.add(Math.round(gx - f[2] / 2), Math.round(gy - f[3] + 4), f, rowA, rowB, b.k, false);
+      };
+      if (open > 0) {
+        ring(false);
+        if (light.count < 6) {
+          const o = light.count * 4;
+          light.lights[o] = gx;
+          light.lights[o + 1] = gy - 4;
+          light.lights[o + 2] = 22 * open;
+          light.lights[o + 3] = 0.3 * open;
+          light.count++;
+        }
+      }
+      // The creature: up out of the ring and over to the fire, there a while, back and down into the ring again.
+      const dozing = this.neighbour !== null && !awakeAt(this.neighbour.nightOwl, this.creatureClock());
+      if (visit.phase === 'coming' || visit.phase === 'going') {
+        const c = crossing(visit);
+        // Coming it faces the fire; going, the ring.
+        const flip = visit.phase === 'coming';
+        const x = gate + (seat - gate) * c.at;
+        // Climbing out of the hole (or down into it), it rises from a little below the ground.
+        const sink = c.walking ? 0 : Math.round((1 - c.shown) * 7);
+        drawNeighbour(r, atlas, colOf(x), groundRow(x) + sink, c.walking ? 'walk' : 'stand', flip, this.neighbour, rows, 'open', time, c.shown, (gate - x) * PX_PER_M);
+      } else if (visit.phase === 'with') {
+        const awake = sitsUp(visit);
+        drawNeighbour(r, atlas, colOf(seat), groundRow(seat), 'sit', true, this.neighbour, rows, dozing && !awake ? 'shut' : awake ? 'happy' : 'open', time);
+      }
+      if (open > 0) ring(true);
+    }
+
     // Him.
     const sheet = atlas.sheets.wanderer;
-    const stage = pose ?? l.stage;
+    // On the nights he wakes, he sits up by the fire while the creature is with him.
+    const stage = pose ?? (sitsUp(this.visit) ? 'wake' : l.stage);
     const seat = l.seat <= 2 ? 0 : l.seat <= 7 ? 5 : 10;
     let frame: readonly number[];
     let lift = 0;

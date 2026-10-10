@@ -295,10 +295,12 @@ function lieFrame(breath: number, shut: boolean): string[] {
   const eyes = shut ? 'hh' : 'ee';
   return compose(W, H, [
     block(19, 32, ['..qqrrrrq.', '.prrrrrrrq', 'ppqqqqqqqp']),
+    // The coat over his side rises on the breath; its last row, hidden under the rows below at rest, fills the gap.
     block(2, 27 - breath, [
       '...................ooo.....',
       '..........ooooooo.odmmo....',
       '.......oooddmmmmmooddmmmo..',
+      '.......oddmmmmmmmmmddmmmo..',
     ]),
     block(2, 30, [
       '...bboddmmmmmmmmmmmmmdmhhhmo',
@@ -313,8 +315,9 @@ function lieFrame(breath: number, shut: boolean): string[] {
 function backFrame(breath: number): string[] {
   return compose(W, H, [
     stroke(22, 9, 22, 35, 'k', 'K'),
-    block(10, 3 - breath, ['...ooo....', '..odmmo...', '.odmmmmo..', '.odmlmmmo.', 'odmlllmmo.', 'odmmllmmmo', 'odmmmmmmmo', 'odmmmmmmmo', '.odmmmmmo.']),
-    block(9, 12, ['.ssssssss..', 'srrrrrrrrs.', 'qqqqqqqqqq.']),
+    // The hood rises on the breath; its last row, hidden behind the bedroll at rest, keeps it on his shoulders.
+    block(10, 3 - breath, ['...ooo....', '..odmmo...', '.odmmmmo..', '.odmlmmmo.', 'odmlllmmo.', 'odmmllmmmo', 'odmmmmmmmo', 'odmmmmmmmo', 'odmmmmmmmo', 'odmmmmmmmo']),
+    block(9, 12, ['.sssssssss.', 'srrrrrrrrs.', 'qqqqqqqqqq.']),
     block(8, 15, [
       'odlppppppldo',
       'odmprrrrpmdo',

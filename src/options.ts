@@ -1,6 +1,6 @@
 // Options, from the URL in the page and from the command line on the server: the same names in both places
 // (`npm start -- --seed moss --speed 20` opens `?seed=moss&speed=20`).
-import { BIOME_IDS } from './biomes.ts';
+import { ROAD_BIOMES } from './biomes.ts';
 import type { BiomeId } from './biomes.ts';
 
 export type Options = {
@@ -40,6 +40,8 @@ export type Options = {
   readonly live: boolean;
   /** On the live road, the moment to show instead of now (ms since 1970, or a date), for pictures and tests. */
   readonly now: number | null;
+  /** A look at his camp a little before the creature comes through its portal (src/creature/visit.ts), not saved. */
+  readonly visit: boolean;
 };
 
 export const DEFAULTS: Options = {
@@ -62,6 +64,7 @@ export const DEFAULTS: Options = {
   manual: false,
   live: false,
   now: null,
+  visit: false,
 };
 
 /** Option names and whether each takes a value; the command line and the URL share them. */
@@ -85,6 +88,7 @@ export const OPTION_NAMES: Readonly<Record<string, boolean>> = {
   manual: false,
   live: false,
   now: true,
+  visit: false,
 };
 
 const num = (v: string | null, min: number, max: number): number | null => {
@@ -113,7 +117,7 @@ export function parseOptions(get: (name: string) => string | null): Options {
     day: num(get('day'), 1, 24 * 60 * 7) ?? DEFAULTS.day,
     realClock: flag(get('realclock')),
     hour: num(get('hour'), 0, 23.999),
-    biome: biome !== null && (BIOME_IDS as readonly string[]).includes(biome) ? (biome as BiomeId) : null,
+    biome: biome !== null && (ROAD_BIOMES as readonly string[]).includes(biome) ? (biome as BiomeId) : null,
     offline: flag(get('offline')),
     frozen: flag(get('frozen')),
     at: num(get('at'), -1e12, 1e12),
@@ -126,6 +130,7 @@ export function parseOptions(get: (name: string) => string | null): Options {
     manual: flag(get('manual')),
     live: flag(get('live')),
     now: moment(get('now')),
+    visit: flag(get('visit')),
   };
 }
 

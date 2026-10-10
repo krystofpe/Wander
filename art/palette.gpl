@@ -132,6 +132,72 @@ Columns: 8
  17  14  13	boot 0
  34  30  27	boot 1
 205 198 182	cig 0
+ 16  38  31	cloak0 0
+ 33  71  58	cloak0 1
+ 51 109  82	cloak0 2
+ 75 148 114	cloak0 3
+111 192 150	cloak0 4
+ 18  36  23	cloak1 0
+ 34  65  44	cloak1 1
+ 55 101  67	cloak1 2
+ 79 141  92	cloak1 3
+118 183 122	cloak1 4
+ 14  34  41	cloak2 0
+ 28  64  72	cloak2 1
+ 45 101 108	cloak2 2
+ 67 143 146	cloak2 3
+ 98 186 180	cloak2 4
+ 16  40  37	cloak3 0
+ 31  74  66	cloak3 1
+ 50 114 100	cloak3 2
+ 74 156 134	cloak3 3
+106 200 168	cloak3 4
+ 29  36  16	cloak4 0
+ 54  64  26	cloak4 1
+ 85 100  42	cloak4 2
+118 138  58	cloak4 3
+159 181  88	cloak4 4
+ 27  26  40	cloak5 0
+ 48  51  70	cloak5 1
+ 71  82 102	cloak5 2
+ 98 122 138	cloak5 3
+134 162 168	cloak5 4
+255 210 123	mood 0
+255 240 160	mood 1
+240 216 160	mood 2
+159 240 255	mood 3
+160 136  80	mood 4
+255 176  96	mood 5
+200 192 160	mood 6
+156 184 255	mood 7
+255 112  80	mood 8
+255 255 255	mood 9
+255 143 200	mood 10
+127 178 255	mood 11
+ 31 111 115	shroom 0
+ 79 196 191	shroom 1
+181 255 242	shroom 2
+ 61  15  24	berry 0
+122  31  44	berry 1
+194  59  72	berry 2
+ 79 184 221	toy 0
+200 246 255	toy 1
+255 127 176	heart 0
+255 224 138	note 0
+255 244 192	spark 0
+ 90  78 102	wing 0
+154 139 166	wing 1
+217 207 217	wing 2
+ 59  31 110	amethyst 0
+138  79 214	amethyst 1
+217 184 255	amethyst 2
+ 74  34  14	amber 0
+168  96  46	amber 1
+232 168 114	amber 2
+ 34   9  15	coral 0
+ 74  26  34	coral 1
+122  46  48	coral 2
+165  80  74	coral 3
 255   0 255	unused
 255   0   0	unused
 255   0   1	unused
@@ -195,69 +261,3 @@ Columns: 8
 255   0  59	unused
 255   0  60	unused
 255   0  61	unused
-255   0  62	unused
-255   0  63	unused
-255   0  64	unused
-255   0  65	unused
-255   0  66	unused
-255   0  67	unused
-255   0  68	unused
-255   0  69	unused
-255   0  70	unused
-255   0  71	unused
-255   0  72	unused
-255   0  73	unused
-255   0  74	unused
-255   0  75	unused
-255   0  76	unused
-255   0  77	unused
-255   0  78	unused
-255   0  79	unused
-255   0  80	unused
-255   0  81	unused
-255   0  82	unused
-255   0  83	unused
-255   0  84	unused
-255   0  85	unused
-255   0  86	unused
-255   0  87	unused
-255   0  88	unused
-255   0  89	unused
-255   0  90	unused
-255   0  91	unused
-255   0  92	unused
-255   0  93	unused
-255   0  94	unused
-255   0  95	unused
-255   0  96	unused
-255   0  97	unused
-255   0  98	unused
-255   0  99	unused
-255   0 100	unused
-255   0 101	unused
-255   0 102	unused
-255   0 103	unused
-255   0 104	unused
-255   0 105	unused
-255   0 106	unused
-255   0 107	unused
-255   0 108	unused
-255   0 109	unused
-255   0 110	unused
-255   0 111	unused
-255   0 112	unused
-255   0 113	unused
-255   0 114	unused
-255   0 115	unused
-255   0 116	unused
-255   0 117	unused
-255   0 118	unused
-255   0 119	unused
-255   0 120	unused
-255   0 121	unused
-255   0 122	unused
-255   0 123	unused
-255   0 124	unused
-255   0 125	unused
-255   0 126	unused
-255   0 127	unused

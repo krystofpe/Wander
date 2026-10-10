@@ -2,7 +2,7 @@
 // out), the stages of a stop (walk there, sit down, smoke, stand up), the camp from dusk to dawn with its fire, when
 // a thought is due, and the log of places passed. The page draws it and plays its sounds; the tests and the soak run
 // it in Node. Everything random comes from the RNG state kept in the save, so a restored journey goes on exactly.
-import { BIOMES } from './biomes.ts';
+import { BIOMES, MARK_NAMES } from './biomes.ts';
 import type { BiomeId } from './biomes.ts';
 import { ACTS, BRAIN, choose, freshMemory } from './brain.ts';
 import type { Act, Choice, Memory, Spot, Until } from './brain.ts';
@@ -12,7 +12,7 @@ import { dayOf, dayPhase, hourOfDay, shownHour, sunElevation, weatherAt } from '
 import type { Weather } from './sky.ts';
 import type { ThoughtContext } from './thoughts.ts';
 import { paceFor } from './walker.ts';
-import { biomeAt, groundHeight, landmarkNear, landmarksBetween, stretchAt, tendencyAt } from './world.ts';
+import { biomeAt, groundHeight, landmarksBetween, stretchAt, tendencyAt } from './world.ts';
 
 /** What his body is doing: each stage has its own pose. */
 export const STAGES = ['walk', 'stand', 'look', 'back', 'sitdown', 'sit', 'standup', 'kneel', 'campsit', 'lie', 'sleep', 'wake', 'pack'] as const;
@@ -201,7 +201,6 @@ function setStage(l: Life, stage: Stage, events: LifeEvent[]): void {
 
 /** What ground he walks on, for his pace and his steps. */
 export function groundAt(l: Life, w: Weather): string {
-  if (landmarkNear(l.seed, l.at, 7.5)?.kind === 'bridge') return 'wood';
   const b = biomeAt(l.seed, l.at);
   const id = b.k < 0.5 ? b.a : b.b;
   if (w.kind === 'snow' && w.precip > 0.4) return 'snow';
@@ -323,8 +322,8 @@ function notePlaces(l: Life, env: Env, events: LifeEvent[]): void {
     if (m.cell === l.lastMark || m.at > l.at) continue;
     l.lastMark = m.cell;
     events.push({ type: 'landmark', kind: m.kind });
-    l.log.push({ at: m.at, day, hour: shownHour(hour, env.natural), kind: 'landmark', name: m.kind });
-    l.sinceName = `the ${m.kind === 'circle' ? 'stone circle' : m.kind}`;
+    l.log.push({ at: m.at, day, hour: shownHour(hour, env.natural), kind: 'landmark', name: MARK_NAMES[m.kind] });
+    l.sinceName = MARK_NAMES[m.kind];
     l.cigarettes = 0;
   }
   if (l.log.length > 500) l.log.splice(0, l.log.length - 500);

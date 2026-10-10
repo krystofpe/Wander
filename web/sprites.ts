@@ -28,8 +28,14 @@ const MAX = 512;
 
 /** The local lights of a frame, in native view pixels: x, y, radius, intensity (six at most), and their colour. */
 export type Light = { readonly lights: Float32Array; count: number; readonly color: Float32Array; albedoRow: number };
-/** Floats per instance: rect (x, y, w, h; native, top-left), source (atlas x, y, w, h), rows (A, B, k, flip), alpha. */
-const STRIDE = 13;
+/**
+ * Floats per instance: rect (x, y, w, h; native, top-left), source (atlas x, y, w, h), rows (A, B, k, flip), alpha,
+ * and two role swaps (a family of five roles moved by an offset, one role replaced by another; -1 for none).
+ */
+const STRIDE = 17;
+
+/** No role swapped. */
+export const NO_SWAP: readonly number[] = [-1, 0, -1, 0];
 
 const VS = `#version 300 es
 in vec2 a_pos;
@@ -37,6 +43,7 @@ in vec4 i_rect;
 in vec4 i_src;
 in vec4 i_rows;
 in float i_alpha;
+in vec4 i_swap;
 uniform float u_scale;
 uniform vec4 u_viewport;
 uniform vec2 u_canvas;
@@ -45,7 +52,9 @@ flat out vec4 v_src;
 flat out vec4 v_rows;
 flat out float v_alpha;
 flat out vec2 v_origin;
+flat out vec4 v_swap;
 void main() {
+  v_swap = i_swap;
   v_origin = i_rect.xy;
   // Snap the sprite's top-left to whole screen pixels: every art pixel stays exactly scale × scale.
   vec2 origin = floor(i_rect.xy * u_scale + 0.5);
@@ -73,6 +82,7 @@ flat in vec4 v_src;
 flat in vec4 v_rows;
 flat in float v_alpha;
 flat in vec2 v_origin;
+flat in vec4 v_swap;
 out vec4 o_color;
 ${LIGHT_GLSL}
 
@@ -84,11 +94,16 @@ int roleAt(ivec2 t, ivec2 size) {
 void main() {
   ivec2 size = ivec2(v_src.zw);
   ivec2 t = ivec2(floor(v_local));
-  // Mirrored when walking left.
-  bool flip = v_rows.w > 0.5;
+  // Mirrored when walking left (bit 1); no rim of light (bit 2), for sprites stacked into one tall shape.
+  bool flip = mod(v_rows.w, 2.0) > 0.5;
+  bool rim = v_rows.w < 1.5;
   ivec2 s = flip ? ivec2(size.x - 1 - t.x, t.y) : t;
   int role = roleAt(s, size);
   if (role == 0) discard;
+  // One sheet for every creature and mood: its cloak's five shades moved to its own family, its eyes to its mood's.
+  int from = int(v_swap.x);
+  if (from >= 0 && role >= from && role < from + 5) role += int(v_swap.y);
+  if (v_swap.z >= 0.0 && role == int(v_swap.z)) role = int(v_swap.w);
   vec4 pa = texelFetch(u_palette, ivec2(role, int(v_rows.x)), 0);
   vec4 pb = texelFetch(u_palette, ivec2(role, int(v_rows.y)), 0);
   vec4 p = mix(pa, pb, v_rows.z);
@@ -111,7 +126,7 @@ void main() {
   }
   // A rim: this pixel is on the outline facing the light (the side the sun or the fire is on), or the top edge.
   int side = int(u_rimSide * (flip ? -1.0 : 1.0));
-  if (u_rimStrength > 0.0 && p.a > 0.99) {
+  if (rim && u_rimStrength > 0.0 && p.a > 0.99) {
     bool edge = (side != 0 && roleAt(s + ivec2(side, 0), size) == 0) || roleAt(s + ivec2(0, -1), size) == 0;
     if (edge) c = mix(c, u_rim, u_rimStrength);
   }
@@ -159,6 +174,7 @@ export class SpriteBatch {
     attr('i_src', 4, 4);
     attr('i_rows', 4, 8);
     attr('i_alpha', 1, 12);
+    attr('i_swap', 4, 13);
     gl.bindVertexArray(null);
   }
 
@@ -170,7 +186,7 @@ export class SpriteBatch {
    * Queues one sprite frame: top-left at native (x, y) (fractional allowed), frame [ax, ay, w, h] in the atlas,
    * palette rows A and B mixed by k, mirrored or not.
    */
-  add(x: number, y: number, frame: readonly number[], rowA: number, rowB: number, k: number, flip: boolean, alpha = 1): void {
+  add(x: number, y: number, frame: readonly number[], rowA: number, rowB: number, k: number, flip: boolean, alpha = 1, swap: readonly number[] = NO_SWAP, rim = true): void {
     if (this.count >= MAX) return;
     const o = this.count * STRIDE;
     const d = this.data;
@@ -185,8 +201,12 @@ export class SpriteBatch {
     d[o + 8] = rowA;
     d[o + 9] = rowB;
     d[o + 10] = k;
-    d[o + 11] = flip ? 1 : 0;
+    d[o + 11] = (flip ? 1 : 0) + (rim ? 0 : 2);
     d[o + 12] = alpha;
+    d[o + 13] = swap[0];
+    d[o + 14] = swap[1];
+    d[o + 15] = swap[2];
+    d[o + 16] = swap[3];
     this.count++;
   }
 

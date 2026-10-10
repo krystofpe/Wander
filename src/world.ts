@@ -1,7 +1,7 @@
 // The road, as pure functions of the seed and the distance along it (metres): which biome, how they blend,
 // how high the ground lies, and where the landmarks stand. The same seed and distance always give the same
 // place, and any distance can be looked up directly, without walking there from the start.
-import { BIOMES, BIOME_IDS, LANDMARK_HOMES, LANDMARK_KINDS } from './biomes.ts';
+import { BIOMES, LANDMARK_HOMES, LANDMARK_KINDS, ROAD_BIOMES } from './biomes.ts';
 import type { BiomeId, LandmarkKind } from './biomes.ts';
 import { fbm1, noise1, unit } from './noise.ts';
 import type { Tendency } from './sky.ts';
@@ -29,7 +29,7 @@ const smooth = (a: number, b: number, v: number): number => {
 
 // ── Climate ────────────────────────────────────────────────────────────────
 
-/** Where each biome sits in temperature, moisture, altitude and human trace (−1..1). */
+/** Where each biome sits in temperature, moisture, altitude and bareness (−1..1): the odd, bare places sit high. */
 const CENTROIDS: Readonly<Record<BiomeId, readonly [number, number, number, number]>> = {
   pine: [-0.3, 0.45, 0.1, -0.5],
   birch: [0.05, 0.2, -0.1, -0.2],
@@ -43,8 +43,8 @@ const CENTROIDS: Readonly<Record<BiomeId, readonly [number, number, number, numb
   swamp: [0.4, 0.8, -0.55, -0.35],
   saltflat: [0.65, -0.6, -0.55, 0.55],
   stones: [-0.35, 0.45, 0.35, 0.3],
-  ruins: [0.2, 0.35, -0.2, 0.8],
-  rail: [0.0, -0.2, -0.3, 0.8],
+  // Never picked for the road (ROAD_BIOMES); only a realm is the deep.
+  deep: [0, 0, 0, 0],
 };
 
 /** Biomes that never touch: the climate keeps them apart, and this catches the rare case it does not. */
@@ -66,7 +66,7 @@ function climate(seed: number, k: number): [number, number, number, number] {
 /** Biomes ranked for stretch k by how well they fit its climate, each with a weight for a random pick. */
 function ranked(seed: number, k: number): { id: BiomeId; weight: number }[] {
   const c = climate(seed, k);
-  const scored = BIOME_IDS.map((id) => {
+  const scored = ROAD_BIOMES.map((id) => {
     const p = CENTROIDS[id];
     const d2 = (c[0] - p[0]) ** 2 + (c[1] - p[1]) ** 2 + 0.8 * (c[2] - p[2]) ** 2 + 0.8 * (c[3] - p[3]) ** 2;
     return { id, weight: Math.exp(-d2 / 0.3) * (BIOMES[id].odd ? 0.55 : 1) };
@@ -103,13 +103,33 @@ function biomeOfStretch(seed: number, k: number): BiomeId {
   const fits = (id: BiomeId): boolean => id !== before && id !== after && !forbidden(id, before) && !forbidden(id, after);
   if (order.some((o) => fits(o.id))) return pickFrom(order, fits, u);
   // Nothing fits both: anything that at least differs from both and may sit next to them.
-  for (const id of BIOME_IDS) if (fits(id)) return id;
+  for (const id of ROAD_BIOMES) if (fits(id)) return id;
   return order.find((o) => o.id !== before && o.id !== after)?.id ?? order[0].id;
 }
 
 const stretchCache = new Map<string, BiomeId>();
 
+/** Seeds that are not roads but places of their own, every stretch the same biome: the deep, where the creature lives. */
+const REALMS = new Map<number, BiomeId>();
+
+/**
+ * A realm: a world that is one place all the way along (the deep, where the creature lives), with no landmarks,
+ * painted and graded by the same engine as his road. Returns the seed to paint it with, made from `seed`.
+ */
+export function realm(seed: number, biome: BiomeId = 'deep'): number {
+  const s = (Math.imul(seed ^ 0x0dee9, 0x9e3779b1) ^ 0x5eedd) >>> 0;
+  REALMS.set(s, biome);
+  return s;
+}
+
+/** Whether a seed is a realm (and so has no road, no landmarks, one biome). */
+export function isRealm(seed: number): boolean {
+  return REALMS.has(seed);
+}
+
 function stretchBiome(seed: number, k: number): BiomeId {
+  const place = REALMS.get(seed);
+  if (place !== undefined) return place;
   const key = `${seed}:${k}`;
   let id = stretchCache.get(key);
   if (id === undefined) {
@@ -207,11 +227,10 @@ function biomeGround(seed: number, id: BiomeId, d: number): number {
 export function groundHeight(seed: number, d: number): number {
   const blend = biomeAt(seed, d, 70);
   const h = blended(blend, (id) => biomeGround(seed, id, d));
-  // Near a landmark the ground flattens, so the moment reads as a pause; at a bridge it is level from bank to bank.
+  // Near a landmark the ground flattens, so the moment reads as a pause.
   const mark = landmarkNear(seed, d, 60);
   if (mark === null) return h;
-  const calm = mark.kind === 'bridge' ? smooth(12, 60, Math.abs(d - mark.at)) : 1 - 0.6 * (1 - smooth(20, 60, Math.abs(d - mark.at)));
-  return h * calm;
+  return h * (1 - 0.6 * (1 - smooth(20, 60, Math.abs(d - mark.at))));
 }
 
 // ── Landmarks ──────────────────────────────────────────────────────────────

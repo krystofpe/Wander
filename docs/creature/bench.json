@@ -1,0 +1,110 @@
+[
+ {
+  "run": "1920x1080 hour=15&weather=clear",
+  "seconds": 20,
+  "frames": 1201,
+  "fps": 60,
+  "width": 1920,
+  "height": 1080,
+  "interval": {
+   "p50": 16.7,
+   "p99": 16.8,
+   "max": 16.8,
+   "mean": 16.67
+  },
+  "cpu": {
+   "p50": 0.2,
+   "p99": 0.5,
+   "max": 1,
+   "mean": 0.23
+  },
+  "gpu": {
+   "p50": 5.56,
+   "p99": 7.07,
+   "max": 8.79,
+   "mean": 5.1
+  },
+  "late": 0
+ },
+ {
+  "run": "1920x1080 hour=21&weather=clear&visit=1",
+  "seconds": 20,
+  "frames": 1201,
+  "fps": 60,
+  "width": 1920,
+  "height": 1080,
+  "interval": {
+   "p50": 16.7,
+   "p99": 16.8,
+   "max": 16.8,
+   "mean": 16.67
+  },
+  "cpu": {
+   "p50": 0.2,
+   "p99": 0.5,
+   "max": 1.5,
+   "mean": 0.25
+  },
+  "gpu": {
+   "p50": 5.63,
+   "p99": 7.43,
+   "max": 8.03,
+   "mean": 5.73
+  },
+  "late": 0
+ },
+ {
+  "run": "3840x2160 hour=15&weather=clear",
+  "seconds": 20,
+  "frames": 1201,
+  "fps": 60,
+  "width": 3840,
+  "height": 2160,
+  "interval": {
+   "p50": 16.7,
+   "p99": 16.8,
+   "max": 16.8,
+   "mean": 16.67
+  },
+  "cpu": {
+   "p50": 0.3,
+   "p99": 0.5,
+   "max": 1.1,
+   "mean": 0.28
+  },
+  "gpu": {
+   "p50": 4.56,
+   "p99": 6.29,
+   "max": 21.13,
+   "mean": 4.47
+  },
+  "late": 0
+ },
+ {
+  "run": "3840x2160 hour=21&weather=clear&visit=1",
+  "seconds": 20,
+  "frames": 1201,
+  "fps": 60,
+  "width": 3840,
+  "height": 2160,
+  "interval": {
+   "p50": 16.7,
+   "p99": 16.8,
+   "max": 16.8,
+   "mean": 16.67
+  },
+  "cpu": {
+   "p50": 0.3,
+   "p99": 0.5,
+   "max": 1.6,
+   "mean": 0.29
+  },
+  "gpu": {
+   "p50": 4.58,
+   "p99": 6.03,
+   "max": 14.88,
+   "mean": 4.4
+  },
+  "late": 0
+ }
+]

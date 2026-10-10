@@ -32,6 +32,16 @@ export type Api = {
   mind(): 'claude' | 'local';
   /** The page is alive (it calls this every few seconds). */
   beat?(): void;
+  /** The creature (`npm run creature`): its saved life as written, or null for a new one. */
+  loadCreature?(): Promise<unknown>;
+  saveCreature?(life: unknown): Promise<void>;
+  /** Its words from Claude for a moment, or null (no credentials, too soon, failure); and whose words they are. */
+  creatureSay?(request: unknown): Promise<unknown>;
+  creatureMind?(): { mind: 'claude' | 'local'; model: string | null };
+  /** The mode you are in, so the next start opens it (the pages say when you switch). */
+  setMode?(mode: string): Promise<void>;
+  /** It came through its portal and sat by his fire (his page says so): its save keeps the visit. */
+  creatureVisit?(request: unknown): Promise<boolean>;
 };
 
 export type Running = {
@@ -111,6 +121,19 @@ export function startServer(root: string, api: Api, port = 0): Promise<Running> 
     if (!LOCAL.test(req.headers.host ?? '') || (origin !== undefined && origin !== 'null' && !LOCAL_ORIGIN.test(origin))) return send(res, 403, MIME['.txt'], 'forbidden');
     const handle = async (): Promise<void> => {
       if (route === 'GET /' || route === 'GET /index.html') return serveFile(root, 'web/index.html', res);
+      if (route === 'GET /creature' || route === 'GET /creature/') return serveFile(root, 'web/creature/index.html', res);
+      if (route === 'GET /api/creature' && api.loadCreature !== undefined) return json(res, 200, { life: await api.loadCreature(), ...(api.creatureMind?.() ?? { mind: 'local', model: null }) });
+      if ((route === 'PUT /api/creature' || route === 'POST /api/creature') && api.saveCreature !== undefined) {
+        await api.saveCreature(JSON.parse(await body(req)));
+        return json(res, 200, { ok: true });
+      }
+      if (route === 'POST /api/creature/visit' && api.creatureVisit !== undefined) {
+        return json(res, 200, { kept: await api.creatureVisit(JSON.parse(await body(req))) });
+      }
+      if (route === 'POST /api/creature/say' && api.creatureSay !== undefined) {
+        const reply = await api.creatureSay(JSON.parse(await body(req)));
+        return json(res, 200, { reply, ...(api.creatureMind?.() ?? { mind: 'local', model: null }) });
+      }
       if (route === 'GET /api/events') {
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
         res.write(': listening\n\n');
@@ -128,6 +151,11 @@ export function startServer(root: string, api: Api, port = 0): Promise<Running> 
         return json(res, 200, { thought: reply?.text ?? null, mind: api.mind() });
       }
       if (route === 'GET /api/mind') return json(res, 200, { mind: api.mind() });
+      if (route === 'POST /api/mode' && api.setMode !== undefined) {
+        const m = (JSON.parse(await body(req)) as { mode?: unknown }).mode;
+        await api.setMode(typeof m === 'string' ? m : 'wander');
+        return json(res, 200, { ok: true });
+      }
       if (route === 'POST /api/beat') {
         api.beat?.();
         return json(res, 200, { ok: true });

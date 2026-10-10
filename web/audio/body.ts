@@ -253,13 +253,6 @@ function step(e: Engine, at: number, ground: string, wet: boolean, pan: number, 
       grain('brown', at, 0.12, 'bandpass', 420, 2, 1.2, 180);
       grain('pink', ball, 0.15, 'bandpass', 900, 3, 0.25, 500);
       break;
-    case 'wood': {
-      // Farnell's resonators for a plank, three of them at random.
-      const hz = [95, 123, 134, 139, 154, 156, 189, 201];
-      for (let i = 0; i < 3; i++) grain('white', at, 0.25, 'bandpass', hz[Math.floor(Math.random() * hz.length)], 30, 6);
-      thud(ball, 140, 0.3);
-      break;
-    }
     case 'leaves':
       thud(at, 75, 0.22);
       grain('white', at, 0.12, 'bandpass', 2500 + Math.random() * 2500, 1.2, 0.35);

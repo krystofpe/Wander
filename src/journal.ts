@@ -1,6 +1,6 @@
 // The journey as it is saved: the road's seed, the moon it started under, his life (clock, distance, state, log),
 // and the time away when it comes back (research-free, spec §8). Pure, shared by the page and the server.
-import { BIOMES } from './biomes.ts';
+import { BIOMES, MARK_NAMES } from './biomes.ts';
 import { ACTS, freshMemory } from './brain.ts';
 import { STAGES, newLife } from './life.ts';
 import type { Life, LogEntry } from './life.ts';
@@ -103,7 +103,7 @@ export function catchUp(j: Journey, now: number, dayLengthSec: number): Away {
   };
   const notes: LogEntry[] = [];
   for (const s of stretchesBetween(l.seed, from, to)) if (s.start > from) notes.push({ at: s.start, ...when(s.start), kind: 'biome', name: BIOMES[s.biome].title });
-  for (const m of landmarksBetween(l.seed, from, to)) notes.push({ at: m.at, ...when(m.at), kind: 'landmark', name: m.kind });
+  for (const m of landmarksBetween(l.seed, from, to)) notes.push({ at: m.at, ...when(m.at), kind: 'landmark', name: MARK_NAMES[m.kind] });
   notes.sort((a, b) => a.at - b.at);
   l.log.push(...notes);
   if (l.log.length > 500) l.log.splice(0, l.log.length - 500);

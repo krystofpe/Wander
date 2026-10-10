@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { LANDMARK_KINDS, ROAD_BIOMES } from '../src/biomes.ts';
 import { allTemplates, candidates, fill, localThought, pastOf } from '../src/thoughts.ts';
 import type { ThoughtContext } from '../src/thoughts.ts';
 import { rng } from '../src/noise.ts';
@@ -61,16 +62,24 @@ test('a recent line is not said again', () => {
 });
 
 test('what is around him weighs more than the general', () => {
-  const near = { ...base, near: 'house' };
+  const near = { ...base, near: 'lonetree' };
   const random = rng(3);
-  let house = 0;
-  for (let i = 0; i < 400; i++) if (/house|window|cooking/i.test(localThought(near, random))) house++;
-  assert.ok(house > 60, `house lines ${house}/400`);
+  let tree = 0;
+  for (let i = 0; i < 400; i++) if (/tree/i.test(localThought(near, random))) tree++;
+  assert.ok(tree > 60, `lone tree lines ${tree}/400`);
+});
+
+test('every landmark has two or three lines of its own', () => {
+  const none = candidates(base).length;
+  for (const kind of LANDMARK_KINDS) {
+    const own = candidates({ ...base, near: kind }).length - none;
+    assert.ok(own >= 2 && own <= 3, `${kind}: ${own}`);
+  }
 });
 
 test('a cigarette count is only spoken when there is one', () => {
   assert.ok(candidates({ ...base, doing: 'smoking' }).every((c) => !c.line.includes('{Ordinal}')));
-  assert.ok(candidates({ ...base, doing: 'smoking', cigarettes: 3, since: 'the bridge' }).some((c) => c.line.includes('{Ordinal}')));
+  assert.ok(candidates({ ...base, doing: 'smoking', cigarettes: 3, since: 'the lone tree' }).some((c) => c.line.includes('{Ordinal}')));
 });
 
 test('hundreds of different things to say', () => {
@@ -78,13 +87,13 @@ test('hundreds of different things to say', () => {
   const phases = ['dawn', 'morning', 'noon', 'afternoon', 'golden', 'dusk', 'blue', 'night', 'late'] as const;
   const skies = ['clear', 'cloudy', 'fog', 'rain', 'snow', 'storm'] as const;
   const doings = ['walking', 'looking', 'sitting', 'smoking', 'sheltering', 'camp', 'waking'] as const;
-  const biomes = ['pine', 'birch', 'meadow', 'autumn', 'plateau', 'pass', 'coast', 'desert', 'tundra', 'swamp', 'saltflat', 'stones', 'ruins', 'rail'];
-  const near = [null, 'house', 'chapel', 'lighthouse', 'mast', 'car', 'bridge', 'train', 'circle', 'shrine', 'skeleton', 'camp'];
+  const biomes = ROAD_BIOMES;
+  const near = [null, ...LANDMARK_KINDS];
   for (const seed of [1, 2, 3, 4])
     for (const phase of phases)
       for (const sky of skies)
         for (const doing of doings) {
-          const ctx = { ...base, seed, phase, sky, doing, cigarettes: 2, since: 'the chapel', biome: biomes[(seed * 5 + phases.indexOf(phase)) % biomes.length], near: near[(seed + skies.indexOf(sky) * 3) % near.length] };
+          const ctx = { ...base, seed, phase, sky, doing, cigarettes: 2, since: 'the stone arch', biome: biomes[(seed * 5 + phases.indexOf(phase)) % biomes.length], near: near[(seed + skies.indexOf(sky) * 3) % near.length] };
           const random = rng(seed);
           for (const c of candidates(ctx)) for (let k = 0; k < 12; k++) lines.add(fill(c.line, ctx, pastOf(seed), random));
         }

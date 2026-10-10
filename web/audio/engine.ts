@@ -17,7 +17,6 @@ const CAPS: Readonly<Record<string, number>> = {
   breath: 3,
   call: 3,
   thunder: 2,
-  train: 1,
 };
 
 /** Seconds of each looping noise buffer. */

@@ -69,6 +69,8 @@ export type View = {
   /** The Milky Way's strength and the aurora's, 0..1. */
   milky: number;
   aurora: number;
+  /** 1 in the hollow, the world under the world: the sky shader draws its roof, the openings in it and the light through them. */
+  cave: number;
   /** The rim's colour (rgb 0..1): the sun's light by day, a cold sky light at night. */
   rim: Float32Array;
   /** Local lights (fire, ember, windows) in native view pixels. */
@@ -124,7 +126,7 @@ export class Renderer {
   readonly gpu: Gpu;
   readonly gl: WebGL2RenderingContext;
   private readonly quad: WebGLVertexArrayObject;
-  /** Sprites drawn over each layer (him, the fire and smoke on the playfield; animals, a train, lamps further off). */
+  /** Sprites drawn over each layer (him, the fire and smoke on the playfield; animals further off). */
   readonly batches: SpriteBatch[];
   readonly ground: SpriteBatch;
   atlas: Atlas | null = null;
@@ -403,7 +405,9 @@ export class Renderer {
       // Offsets wrapped in double precision at the pattern's own period (see RAIN_FS), so they never jump.
       const cell = v.snow ? p.snowCell : p.cell;
       gl.uniform1f(this.rain.u('u_offset'), (v.camX / p.z) % (4096 * cell[0]));
-      gl.uniform1f(this.rain.u('u_fall'), ((v.snow ? p.snowSpeed : p.speed) * v.time) % (1024 * cell[1]));
+      // In the hollow the "snow" is motes drifting down through the mist, slow.
+      const slow = v.cave > 0.5 ? 0.22 : 1;
+      gl.uniform1f(this.rain.u('u_fall'), ((v.snow ? p.snowSpeed : p.speed) * slow * v.time) % (1024 * cell[1]));
       gl.uniform3fv(this.rain.u('u_color'), v.rainColor);
       gl.uniform1f(this.rain.u('u_alpha'), p.alpha * (v.snow ? 1.6 : 1));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -557,6 +561,7 @@ export class Renderer {
     gl.uniform1f(this.sky.u('u_milky'), v.milky);
     gl.uniform1f(this.sky.u('u_aurora'), v.aurora);
     gl.uniform1f(this.sky.u('u_seed'), (v.seed % 997) / 97);
+    gl.uniform1f(this.sky.u('u_cave'), v.cave);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
     // The layers, back to front, premultiplied.

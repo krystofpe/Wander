@@ -11,7 +11,7 @@ export type Spot = {
   readonly kind: SpotKind;
   /** Where, in metres along the road. */
   readonly at: number;
-  /** What it is ("rock", "bench", "bridge"…), for his thoughts and his pose. */
+  /** What it is ("rock", "log", "lonetree"…), for his thoughts and his pose. */
   readonly what: string;
   /** 0..1, how good a spot it is: a rock with a view is better than a stump in a ditch. */
   readonly quality: number;

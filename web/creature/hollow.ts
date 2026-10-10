@@ -310,18 +310,31 @@ export class Hollow {
       }
     }
 
-    // Its portal, when it goes to his camp at night and when it comes back: tearing open from a point of light,
-    // turning, closing; while it is gone, a faint crack of light in the air where it went.
+    // Its way up to his camp: a ring of its mushrooms coming up where a shaft of light comes down from an opening far
+    // above; it steps in and rises up the light, and comes back down it before dawn. While it is gone the ring stays,
+    // quiet, its caps up and the earth closed. The far half and the light behind it, the near rim in front.
     const open = game.portal;
     if (open > 0 || game.gone) {
       const PORTAL = portalOf(game.scene.layout);
-      const px = Math.round(geo.px(PORTAL.x)) + 6;
+      const px = Math.round(geo.px(PORTAL.x));
       const foot = Math.round(geo.footY(PORTAL.x, PORTAL.z));
       const sheet = sheets.portal;
-      const frame = open >= 1 ? sheet.loop[Math.floor(time * 11) % sheet.loop.length] : open > 0 ? sheet.open[Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length))] : sheet.open[2];
-      const alpha = open > 0 ? 1 : 0.22 + 0.12 * Math.sin(time * 1.3);
-      later(PORTAL.z + 0.001, () => put(ground, px - (frame[2] >> 1), foot - frame[3] + 2, frame, false, alpha));
-      addLight(px, foot - 16, 12 + 22 * open, 0.06 + 0.29 * open);
+      const pick = (front: boolean): readonly number[] =>
+        open >= 1
+          ? (front ? sheet.loopfront : sheet.loop)[Math.floor(time * 8) % sheet.loop.length]
+          : (front ? sheet.openfront : sheet.open)[open > 0 ? Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length)) : 2];
+      const back = pick(false);
+      const front = pick(true);
+      if (open > 0) {
+        const tile = sheets.shaft.tile[0];
+        later(PORTAL.z - 0.002, () => {
+          // Soft, and softer toward the ring, as the shafts from the openings are.
+          for (let y = foot - 6 - tile[3], k = 0; y > -tile[3]; y -= tile[3], k++) put(ground, px - (tile[2] >> 1), y, tile, false, open * Math.min(0.3, 0.12 + k * 0.04), undefined, false);
+        });
+        addLight(px, foot - 4, 10 + 18 * open, 0.05 + 0.25 * open);
+      }
+      later(PORTAL.z - 0.001, () => put(ground, px - (back[2] >> 1), foot - back[3] + 4, back));
+      later(PORTAL.z + 0.001, () => put(ground, px - (front[2] >> 1), foot - front[3] + 4, front));
     }
 
     // The creature.

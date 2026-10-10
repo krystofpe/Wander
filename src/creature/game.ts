@@ -96,7 +96,7 @@ const DOING: Readonly<Record<string, string>> = {
   hide: 'hiding',
   wander: 'wandering beyond the edge of your world',
   watch: 'watching something tall walk through the light at the end of the path',
-  portal: 'gone through your portal to the traveller\'s camp, sitting by his fire',
+  portal: 'gone up your ring of mushrooms to the traveller\'s camp, sitting by his fire',
   listen: 'at the glass, listening to them',
   greet: 'at the glass',
 };
@@ -224,7 +224,7 @@ export class Game implements Ctx {
     // The traveller came by while you were away: it tells you first.
     if (cameWhileAway(life, this.worldMs - ms)) {
       this.greetTopic = 'travellerBack';
-      this.greetMoment = 'While they were away you went through your portal to the camp of the traveller in the long coat, the one who walks the endless road, and sat by his fire. Greet them, and tell them.';
+      this.greetMoment = 'While they were away you went up through your ring of mushrooms to the camp of the traveller in the long coat, the one who walks the endless road, and sat by his fire. Greet them, and tell them.';
     }
     this.brain.run('greet');
   }

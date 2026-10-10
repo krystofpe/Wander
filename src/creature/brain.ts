@@ -249,10 +249,30 @@ function* comeOut(c: Ctx): Script {
   yield* walkTo(c, c.body.x, Math.min(1, home.z + 0.1));
 }
 
-/** Opens its portal (from 0 to 1) or closes it (1 to 0), quickly: a tear in the air. */
+/** Brings its ring up and opens it (from 0 to 1), or closes it (1 to 0): the caps coming up, the earth parting. */
 function* tear(c: Ctx, from: number, to: number): Script {
-  for (let t = 0; t < 0.8; t += yield) c.opening(from + (to - from) * (t / 0.8));
+  for (let t = 0; t < 1.2; t += yield) c.opening(from + (to - from) * (t / 1.2));
   c.opening(to);
+}
+
+/** Rises up the shaft of light from its ring, fading into it (`up`), or comes back down it into the ring. */
+function* rise(c: Ctx, up: boolean): Script {
+  const b = c.body;
+  b.pose = 'jump';
+  const SEC = 1.6;
+  const HIGH = 46;
+  for (let t = 0; t < SEC; t += yield) {
+    const k = up ? t / SEC : 1 - t / SEC;
+    b.lift = Math.pow(k, 1.5) * HIGH;
+    b.doorway = Math.max(0, (k - 0.25) / 0.75);
+  }
+  b.lift = up ? HIGH : 0;
+  b.doorway = up ? 1 : 0;
+  if (up) {
+    b.lift = 0;
+    b.doorway = 0;
+  }
+  b.pose = 'stand';
 }
 
 /** Moves its doorway fade to `to` (1 gone into the dark, 0 outside) over BRAIN.doorwaySec. */
@@ -637,27 +657,26 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       c.say('portal');
       yield* hush(c, 3);
       const PORTAL = portalOf(c.scene.layout);
-      yield* walkTo(c, PORTAL.x - 0.03, PORTAL.z);
+      yield* walkTo(c, PORTAL.x - 0.05, PORTAL.z);
       c.body.facing = 1;
-      // It tears open in the air before it, turns a moment; it steps in and fades into the light.
+      // Its ring comes up and opens before it, a shaft of light coming down onto it; it steps in and rises up the
+      // light, fading into it.
       yield* tear(c, 0, 1);
       yield* wait(0.6);
       yield* walkTo(c, PORTAL.x, PORTAL.z);
-      for (let t = 0; t < 0.8; t += yield) c.body.doorway = t / 0.8;
+      yield* rise(c, true);
       c.body.visible = false;
-      c.body.doorway = 0;
       c.through(true);
       yield* wait(0.7);
       yield* tear(c, 1, 0);
       // Gone, until its visit is over.
       let t = 0;
       while (c.visit() !== null && c.visit()?.phase !== 'closing' && t < 1800) t += yield;
+      // Back down the light into its ring.
       yield* tear(c, 0, 1);
       yield* wait(0.4);
       c.body.visible = true;
-      c.body.doorway = 1;
-      for (let k = 0; k < 0.8; k += yield) c.body.doorway = 1 - k / 0.8;
-      c.body.doorway = 0;
+      yield* rise(c, false);
       c.through(false);
       yield* walkTo(c, PORTAL.x - 0.08, Math.min(1, PORTAL.z + 0.1));
       yield* wait(0.5);

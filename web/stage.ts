@@ -341,35 +341,42 @@ export class Stage {
       const seat = l.fire.at + 1.3;
       const gx = colOf(gate);
       const gy = groundRow(gate);
-      // The portal: tearing open from a point of light, turning while it is open, closing the same way.
+      // Its way up: a ring of its mushrooms coming up beyond his fire, the earth inside parting on the hollow's light,
+      // motes of it rising; at the end the moss closes over it. The far half first, its near rim after the creature.
       const sheet = atlas.sheets.portal;
       const open = portalOpen(visit);
+      const ringFrame = (front: boolean): readonly number[] =>
+        open < 1 ? (front ? sheet.openfront : sheet.open)[Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length))] : (front ? sheet.loopfront : sheet.loop)[Math.floor(time * 8) % sheet.loop.length];
+      const ring = (front: boolean): void => {
+        const f = ringFrame(front);
+        r.ground.add(Math.round(gx - f[2] / 2), Math.round(gy - f[3] + 4), f, rowA, rowB, b.k, false);
+      };
       if (open > 0) {
-        const frame = open < 1 ? sheet.open[Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length))] : sheet.loop[Math.floor(time * 11) % sheet.loop.length];
-        // While it sits with him the portal stays, a little dimmer, waiting.
-        const dim = visit.phase === 'with' ? 0.8 : 1;
-        r.ground.add(Math.round(gx - frame[2] / 2), Math.round(gy - frame[3] + 2), frame, rowA, rowB, b.k, false, dim);
+        ring(false);
         if (light.count < 6) {
           const o = light.count * 4;
           light.lights[o] = gx;
-          light.lights[o + 1] = gy - 16;
-          light.lights[o + 2] = 30 * open;
-          light.lights[o + 3] = 0.35 * open * dim;
+          light.lights[o + 1] = gy - 4;
+          light.lights[o + 2] = 22 * open;
+          light.lights[o + 3] = 0.3 * open;
           light.count++;
         }
       }
-      // The creature: out of the portal and over to the fire, there a while, back and through again.
+      // The creature: up out of the ring and over to the fire, there a while, back and down into the ring again.
       const dozing = this.neighbour !== null && !awakeAt(this.neighbour.nightOwl, this.creatureClock());
       if (visit.phase === 'coming' || visit.phase === 'going') {
         const c = crossing(visit);
-        // Coming it faces the fire; going, the portal.
+        // Coming it faces the fire; going, the ring.
         const flip = visit.phase === 'coming';
         const x = gate + (seat - gate) * c.at;
-        drawNeighbour(r, atlas, colOf(x), groundRow(x), c.walking ? 'walk' : 'stand', flip, this.neighbour, rows, 'open', time, c.shown, (gate - x) * PX_PER_M);
+        // Climbing out of the hole (or down into it), it rises from a little below the ground.
+        const sink = c.walking ? 0 : Math.round((1 - c.shown) * 7);
+        drawNeighbour(r, atlas, colOf(x), groundRow(x) + sink, c.walking ? 'walk' : 'stand', flip, this.neighbour, rows, 'open', time, c.shown, (gate - x) * PX_PER_M);
       } else if (visit.phase === 'with') {
         const awake = sitsUp(visit);
         drawNeighbour(r, atlas, colOf(seat), groundRow(seat), 'sit', true, this.neighbour, rows, dozing && !awake ? 'shut' : awake ? 'happy' : 'open', time);
       }
+      if (open > 0) ring(true);
     }
 
     // Him.

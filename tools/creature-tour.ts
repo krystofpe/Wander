@@ -56,8 +56,8 @@ add('nights', 'nest', { hour: '23.4', weather: 'clear', act: 'sleep' }, 9);
 
 // At the hour of his camp it goes to him: its portal opens, it steps through, a faint shimmer where it went; it comes
 // back the same way before dawn.
-add('visit', 'going', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 12);
-add('visit', 'portal', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 14.8);
+add('visit', 'going', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 13);
+add('visit', 'portal', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 17.4);
 add('visit', 'gone', { hour: '15', weather: 'clear', visit: '1', act: 'idle' }, 40);
 add('visit', 'back', { hour: '15', weather: 'clear', visit: '1', act: 'idle', speed: '30' }, 22);
 

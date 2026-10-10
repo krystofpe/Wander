@@ -4,7 +4,7 @@ A lone hooded wanderer walks forever through pixel-art lands made up as he goes.
 
 Nobody plays it. It is something to look at, or to leave running for hours full screen on a second monitor.
 
-It has a second mode, a world away and the same world: [the creature](#the-creature), a small creature wearing its moss like a blanket that lives in the hollow, the world under his world, and notices you, a tamagotchi of sorts. Tab goes from one to the other. Every night, when he has lain down by his fire, a portal opens beyond it and the creature comes through to sit with him until the small hours; some nights he wakes and sits up with it, some nights he sleeps on.
+It has a second mode, a world away and the same world: [the creature](#the-creature), a small creature wearing its moss like a blanket that lives in the hollow, the world under his world, and notices you, a tamagotchi of sorts. Tab goes from one to the other. Every night, when he has lain down by his fire, a ring of its mushrooms comes up beyond it, the earth inside opens on the hollow's light, and the creature climbs out to sit with him until the small hours; some nights he wakes and sits up with it, some nights he sleeps on.
 
 **Live: [krystofpe.github.io/Wander](https://krystofpe.github.io/Wander/)**: one wanderer for everyone, walking day and night. Whoever opens the page finds him in the same place at the same moment; Tab there opens a creature of your own. Or run your own road from this repository ([Run](#run)).
 
@@ -48,7 +48,7 @@ The same options work on the command line (`npm start -- --seed moss --speed 20`
 | `--offline` | Never ask Claude; his own voice only. |
 | `--mute` | Start with the sound off. |
 | `--at M` | A look further along the road, from M metres (not saved). |
-| `--visit` | A look at his camp on a new road's second night, a little before the creature comes through its portal (not saved). |
+| `--visit` | A look at his camp on a new road's second night, a little before the creature comes up through its ring (not saved). |
 | `--frozen --at M --weather W --pose P` | A still frame for pictures: time stopped at a distance, hour and weather. |
 | `--live` | The live road of the published page instead of your own (below). |
 | `--now TIME --speed X` | On the live road: show another moment (a date, or ms since 1970), running X times faster. |
@@ -68,7 +68,7 @@ The road is saved to `~/.local/share/wander/journey.json` (or under `$XDG_DATA_H
 
 [The published page](https://krystofpe.github.io/Wander/) has no server behind it and saves nothing, yet everyone sees the same wanderer. Each real hour is one of his days. At the top of every hour he lies asleep by the fire at that night's camp, and where each night's camp lies is fixed in advance, so any browser can start from the last camp and live the hour up to now, in the same half-second steps as everyone else's (`src/live.ts`). Through the day a plan brings him to the next camp by nightfall: he never walks past it, waits by it if he is early, and stops for nothing if he is late. Every hour ends exactly where the next begins (`npm run live` checks thousands of them). His thoughts there come from his own voice, picked alike for everyone; a public page cannot hold an API key. Click once for sound (browsers ask for that), double-click or F for full screen.
 
-Tab there opens [the creature](https://krystofpe.github.io/Wander/creature/): one of your own, born in your browser and kept there, with its own small voice (no Claude on a public page). It keeps the live road's nights: when the live wanderer has lain down at his camp, it goes through its portal to his fire, and the road shows it there with him. The page remembers which of the two you had open last.
+Tab there opens [the creature](https://krystofpe.github.io/Wander/creature/): one of your own, born in your browser and kept there, with its own small voice (no Claude on a public page). It keeps the live road's nights: when the live wanderer has lain down at his camp, it goes up through its ring to his fire, and the road shows it there with him. The page remembers which of the two you had open last.
 
 `npm run site` builds both pages into `dist/` (the TypeScript with its types stripped, the pages marked as the site), and the [Live page workflow](.github/workflows/pages.yml) publishes it on every push to `main`. `npm run site -- --serve` then serves the build as GitHub Pages will, to look at locally first; `npm start -- --live` opens the same road with the local server.
 
@@ -101,13 +101,13 @@ With `ANTHROPIC_API_KEY` set, its words come from Claude (`mind: claude` in the 
 
 ### One world, two lives
 
-They live far apart: he walks his road, it lives in its hollow. But every night, a while after he has lain down by his fire (from half past eleven to half past three by his clock), a portal tears open in the dark beyond his camp, a point of light, then a slit, then an oval of violet light with blue swirling in it; the creature steps out, pads over and sits down by the fire with him until the small hours, then goes back and the portal closes behind it. Some nights he wakes and sits up with it, the two of them by the fire; some nights he sleeps on and it keeps him company anyway. From the hollow you see it go: it says where it is going, walks across from its stone, opens its portal and steps through, and only a faint crack of light is left in the air where it went until it comes back the same way before dawn (if it is asleep itself, it sleeps through). Either way it keeps the visit: a line in its diary, whether he woke or slept, and it tells you about it the next time you open the hollow.
+They live far apart: he walks his road, it lives in its hollow. But every night, a while after he has lain down by his fire (from half past eleven to half past three by his clock), a ring of its mushrooms comes up in the dark beyond his camp, red and sea-green like the ones on its back, the earth inside parts on the soft light of the hollow below, motes of it rising, and the creature climbs out, pads over and sits down by the fire with him until the small hours; then it goes back down, and the moss closes over the ring. Some nights he wakes and sits up with it, the two of them by the fire; some nights he sleeps on and it keeps him company anyway. From the hollow you see it go: it says where it is going, walks across from its stone to where a shaft of light comes down from his world, its ring comes up and opens there, and it rises up the light and is gone; the ring stays, quiet, until it comes back down the light before dawn (if it is asleep itself, it sleeps through). Either way it keeps the visit: a line in its diary, whether he woke or slept, and it tells you about it the next time you open the hollow.
 
-Both modes keep his clock: here his journey moved on since its last save at the pace he keeps while away, so both agree on when it is night at his camp; on the published page, the live road. On the default road one of his days is a real hour, so a visit lasts about ten minutes. To see one without waiting, a look that is not saved: on the road, `npm start -- --visit` (a new road's second night, him asleep by his fire half a minute before the portal opens; `--seed moth` is a night he wakes, `--seed moss` one he sleeps through), or from the hollow, `npm run creature -- --visit` (his night begins a moment after the page opens).
+Both modes keep his clock: here his journey moved on since its last save at the pace he keeps while away, so both agree on when it is night at his camp; on the published page, the live road. On the default road one of his days is a real hour, so a visit lasts about ten minutes. To see one without waiting, a look that is not saved: on the road, `npm start -- --visit` (a new road's second night, him asleep by his fire half a minute before its ring comes up; `--seed moth` is a night he wakes, `--seed moss` one he sleeps through), or from the hollow, `npm run creature -- --visit` (his night begins a moment after the page opens).
 
-![At his camp at night: the portal open beyond the fire, the creature sitting by the fire with him](docs/tour/landmarks/visit.jpg)
+![At his camp at night: its ring of mushrooms glowing beyond the fire, the creature sitting by the fire with him](docs/tour/landmarks/visit.jpg)
 
-![From the hollow: it opens its portal and steps through](docs/creature/visit/portal.jpg)
+![From the hollow: it rises up the light from its ring](docs/creature/visit/portal.jpg)
 
 Options (`npm run creature -- --name Ori`): `--name NAME` and `--seed WORD` (a new one), `--new` (start over; the old one is kept as `creature.json.bak`), `--offline`, `--mute`, `--speed X`, `--hour H`, `--visit` (a look, not saved), `--no-browser`, `--port N`, `--save PATH`.
 
@@ -144,7 +144,7 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 
 - **Fast soak** (`npm run soak -- --speed 16 --hours 48`): 48 in-world hours, no errors; JS heap 24.4 → 24.7 MB, GPU textures (48, 52 MB), buffers and framebuffers constant, frame time p50 16.7 / p99 16.8 ms throughout.
 - **Normal soak** (`npm run soak -- --minutes 122 --hidden 20`): two real hours at speed 1, the first 20 minutes hidden (he walked on 370 m and his steps kept sounding with 9 frames drawn), no errors; frame time p50 16.7 / p99 16.8 ms every minute once shown; GPU resources constant; the heap 21 → 27 MB in the first hour while bounded caches fill, then 26–28 MB.
-- **The creature** (`docs/creature/bench.json`, its in-page bench, 20 s each): 60 fps at 1920×1080 and 3840×2160, frame interval p50 16.7 / p99 16.8 ms, CPU 0.2–0.3 ms and GPU 4.6–5.6 ms a frame, in the hollow by day and at night with its portal open. End to end (`npm run creature:check`): 24 of 24 (`docs/creature/check.txt`).
+- **The creature** (`docs/creature/bench.json`, its in-page bench, 20 s each): 60 fps at 1920×1080 and 3840×2160, frame interval p50 16.7 / p99 16.8 ms, CPU 0.2–0.3 ms and GPU 4.6–5.6 ms a frame, in the hollow by day and at night with its ring open. End to end (`npm run creature:check`): 24 of 24 (`docs/creature/check.txt`).
 - **End to end** (`npm run check`, through the real server): closing and reopening, three hours away, offline, Claude, and a slow, failing or refused API: `docs/soak/check.txt`.
 
 ## Tools
@@ -163,8 +163,8 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 | `npm run live -- --hours 1000` | Lives the live road's hours one after another and checks that each ends where the next begins. |
 | `npm run site` | Builds the published page into `dist/`, both modes; `-- --serve` then serves it as GitHub Pages will, to look at locally. |
 | `npm run site:check` | Serves `dist/` as GitHub Pages would and checks it: the same wanderer as `src/live.ts`, the hour turning without a jump, the creature kept in the browser, its visit to the live road's camp seen from both pages, Tab both ways, the last mode opening again, no requests for anything that is not there. |
-| `npm run creature:tour` | Pictures of the creature: the hollow through the day, its moments, its nights, its visit through the portal, you (`docs/creature/`). |
-| `npm run creature:check` | The creature end to end through the real server: its first meeting, saving and reopening, days away, a terminal-era save moving in, Claude and when it fails, and one world, two lives: through its portal to his camp at night and the visit kept, Tab both ways (`docs/creature/check.txt`). |
+| `npm run creature:tour` | Pictures of the creature: the hollow through the day, its moments, its nights, its visit up through its ring, you (`docs/creature/`). |
+| `npm run creature:check` | The creature end to end through the real server: its first meeting, saving and reopening, days away, a terminal-era save moving in, Claude and when it fails, and one world, two lives: up through its ring to his camp at night and the visit kept, Tab both ways (`docs/creature/check.txt`). |
 | `npm run art:draw`, `npm run art` | Builds the hand-drawn sprites into Aseprite files, then exports the atlas. |
 
 ## How it is made

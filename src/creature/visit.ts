@@ -7,11 +7,11 @@ import { unit } from '../noise.ts';
 import { hourOfDay } from '../sky.ts';
 
 /**
- * The hours of his clock the visit spans; how long (hours) the portal stands open before it steps out (and after it
- * steps back in), and how long it takes to come over to the fire; how long the portal takes to tear open or close.
- * On a road with an hour-long day, an hour of his clock is 150 real seconds: it opens in about a second.
+ * The hours of his clock the visit spans; how long (hours) its way up stands open before it climbs out (and after it
+ * goes back down), and how long it takes to come over to the fire; how long the ring takes to come up and open, or
+ * close. On a road with an hour-long day, an hour of his clock is 150 real seconds: it opens in a second and a half.
  */
-export const VISIT = { from: 23.5, to: 3.5, open: 0.04, walk: 0.06, tear: 0.007 } as const;
+export const VISIT = { from: 23.5, to: 3.5, open: 0.04, walk: 0.06, tear: 0.01 } as const;
 
 /** How long the visit lasts, hours of his clock. */
 const SPAN = (VISIT.to + 24 - VISIT.from) % 24;
@@ -51,7 +51,7 @@ export function visitAt(clock: number, seed: number): Visit | null {
   return null;
 }
 
-/** How open the portal is (0 shut … 1 open): tearing open at the start of the visit, closing at its end. */
+/** How open its way up is (0 shut … 1 open): the ring coming up and opening at the start of the visit, closing at its end. */
 export function portalOpen(v: Visit): number {
   if (v.phase === 'opening') return Math.min(1, (v.k * VISIT.open) / VISIT.tear);
   if (v.phase === 'closing') return Math.min(1, ((1 - v.k) * VISIT.open) / VISIT.tear);

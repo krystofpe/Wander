@@ -1,4 +1,4 @@
-// The traveller: the wanderer. Every night it goes through its portal to his camp and sits by his fire with him
+// The traveller: the wanderer. Every night it goes up through its ring of mushrooms to his camp and sits by his fire with him
 // (src/creature/visit.ts); it keeps the visit (a line in its diary, how many times, the last time), and speaks of him
 // later. Written by whichever side sees it happen: his road when it comes, its own page when it goes. Pure.
 import { addDiary, isNightFor } from './life.ts';

@@ -81,7 +81,7 @@ export const LINES = {
   spring: ['Something is growing. I can hear it.', 'It smells green.'],
   summer: ['The air is thick.', 'Even the shadows are warm today.'],
   listening: ['...', '?', 'I am listening.'],
-  // The traveller: the one who walks the endless road, whose fire it goes to through its portal at night.
+  // The traveller: the one who walks the endless road, whose fire it goes up to through its ring at night.
   travellerBack: ['While you were gone I went to the traveller\'s fire. He was asleep. I kept him company.', 'I sat with the one who walks last night. You missed it.', 'There is a man in a long coat who sleeps by his fire. I go to him at night. I think he is lonely too.'],
   traveller: ['I think about the one who walks. Where will he sleep tonight?', 'The traveller never says where he is going. Maybe he does not know.', 'His fire smells of far places.', 'Tonight I will go to him again.'],
   portal: ['He has made his camp. I will go and sit with him.', 'His fire is lit, far away. I know the way.', 'The traveller should not be alone tonight.'],

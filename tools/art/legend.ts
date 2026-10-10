@@ -45,6 +45,27 @@ export const LEGEND: Readonly<Record<string, number>> = {
   N: role('stone', 2),
   a: role('soil', 0),
   A: role('soil', 1),
+  // Animals: fur darkest to lightest, birds and bats, falling leaves, a fish, fireflies.
+  '1': role('fur', 0),
+  '2': role('fur', 1),
+  '3': role('fur', 2),
+  '4': role('fur', 3),
+  '5': role('bird', 0),
+  '6': role('bird', 1),
+  '7': role('leaf', 3),
+  '8': role('leaf', 4),
+  P: role('water', 2),
+  Q: role('water', 3),
+  F: role('firefly', 0),
+  // Lamps and a far train: the red lamp, glass (dark, and the pane lit at night), the body, the running gear.
+  R: role('lamp', 0),
+  G: role('glass', 0),
+  W: role('glass', 1),
+  I: role('roof', 0),
+  O: role('roof', 1),
+  H: role('roof', 2),
+  S: role('rail', 0),
+  Z: role('rail', 1),
 };
 
 /** A sprite sheet drawn by hand: frames grouped by tag, each frame rows of characters, with frame durations (ms). */

@@ -15,7 +15,8 @@
     "art:draw": "node --disable-warning=ExperimentalWarning tools/art/draw.ts",
     "motion": "node --disable-warning=ExperimentalWarning tools/motion.ts",
     "start": "node --disable-warning=ExperimentalWarning server/main.ts",
-    "listen": "node --disable-warning=ExperimentalWarning tools/listen.ts"
+    "listen": "node --disable-warning=ExperimentalWarning tools/listen.ts",
+    "watch": "node --disable-warning=ExperimentalWarning tools/watch.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.132.1"

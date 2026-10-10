@@ -12,6 +12,8 @@ import { biomeAt, blended, groundHeight } from '../world.ts';
 import { Chunk, FLAG, newStamp, put, stamp } from './chunk.ts';
 import type { Stamp } from './chunk.ts';
 import { HORIZON } from './land.ts';
+import { BRIDGE, levelling, marksOn } from './landmarks.ts';
+import type { Placed as Mark } from './landmarks.ts';
 import { birch, broadleaf, bush, cactus, cached, conifer, deadTree, reeds, rock, tuft } from './plants.ts';
 import { baseline } from '../layers.ts';
 
@@ -278,6 +280,8 @@ function surfaceAt(seed: number, d: number): string {
 export function paintTrees(c: Chunk, seed: number, layer: LayerDef, li: number, u0: number): void {
   c.clear(u0);
   const tops = new Int32Array(c.w);
+  // A landmark on this layer stands on a level plot of its own, even in open country.
+  const marks = marksOn(seed, layer, u0, u0 + c.w);
   for (let x = 0; x < c.w; x++) {
     const u = u0 + x;
     const d = columnDistance(u, layer.z);
@@ -286,7 +290,11 @@ export function paintTrees(c: Chunk, seed: number, layer: LayerDef, li: number, 
     const yh = blended(blend, (id) => HORIZON[id]);
     const base = layer.top + Math.round(baseline(layer.z, yh, WALK_Y));
     const bank = blended(blend, (id) => BANK[id]);
-    const bankH = bankHeight(seed, layer, li, u);
+    let bankH = bankHeight(seed, layer, li, u);
+    for (const m of marks) {
+      const k = levelling(m, u);
+      if (k > 0) bankH += (Math.min(6, bankHeight(seed, layer, li, m.u)) - bankH) * k;
+    }
     // Things stand on the bank where there is one, on the layer's baseline where there is not.
     tops[x] = Math.round(base - bankH * bank);
     // Where the woods end, the bank slides down behind the playfield instead of stopping in a cliff.
@@ -310,19 +318,41 @@ export function paintTrees(c: Chunk, seed: number, layer: LayerDef, li: number, 
       c.set(u, y, r, FLAG.RIM);
     }
   }
-  // Plants and props standing on the bank, back to front by size (big trees behind small ones).
+  // Plants and props standing on the bank, back to front by size (big trees behind small ones), none crowding a
+  // landmark.
   placeBetween(seed, layer.name, li, layer.z, u0 - 80, u0 + c.w + 80, placed);
   placed.sort((a, b) => b.size - a.size);
   for (const p of placed) {
+    if (marks.some((m) => Math.abs(p.u - m.u) < m.half + 6)) continue;
     const s = stampFor(p, layer.z);
     const x = p.u - u0;
     const groundTop = x >= 0 && x < c.w ? tops[x] : bankTopAt(seed, layer, li, p.u);
     stamp(c, s, p.u, groundTop + 1 + (p.species === 'rock' || p.species === 'boulder' ? 1 : 0), p.flip, false);
   }
+  for (const m of marks) {
+    if (m.stamp === null) continue;
+    const top = markTop(seed, layer, li, m);
+    // A strip of ground under it, so in open country it sits on the land rather than on nothing.
+    const n = surfaceAt(seed, columnDistance(m.u, layer.z));
+    const fam = n === 'rock' || n === 'snow' || n === 'sand' || n === 'salt' ? n : 'grass';
+    for (let u = m.u - m.half - 8; u <= m.u + m.half + 8; u++) {
+      const edge = Math.max(0, Math.abs(u - m.u) - m.half);
+      for (let y = top + Math.floor(edge / 3); y <= top + 2; y++) c.set(u, y, role(fam, y === top + Math.floor(edge / 3) ? 1 : 0), FLAG.RIM);
+    }
+    stamp(c, m.stamp, m.u, top + 2, false, false);
+  }
   drawWires(c, seed, layer, li, u0, (u) => bankTopAt(seed, layer, li, u));
 }
 
-function bankTopAt(seed: number, layer: LayerDef, li: number, u: number): number {
+/** The row a landmark on a tree layer stands on: its plot's top. */
+export function markTop(seed: number, layer: LayerDef, li: number, m: Mark): number {
+  const blend = biomeAt(seed, columnDistance(m.u, layer.z));
+  const yh = blended(blend, (id) => HORIZON[id]);
+  const base = layer.top + Math.round(baseline(layer.z, yh, WALK_Y));
+  return Math.round(base - Math.min(6, bankHeight(seed, layer, li, m.u)) * blended(blend, (id) => BANK[id]));
+}
+
+export function bankTopAt(seed: number, layer: LayerDef, li: number, u: number): number {
   const d = columnDistance(u, layer.z);
   const yh = blended(biomeAt(seed, d), (id) => HORIZON[id]);
   const base = layer.top + Math.round(baseline(layer.z, yh, WALK_Y));
@@ -347,6 +377,7 @@ export function groundTop(seed: number, layer: LayerDef, u: number): number {
 export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number, u0: number): void {
   c.clear(u0);
   const tops = new Int32Array(c.w);
+  const marks = marksOn(seed, layer, u0, u0 + c.w);
   for (let x = 0; x < c.w; x++) {
     const u = u0 + x;
     const d = u / PX_PER_M;
@@ -356,6 +387,11 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
     tops[x] = top;
     const n = surfaceAt(seed, d);
     const steps = n === 'salt' ? 3 : n === 'snow' || n === 'sand' ? 4 : 5;
+    const bridge = marks.find((m) => m.mark.kind === 'bridge' && Math.abs(u - m.u) <= m.half + 2);
+    if (bridge !== undefined) {
+      bridgeColumn(c, u, top, bridge, n, steps);
+      continue;
+    }
     // A trodden path runs where the path noise is high (not on bare salt, sand, rock or snow).
     const pathy = n === 'grass' && noise1(d / 260, seed ^ 0x9a7) > -0.1;
     // Band edges below the surface wander a pixel or two, so they read as drawn, not ruled.
@@ -392,13 +428,55 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
   placeBetween(seed, layer.name, li, layer.z, u0 - 90, u0 + c.w + 90, placed);
   placed.sort((a, b) => b.size - a.size);
   for (const p of placed) {
+    if (marks.some((m) => Math.abs(p.u - m.u) < m.half + (m.mark.kind === 'bridge' ? 14 : 4))) continue;
     const s = stampFor(p, layer.z);
     const x = p.u - u0;
     const top = x >= 0 && x < c.w ? tops[x] : groundTop(seed, layer, p.u);
     const sink = p.species === 'rock' || p.species === 'boulder' || p.species === 'log' ? 1 : 0;
     stamp(c, s, p.u, top + 1 + sink, p.flip, false);
   }
+  for (const m of marks) if (m.stamp !== null) stamp(c, m.stamp, m.u, groundTop(seed, layer, m.u) + 2, false, false);
   drawWires(c, seed, layer, li, u0, (u) => groundTop(seed, layer, u));
+}
+
+/**
+ * A column of the bridge: the deck he walks on with its railing, and below it the gorge: banks falling to a river
+ * whose surface glints as its colours cycle, piers standing in it.
+ */
+function bridgeColumn(c: Chunk, u: number, top: number, m: Mark, n: string, steps: number): void {
+  const gorge = Math.round(BRIDGE.half * PX_PER_M);
+  const dx = Math.abs(u - m.u);
+  const water = top + BRIDGE.deep;
+  const surface = dx < gorge ? water : dx < gorge + BRIDGE.bank ? Math.round(water - ((dx - gorge) / BRIDGE.bank) * BRIDGE.deep) : top;
+  for (let y = surface; y < c.h; y++) {
+    const k = y - surface;
+    if (dx < gorge + 2 && y >= water) {
+      // The river from the side: a bright surface line, glints on the water below it, darkening with depth.
+      const kk = y - water;
+      const glint = kk < 10 && unit(Math.floor((u + kk * 13) / (3 + (kk % 3))) * 64 + kk, 0x5ea) < 0.22 - kk * 0.015;
+      const r = kk === 0 ? role('water', 3) : glint ? role('water', 3) : kk < 5 ? role('water', 2) : kk < 16 ? role('water', 1) : role('water', 0);
+      c.set(u, y, r, FLAG.WATER);
+    } else if (surface === top) c.set(u, y, k === 0 ? role(n, steps - 1) : k < 3 ? role(n, steps - 2) : k < 11 ? role(n, Math.max(1, steps - 3)) : role(n, 0), k < 2 ? FLAG.RIM : 0);
+    else c.set(u, y, k === 0 ? role(n, steps - 2) : k < 3 ? role('soil', 2) : k < 9 ? role(n, Math.max(0, steps - 4)) : role(n, 0), k === 0 ? FLAG.RIM : 0);
+  }
+  if (dx > m.half) return;
+  // The deck: planks, their joints, the beam under them.
+  c.set(u, top, role('wood', 3), FLAG.RIM);
+  c.set(u, top + 1, (u - m.u) % 6 === 0 ? role('wood', 0) : role('wood', 2), FLAG.RIM);
+  c.set(u, top + 2, role('wood', 1), 0);
+  c.set(u, top + 3, role('wood', 0), 0);
+  // The railing: posts, a hand rail and a middle rail.
+  const rel = u - (m.u - m.half);
+  if (rel % 9 === 0) for (let y = top - 8; y < top; y++) c.set(u, y, role('wood', 2), FLAG.RIM);
+  c.set(u, top - 8, role('wood', 3), FLAG.RIM);
+  c.set(u, top - 4, role('wood', 1), FLAG.RIM);
+  // Piers down into the river, braced.
+  const pier = rel % 40;
+  if (pier < 2 && dx < gorge) for (let y = top + 4; y < water + 8; y++) c.set(u, y, y < water ? role('wood', pier === 0 ? 2 : 1) : role('wood', 0), FLAG.RIM);
+  if (dx < gorge && pier >= 2 && pier < 38) {
+    const t = (pier - 2) / 36;
+    c.set(u, top + 4 + Math.round(Math.abs(t - 0.5) * 2 * (BRIDGE.deep - 8)), role('wood', 1), 0);
+  }
 }
 
 /** Wires sagging between neighbouring poles (a parabola looks the same as a catenary at this size). */

@@ -118,6 +118,11 @@ void main() {
   o_color = vec4(c, 1.0) * v_alpha;
 }`;
 
+const PROGRAMS = new WeakMap<Gpu, Program>();
+
+/** No local light (sprites on the far layers). */
+export const NO_LIGHT: Light = { lights: new Float32Array(24), count: 0, color: new Float32Array(3), albedoRow: 0 };
+
 export class SpriteBatch {
   private readonly gpu: Gpu;
   private readonly prog: Program;
@@ -129,7 +134,13 @@ export class SpriteBatch {
   constructor(gpu: Gpu, quad: WebGLBuffer) {
     this.gpu = gpu;
     const gl = gpu.gl;
-    this.prog = gpu.program(VS, FS, 'sprites');
+    // One program for every batch.
+    let prog = PROGRAMS.get(gpu);
+    if (prog === undefined) {
+      prog = gpu.program(VS, FS, 'sprites');
+      PROGRAMS.set(gpu, prog);
+    }
+    this.prog = prog;
     this.vao = gpu.vertexArray();
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, quad);

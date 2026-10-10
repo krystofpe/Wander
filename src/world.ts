@@ -207,10 +207,10 @@ function biomeGround(seed: number, id: BiomeId, d: number): number {
 export function groundHeight(seed: number, d: number): number {
   const blend = biomeAt(seed, d, 70);
   const h = blended(blend, (id) => biomeGround(seed, id, d));
-  // Near a landmark the ground flattens, so the moment reads as a pause.
+  // Near a landmark the ground flattens, so the moment reads as a pause; at a bridge it is level from bank to bank.
   const mark = landmarkNear(seed, d, 60);
   if (mark === null) return h;
-  const calm = 1 - 0.6 * (1 - smooth(20, 60, Math.abs(d - mark.at)));
+  const calm = mark.kind === 'bridge' ? smooth(12, 60, Math.abs(d - mark.at)) : 1 - 0.6 * (1 - smooth(20, 60, Math.abs(d - mark.at)));
   return h * calm;
 }
 

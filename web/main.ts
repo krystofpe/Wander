@@ -123,6 +123,29 @@ const ui = new Ui();
 /** Pictures and stepped captures are silent; everything else has its sound (M turns it off and on). */
 const sound = opts.frozen || opts.manual ? null : new Sound(life.seed, opts.mute);
 Object.assign(status, {
+  /** What is happening now, for the watch tool's log. */
+  moment: () => {
+    const hour = env.hourAt(life.clock);
+    const w = weatherOf(life, env);
+    const b = biomeAt(life.seed, life.at);
+    return {
+      day: dayOf(life.clock),
+      hour: Math.round(shownHour(hour, opts.realClock) * 100) / 100,
+      sun: Math.round(sunElevation(hour, opts.realClock) * 10) / 10,
+      at: Math.round(life.at),
+      biome: b.k < 0.02 ? b.a : `${b.a}→${b.b} ${Math.round(b.k * 100)}%`,
+      weather: w.name,
+      precip: Math.round(w.precip * 100) / 100,
+      fog: Math.round(w.fog * 100) / 100,
+      stage: life.stage,
+      act: life.act,
+      smoking: life.smoking >= 0,
+      fire: life.fire === null ? 0 : Math.round(life.fire.heat * 100) / 100,
+      landmark: landmarkNear(life.seed, life.at, 300)?.kind ?? null,
+      seen: { ...stage.around.seen },
+      thought: shown[shown.length - 1] ?? null,
+    };
+  },
   sound: () => sound?.status() ?? null,
   /** Records the sound for `sec` seconds and returns it as base64 WebM (the tools measure it). */
   record: async (sec: number): Promise<string | null> => {
@@ -271,6 +294,7 @@ function step(now: number): void {
   const hour = env.hourAt(life.clock);
   stage.update(renderer, renderer.atlas, life, hour, opts.realClock, weatherOf(life, env), anim, opts.frozen ? 0 : Math.min(0.1, anim - drawnAt), opts.frozen, null);
   drawnAt = anim;
+  if (stage.around.trainStarted !== null) sound?.train(stage.around.trainStarted);
   // Text sits in CSS pixels: one art pixel is scale / devicePixelRatio of them.
   const css = renderer.scale / devicePixelRatio;
   ui.setScale(css);

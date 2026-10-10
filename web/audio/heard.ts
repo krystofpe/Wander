@@ -202,7 +202,8 @@ export function hear(m: Mix, s: Hear): void {
   m.owls = mixOf((x) => x.owls);
   m.surf = mixOf((x) => x.surf);
   m.water = mixOf((x) => x.water);
-  m.train = Math.max(mixOf((x) => x.train), s.landmark === 'train' ? 1 : 0);
+  // Trains heard and never seen belong to the rail line; one seen crossing brings its own sound.
+  m.train = mixOf((x) => x.train);
   m.mode = k < 0.5 ? a.mode : b.mode;
   const w = s.weather;
   const base = 0.1 + 0.75 * Math.abs(w.wind);

@@ -57,12 +57,15 @@ export function paintClouds(c: Chunk, seed: number, layer: LayerDef, u0: number)
     const u = u0 + x;
     const blend = biomeAt(seed, columnDistance(u, layer.z));
     c.setColumnBiome(u, BIOME_IDS.indexOf(blend.a), BIOME_IDS.indexOf(blend.b), blend.k);
-    // The deck under heavy skies: a flat, slightly ragged band low in the sky, shown only near full cover.
-    const deckTop = 36 + Math.round(fbm1(u / 60, seed ^ 0xdec, 2, 0.5) * 8);
+    // The deck under heavy skies, shown only near full cover: it closes the whole sky from above the top of the
+    // screen down to a ragged foot, darker overhead (dithered into the lighter body), with the light of the horizon
+    // showing under it.
+    const deckTop = -44;
     const deckFoot = 128 + Math.round(fbm1(u / 25, seed ^ 0xdee, 2, 0.5) * 10);
     const deckNeed = 98 + Math.round(fbm1(u / 200, seed ^ 0xdef, 2, 0.5) * 10);
     for (let row = deckTop; row < deckFoot; row++) {
-      const r = row < deckTop + 3 ? C[2] : row < deckFoot - 10 ? C[1] : C[0];
+      const dark = row < 14 || (row < 34 && ((u + row) & 1) === 0 && row < 14 + ((u * 7 + row * 3) % 20));
+      const r = row >= deckFoot - 10 ? C[0] : dark ? C[0] : C[1];
       c.set(u, layer.top + row, r, deckNeed);
     }
     for (const cl of clouds) {

@@ -135,6 +135,11 @@ export class Sound {
     this.body?.fireSound(m, now + AHEAD);
   }
 
+  /** A train seen crossing, starting at `x` across the screen (0..1). */
+  train(x: number): void {
+    if (this.on) this.ambience?.seenTrain(x);
+  }
+
   /** His life's events that make a sound. */
   event(ev: LifeEvent): void {
     if (this.body === null || !this.on) return;

@@ -3,7 +3,7 @@
 // the final pass. GPU resources are made here on start and on resize, never per frame.
 import { BIOME_IDS, BIOMES } from '../src/biomes.ts';
 import type { BiomeId } from '../src/biomes.ts';
-import { CHUNK_W, LAYERS, RING_W, VIEW_H, columnDistance } from '../src/layers.ts';
+import { CHUNK_W, GROUND, LAYERS, RING_W, VIEW_H, columnDistance } from '../src/layers.ts';
 import type { LayerDef } from '../src/layers.ts';
 import { buildRow, gradeOf, hazeAt, labToBytes, newGrade, newMoment } from '../src/palette.ts';
 import type { Grade } from '../src/palette.ts';
@@ -15,7 +15,7 @@ import { stretchesBetween, WORLD } from '../src/world.ts';
 import { Gpu, QUAD_VS } from './gl.ts';
 import type { Program } from './gl.ts';
 import { COMPOSITE_FS, DOWN_FS, FINAL_FS, FOG_FS, GLOWADD_FS, RAIN_FS, RESOLVE_FS, SKY_FS, UP_FS } from './shaders.ts';
-import { SpriteBatch } from './sprites.ts';
+import { NO_LIGHT, SpriteBatch } from './sprites.ts';
 import type { Atlas, Light } from './sprites.ts';
 
 /** Biome rows reserved per layer in the palette texture. */
@@ -63,6 +63,11 @@ export type View = {
   /** Rim light on sprites: which side the light is on (−1 left, +1 right, 0 none) and how strong (0..1). */
   rimSide: number;
   rimStrength: number;
+  /** The Milky Way's strength and the aurora's, 0..1. */
+  milky: number;
+  aurora: number;
+  /** The rim's colour (rgb 0..1): the sun's light by day, a cold sky light at night. */
+  rim: Float32Array;
   /** Local lights (fire, ember, windows) in native view pixels. */
   light: Light;
   /** How strongly the glowing things bloom. */
@@ -114,7 +119,8 @@ export class Renderer {
   readonly gpu: Gpu;
   readonly gl: WebGL2RenderingContext;
   private readonly quad: WebGLVertexArrayObject;
-  /** Sprites standing on the playfield (him, his fire, animals), drawn after it. */
+  /** Sprites drawn over each layer (him, the fire and smoke on the playfield; animals, a train, lamps further off). */
+  readonly batches: SpriteBatch[];
   readonly ground: SpriteBatch;
   atlas: Atlas | null = null;
   private readonly resolve: Program;
@@ -176,7 +182,8 @@ export class Renderer {
     this.composite = prog(COMPOSITE_FS, 'composite');
     this.sky = prog(SKY_FS, 'sky');
     this.final = prog(FINAL_FS, 'final');
-    this.ground = new SpriteBatch(this.gpu, quadBuf);
+    this.batches = LAYERS.map(() => new SpriteBatch(this.gpu, quadBuf));
+    this.ground = this.batches[GROUND];
     this.glowAdd = prog(GLOWADD_FS, 'glow');
     this.fog = prog(FOG_FS, 'fog');
     this.rain = prog(RAIN_FS, 'rain');
@@ -464,7 +471,7 @@ export class Renderer {
       gl.uniform2f(this.glowAdd.u('u_frac'), l.fx, l.fy);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
-    if (this.atlas !== null) this.ground.draw(this.atlas, this.paletteTex, 1, [0, 0, nw, nh], nw, nh, labToRgb(v.grade.light), 0, 0, v.light, 1);
+    if (this.atlas !== null) for (const b of this.batches) b.draw(this.atlas, this.paletteTex, 1, [0, 0, nw, nh], nw, nh, labToRgb(v.grade.light), 0, 0, b === this.ground ? v.light : NO_LIGHT, 1);
     gl.bindVertexArray(this.quad);
     gl.disable(gl.BLEND);
     gl.activeTexture(gl.TEXTURE0);
@@ -531,7 +538,10 @@ export class Renderer {
     gl.uniform1f(this.sky.u('u_moonPhase'), v.moonPhase);
     gl.uniform1f(this.sky.u('u_moonUp'), v.moonUp);
     gl.uniform1f(this.sky.u('u_clear'), v.clear);
-    gl.uniform1f(this.sky.u('u_time'), v.time % 1000);
+    gl.uniform1f(this.sky.u('u_time'), v.time % 3400);
+    gl.uniform1f(this.sky.u('u_milky'), v.milky);
+    gl.uniform1f(this.sky.u('u_aurora'), v.aurora);
+    gl.uniform1f(this.sky.u('u_seed'), (v.seed % 997) / 97);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
     // The layers, back to front, premultiplied.
@@ -559,8 +569,10 @@ export class Renderer {
       gl.uniform2f(this.composite.u('u_frac'), l.fx, l.fy);
       gl.uniform1f(this.composite.u('u_haze'), hazeAt(l.def.z, 0.12));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      if (l.def.kind === 'ground' && this.atlas !== null) {
-        this.ground.draw(this.atlas, this.paletteTex, this.scale, [vx, vy, vw, vh], this.canvasW, this.canvasH, labToRgb(g.light), v.rimSide, v.rimStrength, v.light);
+      const batch = this.batches[l.index];
+      if (batch.count > 0 && this.atlas !== null) {
+        const near = batch === this.ground;
+        batch.draw(this.atlas, this.paletteTex, this.scale, [vx, vy, vw, vh], this.canvasW, this.canvasH, v.rim, v.rimSide, near ? v.rimStrength : v.rimStrength / l.def.z, near ? v.light : NO_LIGHT);
       }
       this.air(v, l.index, [vx, vy, vw, vh]);
     }

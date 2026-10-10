@@ -161,12 +161,22 @@ uniform vec4 u_viewport;
 uniform float u_night;
 uniform float u_clear;
 uniform float u_time;
+uniform float u_milky;
+uniform float u_aurora;
+uniform float u_seed;
 out vec4 o_color;
 
 float hash(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);
   return fract((p3.x + p3.y) * p3.z);
+}
+
+float smoothNoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 q = fract(p);
+  vec2 u = q * q * (3.0 - 2.0 * q);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
 }
 
 void main() {
@@ -182,10 +192,36 @@ void main() {
   vec2 dm = (f - u_moon) / 26.0;
   float mh = exp(-dot(dm, dm) * 1.4) * u_moonUp * 0.22 * u_clear * (0.4 + 0.6 * abs(u_moonPhase - 0.5) * -2.0 + 0.6);
   c += vec3(0.55, 0.6, 0.75) * mh * (0.3 + u_night);
-  // Stars: fixed to the sky, brighter and steadier high up, twinkling near the horizon.
+  // The Milky Way on clear dark nights: a soft band slanting across the sky, split by a dark lane of dust and
+  // thick with faint stars.
+  vec2 mw = vec2(u_view.x * 0.62, u_horizonRow * 0.1);
+  vec2 dir = normalize(vec2(1.0, 0.42));
+  float across = dot(f - mw, vec2(-dir.y, dir.x));
+  float along = dot(f - mw, dir);
+  float band = exp(-across * across / 900.0) * u_milky * (1.0 - t * 0.7);
+  float cloudy = smoothNoise(vec2(along / 38.0, across / 14.0)) * 0.6 + smoothNoise(vec2(along / 11.0, across / 6.0)) * 0.4;
+  float lane = 1.0 - 0.75 * exp(-pow(across + 4.0 * sin(along / 60.0) - 3.0, 2.0) / 30.0) * smoothstep(0.3, 0.7, smoothNoise(vec2(along / 24.0, 3.0)));
+  c += vec3(0.42, 0.45, 0.58) * band * (0.1 + 0.18 * cloudy) * lane;
+  // Aurora in the cold north: curtains of green hanging from a slow wavering line, violet at their tops, their rays
+  // drifting.
+  if (u_aurora > 0.0) {
+    float x = f.x;
+    float foot = u_horizonRow * 0.42 + 16.0 * sin(x * 0.009 + u_time * 0.045 + u_seed) + 9.0 * sin(x * 0.023 - u_time * 0.031);
+    float above = foot - f.y;
+    if (above > -6.0) {
+      float rays = 0.45 + 0.55 * smoothNoise(vec2(x / 5.0 + u_time * 0.35, u_time * 0.05)) * smoothNoise(vec2(x / 23.0 - u_time * 0.12, 7.0));
+      float curtain = (above < 0.0 ? exp(above / 2.0) : exp(-above / (34.0 + 22.0 * smoothNoise(vec2(x / 40.0, u_time * 0.02))))) * rays;
+      float sweep = 0.5 + 0.5 * sin(x * 0.004 + u_time * 0.02 + u_seed * 3.0);
+      vec3 green = vec3(0.25, 0.95, 0.55);
+      vec3 violet = vec3(0.55, 0.3, 0.85);
+      vec3 ac = mix(green, violet, clamp(above / 70.0, 0.0, 1.0));
+      c += ac * curtain * sweep * u_aurora * 0.5 * (1.0 - t * 0.5);
+    }
+  }
+  // Stars: fixed to the sky, brighter and steadier high up, twinkling near the horizon; many more in the Milky Way.
   float h = hash(n * 1.37 + 11.0);
   float dark = u_night * u_clear * (1.0 - t * 0.6);
-  if (h < 0.0042 * dark) {
+  if (h < (0.0042 + 0.02 * band) * dark) {
     float b = hash(n + 3.1);
     float tw = 0.75 + 0.25 * sin(u_time * (1.5 + 3.0 * b) + h * 900.0) * (0.3 + t);
     vec3 star = b < 0.25 ? vec3(0.79, 0.84, 1.0) : b < 0.55 ? vec3(0.97, 0.96, 1.0) : b < 0.8 ? vec3(1.0, 0.9, 0.78) : vec3(1.0, 0.8, 0.55);
@@ -208,6 +244,25 @@ void main() {
     float k = lit ? u_moonUp * mix(0.45, 1.0, u_clear) * mix(0.6, 1.0, u_night) : u_moonUp * u_night * 0.25 * u_clear;
     if (!lit) moon = vec3(0.22, 0.24, 0.33);
     c = mix(c, moon, k);
+  }
+  // A shooting star now and then on a clear night: a short bright streak with a fading tail, gone in half a second.
+  float slot = floor(u_time / 17.0);
+  float e = hash(vec2(slot, u_seed));
+  if (u_night * u_clear > 0.5 && e < 0.45) {
+    float t0 = slot * 17.0 + hash(vec2(slot, 3.0)) * 12.0;
+    float age = (u_time - t0) / 0.6;
+    if (age > 0.0 && age < 1.0) {
+      vec2 start = vec2(hash(vec2(slot, 5.0)) * u_view.x, 20.0 + hash(vec2(slot, 7.0)) * u_horizonRow * 0.45);
+      vec2 v = normalize(vec2(hash(vec2(slot, 9.0)) < 0.5 ? -1.0 : 1.0, 0.45 + 0.4 * hash(vec2(slot, 11.0))));
+      vec2 head = start + v * age * 70.0;
+      vec2 rel = n + 0.5 - head;
+      float back = -dot(rel, v);
+      float side = abs(dot(rel, vec2(-v.y, v.x)));
+      if (back > -0.5 && back < 18.0 && side < 0.75) {
+        float k = (1.0 - back / 18.0) * sin(age * 3.14159) * u_night * u_clear;
+        c = mix(c, vec3(0.92, 0.95, 1.0), clamp(k, 0.0, 1.0));
+      }
+    }
   }
   o_color = vec4(c, 1.0);
 }`;
@@ -253,7 +308,9 @@ void main() {
   float band = exp(-up / u_height) * (n.y > u_base + u_height * 2.0 ? 0.6 : 1.0);
   float f = vnoise(p / vec2(110.0, 16.0) + vec2(u_time * 0.011, 0.0)) * 0.65 + vnoise(p / vec2(41.0, 7.0) - vec2(u_time * 0.019, 0.0)) * 0.35;
   float a = u_density * band * smoothstep(0.22, 0.78, f);
-  a = clamp(floor(a * 4.0 + bayer(p)) / 4.0, 0.0, 0.85);
+  // Quantised in eighths by an ordered dither fixed to the screen's pixels: pixel-art steps, no crawling pattern,
+  // and no visible dot grid in thin fog.
+  a = clamp(floor(a * 8.0 + bayer(n)) / 8.0, 0.0, 0.85);
   o_color = vec4(u_color * a, a);
 }`;
 

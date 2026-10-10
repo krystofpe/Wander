@@ -12,10 +12,12 @@ import { labToBytes } from '../src/palette.ts';
 import { arcX, flashAt, moonAt, roadMoon, shownHour, sunElevation } from '../src/sky.ts';
 import type { Weather } from '../src/sky.ts';
 import { loopFrame, walkFrame } from '../src/walker.ts';
+import { unit } from '../src/noise.ts';
 import { biomeAt, blended, groundHeight } from '../src/world.ts';
 import { ALBEDO_ROW, FOG_AFTER, paletteRow } from './render.ts';
 import type { Renderer, View } from './render.ts';
 import type { Atlas } from './sprites.ts';
+import { Around } from './around.ts';
 
 type Puff = { x: number; y: number; vx: number; vy: number; age: number; life: number; big: boolean; splash: boolean };
 
@@ -39,6 +41,7 @@ export class Stage {
   private splashAt = 0;
   private readonly bytes = new Uint8Array(3);
   readonly moonStart: number;
+  readonly around = new Around();
   /** Where his head is on the native view this frame (for his thoughts). */
   headX = 0;
   headY = 0;
@@ -63,6 +66,9 @@ export class Stage {
       clear: 1,
       rimSide: 0,
       rimStrength: 0,
+      rim: new Float32Array(3),
+      milky: 0,
+      aurora: 0,
       sunUp: 0,
       moonX: 0,
       moonY: 0,
@@ -144,7 +150,27 @@ export class Stage {
     v.moonUp = moon.x > 0 && moon.x < 1 && Math.abs(v.moonPhase - 0.5) < 0.47 ? Math.min(1, Math.max(0, (moon.elevation + 1) / 3)) : 0;
     const low = Math.max(0, 1 - Math.abs(m.elevation - 2) / 14);
     v.rimSide = m.side > 0.15 ? 1 : m.side < -0.15 ? -1 : 0;
-    v.rimStrength = Math.min(0.85, 0.15 + 0.7 * low) * (1 - this.grade.night) * (1 - w.cloud * 0.8);
+    const night = this.grade.night;
+    const dayRim = Math.min(0.85, 0.15 + 0.7 * low) * (1 - night) * (1 - w.cloud * 0.8);
+    // At night a faint cold edge of sky light keeps him apart from the dark woods behind him (Alto's and Limbo keep
+    // the figure readable the same way), from the moon's side when it is up.
+    const nightRim = 0.5 * Math.min(1, night * 1.6) * (1 - 0.3 * w.cloud);
+    v.rimStrength = Math.max(dayRim, nightRim);
+    if (nightRim > dayRim) v.rimSide = v.moonUp > 0.2 ? (v.moonX < W / 2 ? -1 : 1) : 0;
+    labToBytes(this.grade.light[0], this.grade.light[1], this.grade.light[2], this.bytes, 0);
+    const k = Math.min(1, night * 1.4);
+    v.rim[0] = (this.bytes[0] / 255) * (1 - k) + 0.44 * k;
+    v.rim[1] = (this.bytes[1] / 255) * (1 - k) + 0.5 * k;
+    v.rim[2] = (this.bytes[2] / 255) * (1 - k) + 0.62 * k;
+
+    // The Milky Way on clear, dark nights, washed out by a bright moon and by the lights of towns and ruins; aurora
+    // over the cold lands on some clear nights.
+    const dark = Math.max(0, (this.grade.night - 0.5) * 2) * (1 - Math.min(1, w.cloud * 1.6)) * (1 - w.fog);
+    const here = biomeAt(l.seed, l.at);
+    v.milky = dark * (1 - 0.6 * m.moonlight * v.moonUp) * (1 - 0.5 * blended(here, (id) => (id === 'ruins' || id === 'rail' ? 1 : 0)));
+    const cold = blended(here, (id) => (id === 'tundra' ? 1 : id === 'pass' ? 0.7 : id === 'coast' || id === 'saltflat' ? 0.35 : 0));
+    const which = Math.floor(l.clock / 24 + 0.5);
+    v.aurora = cold * dark * (unit(which, l.seed ^ 0xa0a0) < 0.6 ? 1 : 0);
 
     // The air: clouds, fog veils and valley mist, rain or snow.
     v.cover = w.cloud;
@@ -173,7 +199,7 @@ export class Stage {
     v.rainColor[1] = Math.min(1, v.fogColor[1] * 0.6 + 0.38);
     v.rainColor[2] = Math.min(1, v.fogColor[2] * 0.6 + 0.45);
 
-    r.ground.clear();
+    for (const b of r.batches) b.clear();
     const light = v.light;
     light.count = 0;
     v.bloom = 0.35 + 0.55 * this.grade.night;
@@ -210,6 +236,9 @@ export class Stage {
         this.puff(fx + (Math.random() - 0.5) * 3, fy - 12 - l.fire.heat * 6, v.wind, true);
       }
     }
+
+    // The life around him and what moves at the landmarks (behind him on the playfield).
+    this.around.update(r, atlas, v, l, { sun: m.elevation, night: this.grade.night, weather: w, time, dt, extra, camY: this.camY, himX: colOf(l.at) });
 
     // Him.
     const sheet = atlas.sheets.wanderer;

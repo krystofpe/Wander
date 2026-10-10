@@ -239,7 +239,7 @@ export class Ambience {
     if (this.nextTrain < until) {
       const chance = m.train > 0.3 ? 0.8 * m.train : m.night > 0.9 ? 0.04 : 0;
       if (Math.random() < chance && e.take('train')) {
-        this.trainPass(Math.max(now + 0.05, this.nextTrain), m);
+        this.trainPass(Math.max(now + 0.05, this.nextTrain));
         this.count.train++;
       }
       this.nextTrain = Math.max(now, this.nextTrain) + 180 + Math.random() * 300;
@@ -353,11 +353,17 @@ export class Ambience {
    * A train passing far off: a rumble swelling for most of a minute, the clack of rail joints, and the horn's
    * B-major-sixth chord sounding long, long, short, long while its pitch falls as it passes.
    */
-  private trainPass(at: number, m: Mix): void {
+  /** A train seen crossing far off, starting at `x` across the screen (0..1): its sound goes with it. */
+  seenTrain(x: number): void {
+    if (!this.e.take('train')) return;
+    this.trainPass(this.e.now + 0.05, x < 0.5 ? -0.85 : 0.85);
+    this.count.train++;
+  }
+
+  private trainPass(at: number, pan0: number = Math.random() < 0.5 ? -0.85 : 0.85): void {
     const e = this.e;
     const ctx = e.ctx;
     const len = 48;
-    const pan0 = Math.random() < 0.5 ? -0.85 : 0.85;
     const out = e.out('amb', LEVEL.train, pan0);
     out.pan.pan.setValueAtTime(pan0, at);
     out.pan.pan.linearRampToValueAtTime(-pan0, at + len);
@@ -403,7 +409,6 @@ export class Ambience {
       horn.gain.linearRampToValueAtTime(0, t + dur);
       t += dur + 0.45;
     }
-    void m;
     e.free('train', rumble, [rumbleLow, rg, clacks, clackLow, cg, horn, hornLow, out.gain, out.pan, ...oscs]);
   }
 

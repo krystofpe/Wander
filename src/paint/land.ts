@@ -8,7 +8,9 @@ import type { LayerDef } from '../layers.ts';
 import { fbm1, noise1, unit } from '../noise.ts';
 import { role } from '../palette.ts';
 import { biomeAt, blended } from '../world.ts';
-import { Chunk, FLAG } from './chunk.ts';
+import { Chunk, FLAG, stamp } from './chunk.ts';
+import { levelling, marksOn } from './landmarks.ts';
+import type { Placed } from './landmarks.ts';
 
 const R = {
   deep: role('land', 0),
@@ -23,6 +25,8 @@ const R = {
   water1: role('water', 1),
   water2: role('water', 2),
   water3: role('water', 3),
+  rail: role('rail', 1),
+  railDark: role('rail', 0),
 };
 
 /** The horizon's row on screen: lower under big skies (plateau, salt flat, coast), higher in closed country. */
@@ -117,6 +121,12 @@ export function landHeight(seed: number, layer: LayerDef, li: number, u: number)
   return blended(blend, (id) => shapeHeight(seed, FORMS[id][k], salt, u));
 }
 
+/** The land's height under a landmark on this layer: where it stands, levelled; a train's line kept low. */
+export function markGround(seed: number, layer: LayerDef, li: number, m: Placed): number {
+  const g = landHeight(seed, layer, li, m.u);
+  return m.mark.kind === 'train' ? Math.min(g, 14) : g;
+}
+
 /** The layer's baseline row in its texture at a column. */
 export function landBase(seed: number, layer: LayerDef, u: number): number {
   const d = columnDistance(u, layer.z);
@@ -202,15 +212,24 @@ function crown(seed: number, cover: Cover, z: number, u: number, salt: number): 
 export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u0: number): void {
   c.clear(u0);
   const H = c.h;
-  const pad = 4;
+  const pad = 10;
   const n = c.w + 2 * pad;
   const ground = new Float32Array(n);
   const tops = new Float32Array(n);
   const salt = 0x6c3 + li * 811;
+  // Landmarks on this layer stand on levelled ground with no trees crowding them.
+  const marks = marksOn(seed, layer, u0 - pad, u0 + c.w + pad);
+  const under = marks.map((m) => markGround(seed, layer, li, m));
   for (let i = 0; i < n; i++) {
     const u = u0 + i - pad;
     ground[i] = landHeight(seed, layer, li, u);
     tops[i] = ground[i] + crown(seed, coverAt(seed, layer, u), layer.z, u, salt);
+    marks.forEach((m, j) => {
+      const k = levelling(m, u);
+      if (k <= 0) return;
+      ground[i] += (under[j] - ground[i]) * k;
+      tops[i] += (ground[i] - tops[i]) * Math.min(1, k * 1.6);
+    });
   }
   for (let x = 0; x < c.w; x++) {
     const u = u0 + x;
@@ -226,7 +245,15 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
     const cold = blended(blend, (id) => (id === 'pass' || id === 'tundra' ? 1 : 0));
     const k = landIndex(layer.z);
     const amp = blended(blend, (id) => FORMS[id][k][0]);
-    const snowy = cold > 0.5 && ground[i] > amp * (k <= 1 ? 0.55 : 0.75) && layer.z >= 5;
+    // Snow caps above a snow line on the cold far ranges: deeper the higher the peak, their foot ragged where gullies
+    // carry the snow down, lit or shaded by which way the slope faces.
+    const snowLine = amp * (k <= 1 ? 0.5 : 0.68);
+    const snowy = cold > 0.5 && ground[i] > snowLine && layer.z >= 5;
+    const gully = fbm1(u / 6, seed ^ (0x5a0 + li), 2, 0.5) * 5 + fbm1(u / 23, seed ^ (0x5a1 + li), 2, 0.5) * 4;
+    const snowFoot = snowy ? landTop + Math.max(1, Math.round((ground[i] - snowLine) * 0.85 + gully)) : -1;
+    // Snow is shaded by the lie of the whole face (a wide slope), so it falls into broad planes, not stripes.
+    const wide = (ground[i + 9] - ground[i - 9]) / 18;
+    const snowRole = wide > 0.22 ? R.snowLit : wide < -0.22 ? R.snowShade : R.snowFace;
     const faceDepth = 2 + Math.round(3 * unit(Math.floor(u / 4), seed ^ li)) + Math.round(ground[i] * 0.08);
     const shadeDepth = faceDepth + 5 + Math.round(ground[i] * 0.3);
     for (let y = top; y < H; y++) {
@@ -239,12 +266,11 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
         // The rim catches only crests and steep faces; flat land has none, or the plains would stack in stripes.
         const crest = ground[i] > amp * 0.55 && ground[i] >= ground[i - 2] && ground[i] >= ground[i + 2];
         const rimmed = crest || Math.abs(slope) > 0.35;
-        if (below === 0 && top === landTop && (rimmed || snowy)) r = snowy ? R.snowLit : R.rim;
+        if (snowy && y <= snowFoot) r = below === 0 && top === landTop ? R.snowLit : snowRole;
+        else if (below === 0 && top === landTop && rimmed) r = R.rim;
         else if (below === 0 && top === landTop) r = slope > 0.1 ? R.faceL : slope < -0.1 ? R.faceR : R.shade;
-        else if (below <= faceDepth) {
-          const face = slope > 0.15 ? R.faceL : slope < -0.15 ? R.faceR : R.shade;
-          r = snowy ? (face === R.shade ? R.snowShade : R.snowFace) : face;
-        } else {
+        else if (below <= faceDepth) r = slope > 0.15 ? R.faceL : slope < -0.15 ? R.faceR : R.shade;
+        else {
           // The body below is the land's face turned to us, lit by the sky: one shade, never a black void, with a
           // few strata drawn across it so a big face reads as drawn.
           r = R.shade;
@@ -299,5 +325,15 @@ export function paintLand(c: Chunk, seed: number, layer: LayerDef, li: number, u
         c.set(u, y, r, FLAG.WATER);
       }
     }
+  }
+  for (const [j, m] of marks.entries()) {
+    if (m.mark.kind === 'train') {
+      // The line a distant train runs on: a low embankment with the rails catching the light.
+      for (let u = Math.max(u0, m.u - m.half); u < Math.min(u0 + c.w, m.u + m.half); u++) {
+        const top = landBase(seed, layer, u) - Math.round(under[j]);
+        c.set(u, top - 1, R.rail, FLAG.RIM);
+        c.set(u, top, R.railDark, FLAG.RIM);
+      }
+    } else if (m.stamp !== null) stamp(c, m.stamp, m.u, landBase(seed, layer, m.u) - Math.round(under[j]) + 2, false, false);
   }
 }

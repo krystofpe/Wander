@@ -1,6 +1,6 @@
 # Wander
 
-A lone hooded wanderer walks forever through pixel-art lands made up as he goes. Day turns to night, the weather comes and goes, and the land slowly changes around him: pine forest, birch woods, meadows, autumn hills, a high plateau, a mountain pass, the coast, a desert of mesas, snowy tundra, a swamp, and a few odd places: a salt flat with dead power lines, a field of standing stones, the overgrown ruins of a town, a rail embankment. Now and then he stops to look, sits on a rock and smokes, waits out the rain under a tree; at dusk he makes a fire and sleeps beside it, and at dawn he packs up and walks on, alone with his thoughts.
+A lone hooded wanderer walks forever through pixel-art lands made up as he goes. Day turns to night, the weather comes and goes, and the land slowly changes around him: pine forest, birch woods, meadows, autumn hills, a high plateau, a mountain pass, the coast, a desert of mesas, snowy tundra, a swamp, a bare salt flat, a moor of boulders. It is all wild: nothing anyone built stands anywhere along it, and he meets no one. Now and then he stops to look, sits on a rock and smokes, waits out the rain under a tree; at dusk he makes a fire and sleeps beside it, and at dawn he packs up and walks on, alone with his thoughts.
 
 Nobody plays it. It is something to look at, or to leave running for hours full screen on a second monitor.
 
@@ -44,7 +44,7 @@ The same options work on the command line (`npm start -- --seed moss --speed 20`
 | `--day MIN` | Real minutes in a day (60 by default). |
 | `--realclock` | Follow the local time of day, with the natural sun. |
 | `--hour H` | Start a new road at this hour. |
-| `--biome NAME` | Start a new road in this biome (`pine`, `birch`, `meadow`, `autumn`, `plateau`, `pass`, `coast`, `desert`, `tundra`, `swamp`, `saltflat`, `stones`, `ruins`, `rail`). |
+| `--biome NAME` | Start a new road in this biome (`pine`, `birch`, `meadow`, `autumn`, `plateau`, `pass`, `coast`, `desert`, `tundra`, `swamp`, `saltflat`, `stones`). |
 | `--offline` | Never ask Claude; his own voice only. |
 | `--mute` | Start with the sound off. |
 | `--at M` | A look further along the road, from M metres (not saved). |
@@ -118,21 +118,21 @@ More: [the hollow through the day](docs/creature/deep-sheet.jpg) · [moments](do
 - **The land.** Ten parallax layers at fixed depths, from distant mountains to the grass passing close to the eye, each lighter, bluer and softer the further off it stands. Everything is a pure function of the seed and the distance along the road: no two stretches are alike, and none is ever stored. Biomes blend over minutes of walking: colours, ground, plants, weather, sound.
 - **The light.** Every pixel is a colour role, graded through the hour in Oklab, never darkened toward mud: dawn, golden hour, dusk, blue hour and night each have their own keys. The fire lights him and the ground around the camp; the ember of his cigarette lights the inside of his hood. Bloom, fog veils, valley mist, rain and snow at three depths, lightning, grain and a vignette are drawn at full resolution over crisp pixels.
 - **The sky.** A sun and a moon in its phase, stars that twinkle near the horizon, the Milky Way on clear dark nights, aurora over the cold lands, shooting stars, and clouds that catch the sunset.
-- **Landmarks,** rare: a lone house with one lit window and smoke from its chimney, a chapel, a lighthouse that flashes after dark, a radio mast with a blinking red lamp, a rusted car, a bridge over a river, a distant train with lit windows, a stone circle, a roadside shrine with a candle, a huge skeleton half in the ground, someone else's abandoned camp.
-- **Life around him,** rare and quiet: a flock of birds crossing, bats at dusk, fireflies on warm nights, a deer at the edge of the trees that looks up and bounds away, a fox that trots past and stops to watch, a fish leaping under the bridge, leaves falling in the autumn woods; and late at night, the creature by his fire.
-- **Sound,** all synthesised in the browser: wind through the trees, rain by what it falls on, thunder after the flash, waves, crickets that slow as the night cools, birds at dawn, an owl, a train far off, his footsteps on grass, gravel, snow, sand, wood or mud, the lighter's click and a slow exhale, the fire's crackle; and soft generative music that never loops.
+- **Sights,** rare, at least two in every land, all of them natural: a lone ancient tree on a rise, a stone arch, a great boulder left by the ice, a fallen giant with its root plate standing up, a tor of stacked rocks (one a boulder balanced on a pillar), a waterfall from a cliff into a foaming pool, sea stacks off the shore, rock spires, a drowned tree in the swamp, a huge skeleton half in the ground. He stops to look at each, and remembers it by name.
+- **Life around him,** rare and quiet: a flock of birds crossing, bats at dusk, fireflies on warm nights, a deer at the edge of the trees that looks up and bounds away, a fox that trots past and stops to watch, leaves falling in the autumn woods; and late at night, the creature by his fire.
+- **Sound,** all synthesised in the browser: wind through the trees, rain by what it falls on, thunder after the flash, waves, crickets that slow as the night cools, birds at dawn, an owl, his footsteps on grass, gravel, snow, sand or mud, the lighter's click and a slow exhale, the fire's crackle; and soft generative music that never loops.
 
 ## Pictures
 
-From the tour (`docs/tour/`, every biome at six times of day, the blends, every weather, pose and landmark):
+From the tour (`docs/tour/`, every biome at six times of day, the blends, every weather, pose and sight):
 
 | | |
 |---|---|
-| ![The house with one lit window, blue hour](docs/tour/4k/house-blue.jpg) | ![Night camp by the fire](docs/tour/4k/pine-camp.jpg) |
+| ![The lone tree on its rise, golden hour](docs/tour/4k/lonetree-golden.jpg) | ![Night camp by the fire](docs/tour/4k/pine-camp.jpg) |
 | ![The mountain pass at noon](docs/tour/4k/pass-noon.jpg) | ![Tundra at night under the aurora](docs/tour/4k/tundra-night.jpg) |
 | ![The coast at dusk](docs/tour/4k/coast-dusk.jpg) | ![A storm on the meadow](docs/tour/4k/meadow-storm.jpg) |
 
-Contact sheets: [biomes](docs/tour/biomes-sheet.jpg) · [blends](docs/tour/blends-sheet.jpg) · [weather](docs/tour/weather-sheet.jpg) · [poses](docs/tour/poses-sheet.jpg) · [landmarks](docs/tour/landmarks-sheet.jpg) · [life](docs/tour/life-sheet.jpg)
+Contact sheets: [biomes](docs/tour/biomes-sheet.jpg) · [blends](docs/tour/blends-sheet.jpg) · [weather](docs/tour/weather-sheet.jpg) · [poses](docs/tour/poses-sheet.jpg) · [sights](docs/tour/landmarks-sheet.jpg) · [life](docs/tour/life-sheet.jpg)
 
 ## Measured
 
@@ -144,7 +144,7 @@ On an RTX 4070, in headless Chromium on the GPU; the raw numbers are in `docs/so
 
 - **Fast soak** (`npm run soak -- --speed 16 --hours 48`): 48 in-world hours, no errors; JS heap 24.4 → 24.7 MB, GPU textures (48, 52 MB), buffers and framebuffers constant, frame time p50 16.7 / p99 16.8 ms throughout.
 - **Normal soak** (`npm run soak -- --minutes 122 --hidden 20`): two real hours at speed 1, the first 20 minutes hidden (he walked on 370 m and his steps kept sounding with 9 frames drawn), no errors; frame time p50 16.7 / p99 16.8 ms every minute once shown; GPU resources constant; the heap 21 → 27 MB in the first hour while bounded caches fill, then 26–28 MB.
-- **The creature** (`docs/creature/bench.json`, its in-page bench, 20 s each): 60 fps at 1920×1080 and 3840×2160, frame interval p50 16.7 / p99 16.8 ms, CPU 0.2–0.3 ms and GPU 4.0–4.9 ms a frame, in the hollow by day and at night with its portal open. End to end (`npm run creature:check`): 24 of 24 (`docs/creature/check.txt`).
+- **The creature** (`docs/creature/bench.json`, its in-page bench, 20 s each): 60 fps at 1920×1080 and 3840×2160, frame interval p50 16.7 / p99 16.8 ms, CPU 0.2–0.3 ms and GPU 4.6–5.6 ms a frame, in the hollow by day and at night with its portal open. End to end (`npm run creature:check`): 24 of 24 (`docs/creature/check.txt`).
 - **End to end** (`npm run check`, through the real server): closing and reopening, three hours away, offline, Claude, and a slow, failing or refused API: `docs/soak/check.txt`.
 
 ## Tools

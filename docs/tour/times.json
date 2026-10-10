@@ -443,7 +443,7 @@
   },
   {
    "seed": "wander",
-   "at": "10022",
+   "at": "11522",
    "hour": "6.68",
    "weather": "clear",
    "group": "biomes",
@@ -451,7 +451,7 @@
   },
   {
    "seed": "wander",
-   "at": "10022",
+   "at": "11522",
    "hour": "11",
    "weather": "clear",
    "group": "biomes",
@@ -459,7 +459,7 @@
   },
   {
    "seed": "wander",
-   "at": "10022",
+   "at": "11522",
    "hour": "14.84",
    "weather": "clear",
    "group": "biomes",
@@ -467,7 +467,7 @@
   },
   {
    "seed": "wander",
-   "at": "10022",
+   "at": "11522",
    "hour": "16.52",
    "weather": "clear",
    "group": "biomes",
@@ -475,7 +475,7 @@
   },
   {
    "seed": "wander",
-   "at": "10022",
+   "at": "11522",
    "hour": "18",
    "weather": "clear",
    "group": "biomes",
@@ -483,7 +483,7 @@
   },
   {
    "seed": "wander",
-   "at": "10022",
+   "at": "11522",
    "hour": "0",
    "weather": "clear",
    "group": "biomes",
@@ -587,107 +587,11 @@
   },
   {
    "seed": "wander",
-   "at": "9346",
-   "hour": "6.68",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "ruins-dawn"
-  },
-  {
-   "seed": "wander",
-   "at": "9346",
-   "hour": "11",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "ruins-noon"
-  },
-  {
-   "seed": "wander",
-   "at": "9346",
-   "hour": "14.84",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "ruins-golden"
-  },
-  {
-   "seed": "wander",
-   "at": "9346",
-   "hour": "16.52",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "ruins-dusk"
-  },
-  {
-   "seed": "wander",
-   "at": "9346",
-   "hour": "18",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "ruins-blue"
-  },
-  {
-   "seed": "wander",
-   "at": "9346",
-   "hour": "0",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "ruins-night"
-  },
-  {
-   "seed": "wander",
-   "at": "4370",
-   "hour": "6.68",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "rail-dawn"
-  },
-  {
-   "seed": "wander",
-   "at": "4370",
-   "hour": "11",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "rail-noon"
-  },
-  {
-   "seed": "wander",
-   "at": "4370",
-   "hour": "14.84",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "rail-golden"
-  },
-  {
-   "seed": "wander",
-   "at": "4370",
-   "hour": "16.52",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "rail-dusk"
-  },
-  {
-   "seed": "wander",
-   "at": "4370",
-   "hour": "18",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "rail-blue"
-  },
-  {
-   "seed": "wander",
-   "at": "4370",
-   "hour": "0",
-   "weather": "clear",
-   "group": "biomes",
-   "name": "rail-night"
-  },
-  {
-   "seed": "wander",
    "at": "184",
    "hour": "11",
    "weather": "clear",
    "group": "blends",
-   "name": "01-ruins-stones"
+   "name": "01-meadow-stones"
   },
   {
    "seed": "wander",
@@ -727,7 +631,7 @@
    "hour": "14.84",
    "weather": "clear",
    "group": "blends",
-   "name": "06-plateau-rail"
+   "name": "06-plateau-autumn"
   },
   {
    "seed": "wander",
@@ -735,7 +639,7 @@
    "hour": "11",
    "weather": "clear",
    "group": "blends",
-   "name": "07-rail-meadow"
+   "name": "07-autumn-meadow"
   },
   {
    "seed": "wander",
@@ -775,7 +679,7 @@
    "hour": "14.84",
    "weather": "clear",
    "group": "blends",
-   "name": "12-autumn-ruins"
+   "name": "12-autumn-birch"
   },
   {
    "seed": "wander",
@@ -1018,13 +922,12 @@
   },
   {
    "seed": "wander",
-   "at": "24009",
-   "hour": "18",
+   "at": "42657",
+   "hour": "14.84",
    "weather": "clear",
    "t": "3.1",
-   "show": "",
    "group": "landmarks",
-   "name": "house"
+   "name": "skeleton"
   },
   {
    "seed": "wander",
@@ -1032,129 +935,100 @@
    "hour": "14.84",
    "weather": "clear",
    "t": "3.1",
-   "show": "",
    "group": "landmarks",
-   "name": "chapel"
+   "name": "lonetree"
   },
   {
    "seed": "wander",
-   "at": "66658",
+   "at": "24009",
    "hour": "16.52",
    "weather": "clear",
    "t": "3.1",
-   "show": "",
    "group": "landmarks",
-   "name": "lighthouse"
-  },
-  {
-   "seed": "wander",
-   "at": "5133",
-   "hour": "18",
-   "weather": "clear",
-   "t": "3.1",
-   "show": "",
-   "group": "landmarks",
-   "name": "mast"
-  },
-  {
-   "seed": "wander",
-   "at": "9150",
-   "hour": "14.84",
-   "weather": "clear",
-   "t": "3.1",
-   "show": "",
-   "group": "landmarks",
-   "name": "car"
+   "name": "arch"
   },
   {
    "seed": "wander",
    "at": "2683",
-   "hour": "14.84",
-   "weather": "clear",
-   "t": "3.1",
-   "show": "fish",
-   "group": "landmarks",
-   "name": "bridge"
-  },
-  {
-   "seed": "wander",
-   "at": "4370",
-   "hour": "0",
-   "weather": "clear",
-   "t": "40",
-   "show": "",
-   "group": "landmarks",
-   "name": "train"
-  },
-  {
-   "seed": "wander",
-   "at": "20046",
    "hour": "6.68",
    "weather": "clear",
    "t": "3.1",
-   "show": "",
    "group": "landmarks",
-   "name": "circle"
+   "name": "erratic"
   },
   {
    "seed": "wander",
-   "at": "22587",
-   "hour": "18",
+   "at": "8089",
+   "hour": "11",
    "weather": "clear",
    "t": "3.1",
-   "show": "",
    "group": "landmarks",
-   "name": "shrine"
+   "name": "fallen"
   },
   {
    "seed": "wander",
-   "at": "37061",
+   "at": "14684",
    "hour": "14.84",
    "weather": "clear",
    "t": "3.1",
-   "show": "",
    "group": "landmarks",
-   "name": "skeleton"
+   "name": "tor"
+  },
+  {
+   "seed": "wander",
+   "at": "36239",
+   "hour": "11",
+   "weather": "clear",
+   "t": "3.1",
+   "group": "landmarks",
+   "name": "waterfall"
+  },
+  {
+   "seed": "wander",
+   "at": "21624",
+   "hour": "14.84",
+   "weather": "clear",
+   "t": "3.1",
+   "group": "landmarks",
+   "name": "stacks"
   },
   {
    "seed": "wander",
    "at": "7418",
-   "hour": "16.52",
-   "weather": "clear",
-   "t": "3.1",
-   "show": "",
-   "group": "landmarks",
-   "name": "camp"
-  },
-  {
-   "seed": "wander",
-   "at": "1184",
    "hour": "14.84",
    "weather": "clear",
    "t": "3.1",
-   "show": "",
    "group": "landmarks",
-   "name": "hollow"
+   "name": "spires"
   },
   {
    "seed": "wander",
-   "at": "1192",
-   "hour": "14.84",
+   "at": "22587",
+   "hour": "6.68",
    "weather": "clear",
-   "pose": "sitsmoke",
    "t": "3.1",
    "group": "landmarks",
-   "name": "hollow-sitting"
+   "name": "snag"
   },
   {
    "seed": "wander",
-   "at": "1192",
-   "hour": "18",
+   "at": "18890",
+   "hour": "0.4",
    "weather": "clear",
-   "pose": "sitsmoke",
+   "pose": "camp",
    "t": "3.1",
    "group": "landmarks",
-   "name": "hollow-blue"
+   "name": "visit"
+  },
+  {
+   "seed": "wander",
+   "at": "18890",
+   "hour": "1.5",
+   "weather": "clear",
+   "pose": "camp",
+   "t": "3.1",
+   "group": "landmarks",
+   "name": "visit-later"
   },
   {
    "seed": "wander",
@@ -1194,7 +1068,7 @@
   },
   {
    "seed": "wander",
-   "at": "10022",
+   "at": "11522",
    "hour": "16.52",
    "weather": "clear",
    "show": "bats",
@@ -1253,11 +1127,11 @@
   },
   {
    "seed": "wander",
-   "at": "24009",
-   "hour": "18",
+   "at": "14",
+   "hour": "14.84",
    "weather": "clear",
    "group": "4k",
-   "name": "house-blue"
+   "name": "lonetree-golden"
   },
   {
    "seed": "wander",

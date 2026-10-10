@@ -15,7 +15,7 @@ import { loopFrame, walkFrame } from '../src/walker.ts';
 import { unit } from '../src/noise.ts';
 import { biomeAt, blended, groundHeight, isRealm, landmarksBetween, stretchAt } from '../src/world.ts';
 import { awakeAt } from '../src/creature/traveller.ts';
-import { camping, sitsUp, visitAt } from '../src/creature/visit.ts';
+import { camping, crossing, portalOpen, sitsUp, visitAt } from '../src/creature/visit.ts';
 import type { Visit } from '../src/creature/visit.ts';
 import { drawNeighbour } from './neighbour.ts';
 import type { Neighbour } from './neighbour.ts';
@@ -341,27 +341,31 @@ export class Stage {
       const seat = l.fire.at + 1.3;
       const gx = colOf(gate);
       const gy = groundRow(gate);
-      // The portal: opening from a slit, turning while it is open, closing again.
+      // The portal: tearing open from a point of light, turning while it is open, closing the same way.
       const sheet = atlas.sheets.portal;
-      const opening = visit.phase === 'opening' ? visit.k : visit.phase === 'closing' ? 1 - visit.k : 1;
-      const frame = opening < 1 ? sheet.open[Math.min(sheet.open.length - 1, Math.floor(opening * sheet.open.length))] : sheet.loop[Math.floor(time * 7) % sheet.loop.length];
-      // While it sits with him the portal stays, dimmed, waiting.
-      const dim = visit.phase === 'with' ? 0.55 : 1;
-      r.ground.add(Math.round(gx - frame[2] / 2), Math.round(gy - frame[3] + 2), frame, rowA, rowB, b.k, false, dim);
-      if (light.count < 6) {
-        const o = light.count * 4;
-        light.lights[o] = gx;
-        light.lights[o + 1] = gy - 16;
-        light.lights[o + 2] = 30 * opening;
-        light.lights[o + 3] = 0.35 * opening * dim;
-        light.count++;
+      const open = portalOpen(visit);
+      if (open > 0) {
+        const frame = open < 1 ? sheet.open[Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length))] : sheet.loop[Math.floor(time * 11) % sheet.loop.length];
+        // While it sits with him the portal stays, a little dimmer, waiting.
+        const dim = visit.phase === 'with' ? 0.8 : 1;
+        r.ground.add(Math.round(gx - frame[2] / 2), Math.round(gy - frame[3] + 2), frame, rowA, rowB, b.k, false, dim);
+        if (light.count < 6) {
+          const o = light.count * 4;
+          light.lights[o] = gx;
+          light.lights[o + 1] = gy - 16;
+          light.lights[o + 2] = 30 * open;
+          light.lights[o + 3] = 0.35 * open * dim;
+          light.count++;
+        }
       }
-      // The creature: through the portal and over to the fire, there a while, back and through again.
+      // The creature: out of the portal and over to the fire, there a while, back and through again.
       const dozing = this.neighbour !== null && !awakeAt(this.neighbour.nightOwl, this.creatureClock());
       if (visit.phase === 'coming' || visit.phase === 'going') {
-        const k = visit.phase === 'coming' ? visit.k : 1 - visit.k;
-        const fade = Math.min(1, k * 5);
-        drawNeighbour(r, atlas, colOf(gate + (seat - gate) * k), groundRow(seat), 'walk', true, this.neighbour, rows, 'open', time, fade, (gate - seat) * k * PX_PER_M);
+        const c = crossing(visit);
+        // Coming it faces the fire; going, the portal.
+        const flip = visit.phase === 'coming';
+        const x = gate + (seat - gate) * c.at;
+        drawNeighbour(r, atlas, colOf(x), groundRow(x), c.walking ? 'walk' : 'stand', flip, this.neighbour, rows, 'open', time, c.shown, (gate - x) * PX_PER_M);
       } else if (visit.phase === 'with') {
         const awake = sitsUp(visit);
         drawNeighbour(r, atlas, colOf(seat), groundRow(seat), 'sit', true, this.neighbour, rows, dozing && !awake ? 'shut' : awake ? 'happy' : 'open', time);

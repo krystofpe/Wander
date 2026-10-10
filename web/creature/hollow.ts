@@ -290,17 +290,17 @@ export class Hollow {
       }
     }
 
-    // Its portal, when it goes to his camp at night and when it comes back: opening from a slit, turning, closing; while
-    // it is gone, a faint shimmer where it went.
+    // Its portal, when it goes to his camp at night and when it comes back: tearing open from a point of light,
+    // turning, closing; while it is gone, a faint crack of light in the air where it went.
     const open = game.portal;
     if (open > 0 || game.gone) {
       const px = Math.round(geo.px(PORTAL.x)) + 6;
       const foot = Math.round(geo.footY(PORTAL.x, PORTAL.z));
       const sheet = sheets.portal;
-      const frame = open >= 1 ? sheet.loop[Math.floor(time * 7) % sheet.loop.length] : open > 0 ? sheet.open[Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length))] : sheet.open[0];
-      const alpha = open > 0 ? 1 : 0.35 + 0.15 * Math.sin(time * 1.3);
+      const frame = open >= 1 ? sheet.loop[Math.floor(time * 11) % sheet.loop.length] : open > 0 ? sheet.open[Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length))] : sheet.open[2];
+      const alpha = open > 0 ? 1 : 0.22 + 0.12 * Math.sin(time * 1.3);
       later(PORTAL.z + 0.001, () => put(ground, px - (frame[2] >> 1), foot - frame[3] + 2, frame, false, alpha));
-      addLight(px, foot - 16, 12 + 22 * open, 0.1 + 0.25 * open);
+      addLight(px, foot - 16, 12 + 22 * open, 0.06 + 0.29 * open);
     }
 
     // The creature.

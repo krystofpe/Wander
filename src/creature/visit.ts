@@ -6,8 +6,12 @@
 import { unit } from '../noise.ts';
 import { hourOfDay } from '../sky.ts';
 
-/** The hours of his clock the visit spans, and how long (hours) the portal takes to open and it to walk over. */
-export const VISIT = { from: 23.5, to: 3.5, open: 0.15, walk: 0.3 } as const;
+/**
+ * The hours of his clock the visit spans; how long (hours) the portal stands open before it steps out (and after it
+ * steps back in), and how long it takes to come over to the fire; how long the portal takes to tear open or close.
+ * On a road with an hour-long day, an hour of his clock is 150 real seconds: it opens in about a second.
+ */
+export const VISIT = { from: 23.5, to: 3.5, open: 0.04, walk: 0.06, tear: 0.007 } as const;
 
 /** How long the visit lasts, hours of his clock. */
 const SPAN = (VISIT.to + 24 - VISIT.from) % 24;
@@ -45,6 +49,31 @@ export function visitAt(clock: number, seed: number): Visit | null {
     at -= len;
   }
   return null;
+}
+
+/** How open the portal is (0 shut … 1 open): tearing open at the start of the visit, closing at its end. */
+export function portalOpen(v: Visit): number {
+  if (v.phase === 'opening') return Math.min(1, (v.k * VISIT.open) / VISIT.tear);
+  if (v.phase === 'closing') return Math.min(1, ((1 - v.k) * VISIT.open) / VISIT.tear);
+  return 1;
+}
+
+/**
+ * Where it is between the portal (0) and its seat by the fire (1), and whether it is walking or showing (0 … 1)
+ * as it comes out or goes in: out of the portal it stands a moment, then trots over; back, it trots to the portal
+ * and steps in.
+ */
+export function crossing(v: Visit): { readonly at: number; readonly walking: boolean; readonly shown: number } {
+  const OUT = 0.18;
+  if (v.phase === 'coming') {
+    if (v.k < OUT) return { at: 0, walking: false, shown: Math.min(1, v.k / (OUT * 0.6)) };
+    return { at: (v.k - OUT) / (1 - OUT), walking: true, shown: 1 };
+  }
+  if (v.phase === 'going') {
+    if (v.k > 1 - OUT) return { at: 0, walking: false, shown: Math.min(1, (1 - v.k) / (OUT * 0.6)) };
+    return { at: 1 - v.k / (1 - OUT), walking: true, shown: 1 };
+  }
+  return { at: v.phase === 'with' ? 1 : 0, walking: false, shown: v.phase === 'with' ? 1 : 0 };
 }
 
 /** Whether he sits up with it now: a night he wakes, in the middle of its time with him. */

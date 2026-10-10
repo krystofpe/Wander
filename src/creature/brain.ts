@@ -232,6 +232,12 @@ function* comeOut(c: Ctx): Script {
   yield* walkTo(c, c.body.x, Math.min(1, home.z + 0.1));
 }
 
+/** Opens its portal (from 0 to 1) or closes it (1 to 0), quickly: a tear in the air. */
+function* tear(c: Ctx, from: number, to: number): Script {
+  for (let t = 0; t < 0.8; t += yield) c.opening(from + (to - from) * (t / 0.8));
+  c.opening(to);
+}
+
 /** Moves its doorway fade to `to` (1 gone into the dark, 0 outside) over BRAIN.doorwaySec. */
 function* through(c: Ctx, to: number): Script {
   const b = c.body;
@@ -615,29 +621,29 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       yield* hush(c, 3);
       yield* walkTo(c, PORTAL.x - 0.03, PORTAL.z);
       c.body.facing = 1;
-      for (let t = 0; t < 1.6; t += yield) c.opening(t / 1.6);
-      c.opening(1);
+      // It tears open in the air before it, turns a moment; it steps in and fades into the light.
+      yield* tear(c, 0, 1);
+      yield* wait(0.6);
       yield* walkTo(c, PORTAL.x, PORTAL.z);
-      // Through.
       for (let t = 0; t < 0.8; t += yield) c.body.doorway = t / 0.8;
       c.body.visible = false;
       c.body.doorway = 0;
       c.through(true);
-      for (let t = 0; t < 1.6; t += yield) c.opening(1 - t / 1.6);
-      c.opening(0);
+      yield* wait(0.7);
+      yield* tear(c, 1, 0);
       // Gone, until its visit is over.
       let t = 0;
       while (c.visit() !== null && c.visit()?.phase !== 'closing' && t < 1800) t += yield;
-      for (let k = 0; k < 1.6; k += yield) c.opening(k / 1.6);
-      c.opening(1);
+      yield* tear(c, 0, 1);
+      yield* wait(0.4);
       c.body.visible = true;
       c.body.doorway = 1;
       for (let k = 0; k < 0.8; k += yield) c.body.doorway = 1 - k / 0.8;
       c.body.doorway = 0;
       c.through(false);
       yield* walkTo(c, PORTAL.x - 0.08, Math.min(1, PORTAL.z + 0.1));
-      for (let k = 0; k < 1.6; k += yield) c.opening(1 - k / 1.6);
-      c.opening(0);
+      yield* wait(0.5);
+      yield* tear(c, 1, 0);
       c.say('portalBack');
       c.feelings.joy = clamp01(c.feelings.joy + 0.25);
       c.life.needs.love = clamp01(c.life.needs.love + 0.1);

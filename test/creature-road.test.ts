@@ -17,7 +17,7 @@ test('every night it comes to his camp: through the portal, over to the fire, wi
   assert.equal(visitAt(day + 20, seed), null, 'not in the evening');
   assert.equal(visitAt(day + 12, seed), null, 'nor by day');
   const phases: string[] = [];
-  for (let h = VISIT.from; h < VISIT.from + 4.2; h += 0.05) {
+  for (let h = VISIT.from; h < VISIT.from + 4.2; h += 0.005) {
     const v = visitAt(day + h, seed);
     const p = v === null ? 'none' : v.phase;
     if (phases.at(-1) !== p) phases.push(p);
@@ -92,7 +92,7 @@ test('from the deep it opens its portal, goes through, keeps the visit when it c
     gone = game.gone;
   }
   assert.ok(opened === 1 && gone && !game.body.visible, 'the portal opened and it went through');
-  game.hisNight = visitAt(VISIT.from + 3.9, seed);
+  game.hisNight = visitAt(VISIT.from + 3.98, seed);
   for (let i = 0; i < 400; i++) game.update(0.1);
   assert.ok(!game.gone && game.body.visible && game.portal === 0, 'back, and the portal shut');
   assert.ok(life.diary.at(-1)?.text.includes('fire'), 'and it keeps the visit');

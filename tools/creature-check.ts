@@ -80,9 +80,9 @@ async function bar(page: Page): Promise<string> {
   return page.evaluate(() => document.getElementById('bar')?.textContent ?? '');
 }
 /** Waits until `cond` holds on the page (polled), or `ms` pass; returns whether it held. */
-async function until(page: Page, cond: () => boolean, ms: number): Promise<boolean> {
+async function until<A>(page: Page, cond: (arg: A) => boolean, ms: number, arg?: A): Promise<boolean> {
   try {
-    await page.waitForFunction(cond, undefined, { timeout: ms, polling: 200 });
+    await page.waitForFunction(cond, arg as A, { timeout: ms, polling: 200 });
     return true;
   } catch {
     return false;
@@ -176,11 +176,12 @@ try {
     await page.keyboard.type('do you like tea?');
     await page.keyboard.press('Enter');
     const t0 = Date.now();
-    const answered = await until(page, () => {
+    // With Claude, its answer (a line of its own may come first, said of itself); without, the first words at all.
+    const answered = await until(page, (want) => {
       const c = (window as unknown as { __creature: C }).__creature;
       const b = c.moment().bubble;
-      return b !== null && b !== '…';
-    }, 25_000);
+      return want !== null ? b === want : b !== null && b !== '…';
+    }, 25_000, m === 'ok' ? MOCK.say : null);
     const ms = Date.now() - t0;
     const said = (await moment(page)).bubble;
     if (m === 'ok') {

@@ -2,7 +2,7 @@
 // Pictures of the creature in its hollow, from headless Chromium on the GPU, stepped in fixed steps (no frame loop):
 // every biome at dawn, by day, at dusk and at night; its moments (at the glass, waving, sitting, digging, stacking its
 // cairn, humming, eating, petted, playing); its nights (the lantern, the stars, asleep at home, its eyes in the dark
-// doorway, the visitor); the weather; and you (talking to it, the journal, a question). JPEG at quality 90, with a
+// doorway, the visitor); the traveller come by; the weather; and you (talking to it, the journal, a question). JPEG at quality 90, with a
 // contact sheet of each group.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -90,6 +90,11 @@ add('nights', 'doorway', { hour: '21', weather: 'rain', act: 'shelter' }, 18);
 add('nights', 'owl', { now: String(owlMoment(seedOf(word), 22.8)), weather: 'clear', act: 'stargaze' }, 14);
 add('nights', 'eyes', { now: String(eyesMoment(seedOf(word))), weather: 'clear', act: 'idle' }, 0.5);
 add('nights', 'visitor', { now: String(visitMoment(seedOf(word))), weather: 'clear', act: 'watch' }, 3);
+
+add('traveller', 'walks', { hour: '10.5', weather: 'clear', passer: '14', act: 'idle' }, 2);
+add('traveller', 'sits', { hour: '15.5', weather: 'clear', passer: 'sit', act: 'traveller' }, 12);
+add('traveller', 'meadow', { biome: 'meadow', hour: '16', weather: 'clear', passer: 'sit', act: 'traveller' }, 12);
+add('traveller', 'night', { hour: '21.6', weather: 'clear', passer: 'sit', act: 'traveller' }, 12);
 
 add('weather', 'rain', { hour: '16', weather: 'rain', act: 'dance' }, 3);
 add('weather', 'storm', { hour: '19.4', weather: 'storm', act: 'idle' }, 4);

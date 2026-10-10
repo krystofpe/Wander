@@ -147,6 +147,8 @@ async function road(): Promise<{ journey: Journey; mind: string; keep: boolean }
       const j = reviveJourney(saved);
       if (opts.seed === null || opts.seed === j.word) {
         catchUp(j, Date.now(), dayLength);
+        // ?at: a look further along this road (not saved), walking from there.
+        if (opts.at !== null) Object.assign(j.life, { at: opts.at, act: 'walk', stage: 'walk', target: null, fire: null, smoking: -1 });
         return { journey: j, mind, keep };
       }
       // Another seed's road, for a look: the saved one stays as it is (add --new to make this one the road).

@@ -6,7 +6,7 @@ import { dragging } from '../src/life.ts';
 import type { Life } from '../src/life.ts';
 import { gradeOf, newGrade, newMoment } from '../src/palette.ts';
 import { HORIZON } from '../src/paint/land.ts';
-import { BIOMES } from '../src/biomes.ts';
+import { BIOMES, HOLLOW } from '../src/biomes.ts';
 import { LAYERS, baseline } from '../src/layers.ts';
 import { labToBytes } from '../src/palette.ts';
 import { arcX, flashAt, moonAt, roadMoon, shownHour, sunElevation } from '../src/sky.ts';
@@ -302,7 +302,7 @@ export class Stage {
       if (mark.kind !== 'hollow') continue;
       const hb = biomeAt(l.seed, mark.at);
       const rows: [number, number, number] = [paletteRow(GROUND, BIOME_IDS.indexOf(hb.a)), paletteRow(GROUND, BIOME_IDS.indexOf(hb.b)), hb.k];
-      const sitting = (l.stage === 'sit' || l.stage === 'sitdown' || l.stage === 'standup') && l.what === 'hollow' && Math.abs(l.at - mark.at - 3.5) < 2;
+      const sitting = (l.stage === 'sit' || l.stage === 'sitdown' || l.stage === 'standup') && l.what === 'hollow' && Math.abs(l.at - mark.at - HOLLOW.seat) < 2;
       drawHollow(r, atlas, v, colOf(mark.at), groundRow(mark.at), stretchAt(l.seed, mark.at).biome, rows, this.neighbour, { d: l.at - mark.at, sitting }, this.grade.night, time);
     }
 

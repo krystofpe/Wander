@@ -1,8 +1,9 @@
 // The hollow on the screen: what the stage's sky and air leave for the sprites. Its home (the great tree with the
 // hollow at its foot, or a turf shelter), the props, the cairn, food and the toy, the small lives, the little signs,
 // and the creature: its pose, its cloak moved to its own colour, its eyes in the colour of its mood and looking where
-// it looks, what it holds, its lantern at night. Everything on the ground layer is drawn back to front by depth.
-// And the lights: its lantern, the lantern by the door, the toy, the glowing mushrooms.
+// it looks, what it holds, its lantern at night; and the traveller, when his road comes by. Everything on the ground
+// layer is drawn back to front by depth. And the lights: its lantern, the lantern by the door, the toy, the glowing
+// mushrooms, his cigarette.
 import { BIOME_IDS } from '../../src/biomes.ts';
 import { BIOMES } from '../../src/creature/config.ts';
 import type { Game } from '../../src/creature/game.ts';
@@ -11,11 +12,11 @@ import type { EyeShape, PoseTag } from '../../src/creature/look.ts';
 import type { Prop } from '../../src/creature/scene.ts';
 import { forestFocus } from '../../src/creature/scene.ts';
 import { visitAt } from '../../src/creature/visitor.ts';
-import { GROUND } from '../../src/layers.ts';
+import { GROUND, PX_PER_M } from '../../src/layers.ts';
 import { role } from '../../src/palette.ts';
 import { rng } from '../../src/noise.ts';
 import { eyesAt, eyesFade, owlTonight } from '../../src/creature/night.ts';
-import { loopFrame } from '../../src/walker.ts';
+import { loopFrame, walkFrame } from '../../src/walker.ts';
 import { biomeAt } from '../../src/world.ts';
 import { paletteRow } from '../render.ts';
 import type { Renderer } from '../render.ts';
@@ -102,13 +103,14 @@ export class Hollow {
   private readonly items: Item[] = [];
   private growth: Growth[] | null = null;
 
-  draw(r: Renderer, atlas: Atlas, stage: Stage, game: Game, at: number, time: number): void {
+  /** Draws it all for the view at road distance `at` on his road (`worldSeed`); `time` real seconds. */
+  draw(r: Renderer, atlas: Atlas, stage: Stage, game: Game, worldSeed: number, at: number, time: number): void {
     const v = stage.view;
     const life = game.life;
     const geo = game.geo;
     const night = stage.grade.night;
     const seed = life.seed;
-    const blend = biomeAt(seed, at);
+    const blend = biomeAt(worldSeed, at);
     const rows = (li: number): [number, number, number] => [paletteRow(li, BIOME_IDS.indexOf(blend.a)), paletteRow(li, BIOME_IDS.indexOf(blend.b)), blend.k];
     const [ga, gb, gk] = rows(GROUND);
     const ground = r.ground;
@@ -280,6 +282,26 @@ export class Hollow {
         const ex = geo.px(lo + eyes.x * 0.62);
         const ey = geo.footY(0.5, 0) - 34 - Math.round(eyes.up * 60);
         r.batches[NEAR].add(Math.round(ex), Math.round(ey), sheets.eyes[eyes.blink ? 'shut' : 'open'][0], na, nb, nk, false, eyesFade(eyes.t) * dark, [-1, 0, EYE, role('mood', MOOD_EYES.indexOf('hungry'))]);
+      }
+    }
+
+    // The traveller, when his road comes by: walking past at the back of the clearing, out from behind its home and
+    // on across, or sitting on the ground by its door with his cigarette, its ember in the dark.
+    const passer = game.passer;
+    if (passer !== null) {
+      const door = geo.door(home);
+      const hx = Math.round(geo.px(door.x) + passer.dir * passer.d * PX_PER_M);
+      const hy = Math.round(geo.footY(geo.x(hx), 0));
+      const sheet = sheets.wanderer;
+      const flip = passer.dir < 0;
+      const smoke = time % 9.5 < 4 ? 1 : 0;
+      const drag = time % 23 < 1.4;
+      const frame = passer.sitting ? sheet.sitsmoke0[drag ? 2 : smoke] : passer.walking ? sheet.walk[walkFrame(passer.d)] : frameOf('wanderer', 'stand');
+      // His sprite faces right, his feet 14 pixels in: turned, the other way in.
+      const left = flip ? hx - (frame[2] - 14) : hx - 14;
+      if (hx > -40 && hx < geo.w + 40) {
+        later(0, () => put(ground, left, hy - 35, frame, flip));
+        if (passer.sitting) addLight(flip ? left + frame[2] - 22 : left + 22, hy - 35 + 25, drag ? 9 : 6, (drag ? 0.9 : 0.45) * (0.4 + 0.6 * night));
       }
     }
 

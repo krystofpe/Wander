@@ -23,11 +23,15 @@ const LINES: Readonly<Record<Meeting, readonly string[]>> = {
   ],
 };
 
-/** Keeps a visit from the traveller: a diary line, the count, the time. Not twice for the same sitting. */
+/**
+ * Keeps a visit from the traveller: a diary line, the count, the time. Not twice for the same sitting, nor before the
+ * last one kept; one found later (he came while the window was closed) goes into the diary where it happened.
+ */
 export function travellerCame(life: Life, ms: number, how: Meeting): boolean {
   if (ms - life.traveller.last < 10 * 60000) return false;
   const lines = LINES[how];
   addDiary(life, ms, lines[life.traveller.times % lines.length]);
+  life.diary.sort((a, b) => a.t - b.t);
   life.traveller.times++;
   life.traveller.last = ms;
   return true;

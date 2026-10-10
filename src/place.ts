@@ -1,6 +1,7 @@
 // What stands where: plants and props on each layer, placed by jittered grids with density thinning and grove
 // masks, species picked by the biome weights so transitions mix naturally (research: Procgen §26). Pure: the
 // painters draw from it and the brain finds its seats, views, shelters and camps in it.
+import { HOLLOW } from './biomes.ts';
 import type { BiomeId } from './biomes.ts';
 import type { Spot } from './brain.ts';
 import { GROUND, LAYERS, PX_PER_M, columnDistance } from './layers.ts';
@@ -302,7 +303,7 @@ export function spotsBetween(seed: number, d0: number, d1: number): SpotAt[] {
   }
   // Landmarks are worth stopping for; at the creature's hollow, a place to sit by its door.
   for (const m of landmarksBetween(seed, d0 - 40, d1 + 40)) {
-    const at = m.kind === 'hollow' ? m.at + 3.5 : m.at - 25;
+    const at = m.kind === 'hollow' ? m.at + HOLLOW.seat : m.at - 25;
     if (at >= d0 && at < d1) out.push({ kind: m.kind === 'hollow' ? 'seat' : 'view', at, what: m.kind, quality: m.kind === 'hollow' ? 1 : 0.95, height: 0, u: Math.round(at * PX_PER_M) });
   }
   // Camps: flat, dry ground every 20 m, better near trees.

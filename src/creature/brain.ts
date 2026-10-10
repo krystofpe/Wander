@@ -86,6 +86,10 @@ export interface Ctx {
   askName(): void;
   /** Where you last clicked on the ground, or null. */
   pointed(): { x: number; z: number } | null;
+  /** The traveller, when his road comes by its hollow: where he is across the scene (a share), and whether he sits. */
+  traveller(): { readonly x: number; readonly sitting: boolean } | null;
+  /** He sat down at its door: it keeps the visit. */
+  travellerSat(): void;
   /** Rings the bell, if allowed. */
   bell(): void;
 }
@@ -94,7 +98,7 @@ export type Script = Generator<void, void, number>;
 
 export const ACTIVITIES = [
   'idle', 'stroll', 'sit', 'nap', 'sleep', 'forage', 'eat', 'drink', 'chase', 'critter', 'play', 'stargaze', 'shelter',
-  'dance', 'ponder', 'dig', 'hum', 'stack', 'visit', 'knock', 'gift', 'ask', 'hide', 'wander', 'watch',
+  'dance', 'ponder', 'dig', 'hum', 'stack', 'visit', 'knock', 'gift', 'ask', 'hide', 'wander', 'watch', 'traveller',
 ] as const;
 export type ActivityName = (typeof ACTIVITIES)[number];
 export const REACTIONS = ['listen', 'petted', 'woken', 'startle', 'greet', 'arrive', 'return', 'go', 'wave', 'jump', 'spin'] as const;
@@ -586,6 +590,60 @@ const ACT: Readonly<Record<ActivityName, Activity>> = {
       c.body.gaze = null;
       c.life.needs.fun = clamp01(c.life.needs.fun + 0.08);
       c.feelings.joy = clamp01(c.feelings.joy + 0.2);
+    },
+  },
+  // The traveller comes by: it sees him, watches him come, sits beside him at its door while he smokes, and waves him
+  // off. Only outside and awake; asleep or inside, the page keeps the visit all the same.
+  traveller: {
+    cooldown: 300,
+    score: (c) => (c.traveller() !== null && c.body.visible && !c.body.inside && !c.life.asleep ? 3.5 : 0),
+    *run(c) {
+      const him = (): { x: number; sitting: boolean } | null => c.traveller();
+      const look = (): void => {
+        const t = him();
+        if (t !== null) c.body.gaze = t.x < c.body.x - 0.02 ? 'left' : t.x > c.body.x + 0.02 ? 'right' : null;
+      };
+      c.body.pose = 'stand';
+      c.body.icon = '!';
+      yield* wait(0.8);
+      c.body.icon = null;
+      c.say('travellerHere');
+      // Watch him come.
+      let t = 0;
+      while (him() !== null && him()?.sitting !== true && t < 90) {
+        look();
+        t += yield;
+      }
+      const sat = him();
+      if (sat !== null && sat.sitting) {
+        // Sit with him, a little way off, on its side of him.
+        const side = sat.x < c.body.x ? 1 : -1;
+        yield* walkTo(c, Math.max(0.03, Math.min(0.97, sat.x + side * 0.03)), 0.04);
+        c.body.facing = side > 0 ? -1 : 1;
+        c.body.pose = 'sit';
+        c.body.gaze = null;
+        c.travellerSat();
+        let s = 0;
+        while (him()?.sitting === true && s < 300) {
+          const dt = yield;
+          s += dt;
+          if (c.random() < dt * 0.15) particles(c, '♥', 0, 1, { up: 1, spread: 2, life: 2 });
+        }
+        c.body.pose = 'stand';
+        c.life.needs.love = clamp01(c.life.needs.love + 0.08);
+        c.feelings.joy = clamp01(c.feelings.joy + 0.3);
+      }
+      // He goes on: a wave, and it watches him go.
+      c.body.pose = 'wave';
+      look();
+      yield* wait(1.6);
+      c.body.pose = 'stand';
+      t = 0;
+      while (him() !== null && t < 60) {
+        look();
+        t += yield;
+      }
+      c.body.gaze = null;
     },
   },
   // When the visitor walks through the glow, it stops whatever it would do next and watches it go by,

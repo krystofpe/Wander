@@ -10,7 +10,8 @@ import type { Feelings, Life, Mood } from './life.ts';
 import { CREATURE } from './look.ts';
 import type { EyeColour } from './look.ts';
 import { situationText } from './mind.ts';
-import { cameWhileAway } from './traveller.ts';
+import { cameWhileAway, travellerCame } from './traveller.ts';
+import { PX_PER_M } from '../layers.ts';
 import type { Reply, Situation } from './mind.ts';
 import { rng } from '../noise.ts';
 import type { Away } from './save.ts';
@@ -92,6 +93,7 @@ const DOING: Readonly<Record<string, string>> = {
   hide: 'hiding',
   wander: 'wandering beyond the edge of your world',
   watch: 'watching something tall walk through the light at the end of the path',
+  traveller: 'sitting with the traveller in the long coat, who rests at your door',
   listen: 'at the glass, listening to them',
   greet: 'at the glass',
 };
@@ -129,6 +131,12 @@ export class Game implements Ctx {
   knocked = false;
   /** Real seconds since it started. */
   real = 0;
+  /**
+   * The traveller, when his road comes by its hollow (the page follows his road): metres past its door (negative before
+   * it), whether he sits there or walks (or stands), and which way he walks across the scene (1 left to right, -1 the
+   * other way).
+   */
+  passer: { readonly d: number; readonly sitting: boolean; readonly walking: boolean; readonly dir: 1 | -1 } | null = null;
   private worldMs: number;
   private readonly speed: number;
   private readonly rand: () => number;
@@ -312,6 +320,20 @@ export class Game implements Ctx {
 
   bell(): void {
     if (!this.hasFocus) this.knocked = true;
+  }
+
+  traveller(): { x: number; sitting: boolean } | null {
+    const p = this.passer;
+    if (p === null) return null;
+    const door = this.geo.door(this.scene.layout.home);
+    return { x: door.x + (p.dir * p.d * PX_PER_M) / this.geo.w, sitting: p.sitting };
+  }
+
+  travellerSat(): void {
+    // Off wandering beyond the edge of the world, it was not there to see him.
+    if (this.life.away) return;
+    const how = this.life.asleep ? 'asleep' : this.body.inside ? 'night' : 'day';
+    travellerCame(this.life, this.worldMs, how);
   }
 
   // ── Time ─────────────────────────────────────────────────────────────────

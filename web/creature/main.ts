@@ -1,19 +1,25 @@
 // The creature's page: its life loaded (or a new one born), lived through the time it was closed, and set in a still
 // stretch of the wanderer's world; the stage's sky and air over it, the hollow drawn, its sounds; you at the glass
-// with the keys, the mouse and a box to type in; saved every half minute and when the window closes.
-import { BIOMES as WORLD_BIOMES } from '../../src/biomes.ts';
+// with the keys, the mouse and a box to type in; saved every half minute and when the window closes. Its hollow stands
+// on his road, and when his road comes by (the live road on the published page, his journey here), he does.
+import { BIOMES as WORLD_BIOMES, HOLLOW } from '../../src/biomes.ts';
 import { BIOMES, SAVE_EVERY_SEC, STEP_SEC } from '../../src/creature/config.ts';
 import { Game } from '../../src/creature/game.ts';
 import type { MindLink } from '../../src/creature/game.ts';
-import { addDiary, newLife } from '../../src/creature/life.ts';
+import { addDiary, isNightFor, newLife } from '../../src/creature/life.ts';
 import type { Life } from '../../src/creature/life.ts';
 import type { Reply } from '../../src/creature/mind.ts';
 import { parseCreatureOptions } from '../../src/creature/options.ts';
+import { hollowBy, homeHollow, roadFrom, satBetween } from '../../src/creature/road.ts';
+import type { Saved } from '../../src/creature/road.ts';
+import { travellerCame } from '../../src/creature/traveller.ts';
 import { catchUp, revive } from '../../src/creature/save.ts';
 import type { Away } from '../../src/creature/save.ts';
 import { Geometry } from '../../src/creature/scene.ts';
 import { localHour } from '../../src/creature/sky.ts';
 import { PX_PER_M } from '../../src/layers.ts';
+import type { Life as Road, LifeEvent } from '../../src/life.ts';
+import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, msOfStep, stepAt, stepLive } from '../../src/live.ts';
 import { PLAYFIELD } from '../../src/paint/scene.ts';
 import { rng } from '../../src/noise.ts';
 import { seedOf } from '../../src/options.ts';
@@ -78,7 +84,7 @@ function todayAt(hour: number, now: number = Date.now()): number {
 }
 
 /** Runs that bend time or take pictures are not saved. */
-const ephemeral = opts.speed !== 1 || opts.hour !== null || opts.now !== null || opts.manual || opts.weather !== null || opts.bench !== null;
+const ephemeral = opts.speed !== 1 || opts.hour !== null || opts.now !== null || opts.manual || opts.weather !== null || opts.bench !== null || params.has('passer');
 const start = opts.hour !== null ? todayAt(opts.hour, opts.now ?? Date.now()) : (opts.now ?? Date.now());
 
 /** The saved life (lived through the time away), or a new one; and whether the server can ask Claude. */
@@ -133,8 +139,37 @@ async function born(): Promise<{ life: Life; away: Away | null; first: boolean; 
 const b = await born();
 const life = b.life;
 
-/** Where in the wanderer's world it lives: the middle of a stretch of its land, away from his landmarks. */
-function homeOf(seed: number): number {
+// ── His road ───────────────────────────────────────────────────────────────
+
+/** His journey here, as last saved: the road its hollow stands on, and where he was on it. Null without one. */
+async function journeyOf(): Promise<Saved | null> {
+  if (site || !b.server) return null;
+  try {
+    const res = await fetch('/api/journey');
+    const j = ((await res.json()) as { journey?: { savedAt?: unknown; life?: { seed?: unknown; at?: unknown } } | null }).journey;
+    const seed = j?.life?.seed;
+    const at = j?.life?.at;
+    const savedAt = j?.savedAt;
+    return typeof seed === 'number' && typeof at === 'number' && typeof savedAt === 'number' ? { seed, at, savedAt } : null;
+  } catch {
+    return null;
+  }
+}
+let journey = await journeyOf();
+/** His world, where its hollow stands: the shared live road's on the published page, his own road's here (its own before he has one). */
+const worldSeed = site ? LIVE_SEED : (journey?.seed ?? life.seed);
+// He came by while the window was closed: it finds the ash on the root by its door.
+if (journey !== null && b.away !== null && !ephemeral && !life.away) {
+  const t = satBetween(journey, start - b.away.ms, start);
+  if (t !== null) travellerCame(life, t, isNightFor(life.traits, localHour(t)) ? 'asleep' : 'day');
+}
+if (journey !== null && !ephemeral) {
+  // The road page may be open in another window, saving as he goes.
+  setInterval(() => void journeyOf().then((j) => (journey = j ?? journey)), 60_000);
+}
+
+/** Without a hollow on his road: the middle of a still stretch of its land, away from his landmarks. */
+function stillOf(seed: number): number {
   const world = BIOMES[life.biome].world;
   for (let from = 0; from < 2e6; ) {
     const s = firstStretchOf(seed, world, from);
@@ -147,7 +182,9 @@ function homeOf(seed: number): number {
   }
   return 1000;
 }
-const at = homeOf(life.seed);
+/** The hollow on his road where it lives. */
+const home = homeHollow(worldSeed, life.biome);
+const still = home === null ? stillOf(worldSeed) : 0;
 
 // ── Its words from Claude, through the server ───────────────────────────────
 
@@ -196,12 +233,12 @@ const mind: MindLink | null = b.mind === 'claude' && !opts.offline ? new Link(b.
 PLAYFIELD.road = false;
 PLAYFIELD.floor = 2.6;
 const LIFT = Number(params.get('lift') ?? 64);
-const stage = new Stage(life.seed, 0.5);
+const stage = new Stage(worldSeed, 0.5);
 const hollow = new Hollow();
 renderer.atlas = await loadAtlas(renderer.gpu);
 const ui = new CreatureUi();
 /** The walk line's row across the view, from the ground of the world where it lives (the camera never moves). */
-const geoFor = (w: number): Geometry => new Geometry(w, (x) => stage.groundRow(renderer, life.seed, (x * w + stage.view.camX) / PX_PER_M));
+const geoFor = (w: number): Geometry => new Geometry(w, (x) => stage.groundRow(renderer, worldSeed, (x * w + stage.view.camX) / PX_PER_M));
 const game = new Game(life, {
   geo: geoFor(renderer.nativeW),
   now: start,
@@ -213,6 +250,56 @@ const game = new Game(life, {
   ephemeral,
   weather: opts.weather !== null ? namedWeather(opts.weather) : null,
 });
+/** Where on his road the middle of the view is: its door over the hollow's door. */
+const atFor = (geo: Geometry): number => (home === null ? still : home.at + (0.5 * geo.w - geo.px(geo.door(game.scene.layout.home).x)) / PX_PER_M);
+let at = atFor(game.geo);
+/** Past its door is into the clearing: he comes from behind its home and goes on across. */
+const dir: 1 | -1 = game.scene.layout.homeLeft ? 1 : -1;
+
+/** Pictures put him where they want him: ?passer=-12 (metres before its door, walking), ?passer=sit. */
+const pinned = ((): { d: number; sitting: boolean; walking: boolean } | null => {
+  const p = params.get('passer');
+  if (p === null) return null;
+  return p === 'sit' ? { d: HOLLOW.seat, sitting: true, walking: false } : { d: Number(p), sitting: false, walking: true };
+})();
+/** The live road (the published page): his life stepped along with the clock, as the road page steps it. */
+const road = { env: liveEnv(LIVE_SEED), sim: null as Road | null, step: 0, before: 0, events: [] as LifeEvent[] };
+
+/** Where he is now if his road comes by a hollow (whichever it is, it is its own): metres past its door, and how. */
+function passerAt(ms: number): { d: number; sitting: boolean; walking: boolean } | null {
+  if (pinned !== null) return pinned;
+  if (site) {
+    if (ms < LIVE.epoch) return null;
+    const target = stepAt(ms) + 1;
+    if (road.sim === null || target <= road.step || target - road.step > STEPS_PER_DAY) {
+      road.sim = liveAt(LIVE_SEED, target - 1, road.env);
+      road.step = target - 1;
+    }
+    while (road.step < target) {
+      road.before = road.sim.at;
+      road.sim = stepLive(road.sim, ++road.step, road.env, road.events);
+    }
+    const s = road.sim;
+    const k = Math.min(1, Math.max(0, (ms - msOfStep(target - 1)) / (LIVE.tick * 1000)));
+    const by = hollowBy(LIVE_SEED, road.before + (s.at - road.before) * k);
+    if (by === null) return null;
+    const sitting = (s.stage === 'sit' || s.stage === 'sitdown' || s.stage === 'standup') && s.what === 'hollow' && Math.abs(by.d - HOLLOW.seat) < 2;
+    return { d: by.d, sitting, walking: s.stage === 'walk' };
+  }
+  if (journey === null) return null;
+  const pos = roadFrom(journey, ms);
+  const by = hollowBy(journey.seed, pos.at);
+  return by === null ? null : { d: by.d, sitting: pos.sitting, walking: !pos.sitting };
+}
+let wasSitting = false;
+/** Follows his road: where he is for the creature and the drawing; when he sits down at its door, it keeps the visit. */
+function follow(): void {
+  const p = passerAt(game.worldNow());
+  game.passer = p === null ? null : { ...p, dir };
+  if (p?.sitting === true && !wasSitting) game.travellerSat();
+  wasSitting = p?.sitting === true;
+}
+follow();
 if (opts.act !== null) game.brain.run(opts.act as Parameters<typeof game.brain.run>[0]);
 const fixedWeather = opts.weather !== null ? namedWeather(opts.weather) : null;
 
@@ -400,16 +487,20 @@ function live(now: number): void {
     acc -= STEP_SEC;
     game.update(STEP_SEC);
   }
+  follow();
 }
 
 function step(now: number): void {
   if (!opts.manual) live(now);
-  if (game.geo.w !== renderer.nativeW) game.geo = geoFor(renderer.nativeW);
+  if (game.geo.w !== renderer.nativeW) {
+    game.geo = geoFor(renderer.nativeW);
+    at = atFor(game.geo);
+  }
   const world = game.worldNow();
   const hour = localHour(world);
   const w = fixedWeather ?? game.sky.weather;
-  stage.sky(renderer, { seed: life.seed, at, clock: world / 3600000, framing: 0.5, moon: game.sky.moon, lift: LIFT }, hour, true, w, anim, opts.manual ? 0.05 : Math.min(0.1, (now - lastFrame) / 1000), status.frames === 0);
-  if (renderer.atlas !== null) hollow.draw(renderer, renderer.atlas, stage, game, at, anim);
+  stage.sky(renderer, { seed: worldSeed, at, clock: world / 3600000, framing: 0.5, moon: game.sky.moon, lift: LIFT }, hour, true, w, anim, opts.manual ? 0.05 : Math.min(0.1, (now - lastFrame) / 1000), status.frames === 0);
+  if (renderer.atlas !== null) hollow.draw(renderer, renderer.atlas, stage, game, worldSeed, at, anim);
   // Its words above its head, the bar and the hints, the journal, the box to type in.
   const css = renderer.scale / devicePixelRatio;
   ui.setScale(css);
@@ -431,13 +522,13 @@ function hearing(): Parameters<Sound['tick']>[0] {
   const world = game.worldNow();
   const hour = localHour(world);
   const w = fixedWeather ?? game.sky.weather;
-  const blend = biomeAt(life.seed, at);
+  const blend = biomeAt(worldSeed, at);
   const walking = game.body.pose === 'walk' && game.body.visible && !game.body.inside;
   return {
-    seed: life.seed,
+    seed: worldSeed,
     time: anim,
     blend,
-    place: stretchAt(life.seed, at).k,
+    place: stretchAt(worldSeed, at).k,
     hour: shownHour(hour, true),
     sun: sunElevation(hour, true),
     weather: w,
@@ -491,6 +582,7 @@ if (opts.manual) {
   let clock = performance.now();
   (status as unknown as { advance: (dt: number) => void }).advance = (dt: number): void => {
     for (let t = 0; t < dt - 1e-9; t += STEP_SEC) game.update(STEP_SEC);
+    follow();
     anim += dt;
     clock += dt * 1000;
     frame(clock);

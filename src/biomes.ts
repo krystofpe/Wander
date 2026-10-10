@@ -205,6 +205,7 @@ export const LANDMARK_HOMES: Readonly<Record<LandmarkKind, Partial<Record<BiomeI
 
 /**
  * The creature's hollow on his road (web/creature): the great tree in the forests, a turf shelter in the open lands.
- * Whatever hollow he comes to, it is the creature's: one world, two lives. A share of the landmark places in these lands.
+ * Whatever hollow he comes to, it is the creature's: one world, two lives. A share of the landmark places in these lands;
+ * his seat is this many metres past its door.
  */
-export const HOLLOW = { homes: new Set<BiomeId>(['pine', 'birch', 'meadow', 'tundra', 'swamp']), chance: 0.14 } as const;
+export const HOLLOW = { homes: new Set<BiomeId>(['pine', 'birch', 'meadow', 'tundra', 'swamp']), chance: 0.14, seat: 3.5 } as const;

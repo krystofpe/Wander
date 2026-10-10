@@ -367,5 +367,27 @@ function visitor(step: number): string[] {
 }
 const VISITOR = sheet('visitor', 12, 46, [{ name: 'walk', ms: 900, frames: [visitor(0), visitor(1)] }]);
 
+/** The pale glow far off between the trees at the end of the path: an upright oval of mist, dithered thinner outward. */
+function glow(): string[] {
+  const W = 44;
+  const H = 60;
+  const bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const out: string[] = [];
+  for (let y = 0; y < H; y++) {
+    let row = '';
+    for (let x = 0; x < W; x++) {
+      const dx = (x - W / 2 + 0.5) / (W / 2);
+      const dy = (y - H * 0.62) / (H * 0.62);
+      const d = Math.sqrt(dx * dx + dy * dy * (dy < 0 ? 1 : 2.6));
+      const k = Math.max(0, 1 - d);
+      const t = (bayer[(y % 4) * 4 + (x % 4)] + 0.5) / 16;
+      row += k * 1.6 <= t ? '.' : k > 0.62 ? 'w' : k > 0.35 ? 'v' : 'u';
+    }
+    out.push(row);
+  }
+  return out;
+}
+const GLOW = sheet('glow', 44, 60, [one('a', glow())]);
+
 export const SHEET = FERN;
-export const MORE: readonly Sheet[] = [BUSH, SHROOMS, MUSHROOMS, ROCK, STUMP, SNOWDRIFT, REEDS, POND, CAIRN, FOOD, TOY, CARRY, SIGNS, STREAK, BUTTERFLY, MOTH, FROG, HARE, OWL, VISITOR];
+export const MORE: readonly Sheet[] = [BUSH, SHROOMS, MUSHROOMS, ROCK, STUMP, SNOWDRIFT, REEDS, POND, CAIRN, FOOD, TOY, CARRY, SIGNS, STREAK, BUTTERFLY, MOTH, FROG, HARE, OWL, VISITOR, GLOW];

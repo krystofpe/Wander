@@ -1103,6 +1103,9 @@ export class Brain {
     b.holding = null;
     b.doorway = 0;
     if (b.inside && !this.c.life.asleep) b.inside = false;
+    // Cut short while it was out of sight (arriving as a wisp, or away wandering), it is back: whatever comes next
+    // walks it in from where it is.
+    b.visible = true;
   }
 
   private start(name: DoName): void {

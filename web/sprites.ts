@@ -94,8 +94,9 @@ int roleAt(ivec2 t, ivec2 size) {
 void main() {
   ivec2 size = ivec2(v_src.zw);
   ivec2 t = ivec2(floor(v_local));
-  // Mirrored when walking left.
-  bool flip = v_rows.w > 0.5;
+  // Mirrored when walking left (bit 1); no rim of light (bit 2), for sprites stacked into one tall shape.
+  bool flip = mod(v_rows.w, 2.0) > 0.5;
+  bool rim = v_rows.w < 1.5;
   ivec2 s = flip ? ivec2(size.x - 1 - t.x, t.y) : t;
   int role = roleAt(s, size);
   if (role == 0) discard;
@@ -125,7 +126,7 @@ void main() {
   }
   // A rim: this pixel is on the outline facing the light (the side the sun or the fire is on), or the top edge.
   int side = int(u_rimSide * (flip ? -1.0 : 1.0));
-  if (u_rimStrength > 0.0 && p.a > 0.99) {
+  if (rim && u_rimStrength > 0.0 && p.a > 0.99) {
     bool edge = (side != 0 && roleAt(s + ivec2(side, 0), size) == 0) || roleAt(s + ivec2(0, -1), size) == 0;
     if (edge) c = mix(c, u_rim, u_rimStrength);
   }
@@ -185,7 +186,7 @@ export class SpriteBatch {
    * Queues one sprite frame: top-left at native (x, y) (fractional allowed), frame [ax, ay, w, h] in the atlas,
    * palette rows A and B mixed by k, mirrored or not.
    */
-  add(x: number, y: number, frame: readonly number[], rowA: number, rowB: number, k: number, flip: boolean, alpha = 1, swap: readonly number[] = NO_SWAP): void {
+  add(x: number, y: number, frame: readonly number[], rowA: number, rowB: number, k: number, flip: boolean, alpha = 1, swap: readonly number[] = NO_SWAP, rim = true): void {
     if (this.count >= MAX) return;
     const o = this.count * STRIDE;
     const d = this.data;
@@ -200,7 +201,7 @@ export class SpriteBatch {
     d[o + 8] = rowA;
     d[o + 9] = rowB;
     d[o + 10] = k;
-    d[o + 11] = flip ? 1 : 0;
+    d[o + 11] = (flip ? 1 : 0) + (rim ? 0 : 2);
     d[o + 12] = alpha;
     d[o + 13] = swap[0];
     d[o + 14] = swap[1];

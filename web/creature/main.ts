@@ -74,8 +74,8 @@ function todayAt(hour: number, now: number = Date.now()): number {
 }
 
 /** Runs that bend time or take pictures are not saved. */
-const ephemeral = opts.speed !== 1 || opts.hour !== null || opts.manual || opts.weather !== null || opts.bench !== null;
-const start = opts.hour !== null ? todayAt(opts.hour) : Date.now();
+const ephemeral = opts.speed !== 1 || opts.hour !== null || opts.now !== null || opts.manual || opts.weather !== null || opts.bench !== null;
+const start = opts.hour !== null ? todayAt(opts.hour, opts.now ?? Date.now()) : (opts.now ?? Date.now());
 
 /** The saved life (lived through the time away), or a new one; and whether the server can ask Claude. */
 async function born(): Promise<{ life: Life; away: Away | null; first: boolean; mind: string; model: string | null; server: boolean }> {
@@ -110,6 +110,12 @@ async function born(): Promise<{ life: Life; away: Away | null; first: boolean; 
   }
   const seed = opts.seed !== null ? seedOf(opts.seed) : Math.floor(Math.random() * 4294967296);
   const life = newLife(seed, start, { biome: opts.biome ?? undefined, name: opts.name ?? undefined });
+  // For pictures and checks: one that already knows you, past its first meeting.
+  if (opts.user !== null) {
+    life.userName = opts.user;
+    life.bond = 0.5;
+    return { life, away: null, first: false, mind, model, server };
+  }
   return { life, away: null, first: true, mind, model, server };
 }
 

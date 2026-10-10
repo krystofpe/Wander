@@ -126,8 +126,8 @@ export class Hollow {
       const frames = sheets[sheet][tag];
       return frames.length === 1 ? frames[0] : frames[loopFrame(frames.map((f) => f[4]), t)];
     };
-    const put = (batch: SpriteBatch, x: number, y: number, frame: readonly number[], flip = false, alpha = 1, swap?: readonly number[]): void => {
-      batch.add(Math.round(x), Math.round(y), frame, ga, gb, gk, flip, alpha, swap);
+    const put = (batch: SpriteBatch, x: number, y: number, frame: readonly number[], flip = false, alpha = 1, swap?: readonly number[], rim = true): void => {
+      batch.add(Math.round(x), Math.round(y), frame, ga, gb, gk, flip, alpha, swap, rim);
     };
     const items = this.items;
     items.length = 0;
@@ -146,11 +146,11 @@ export class Hollow {
       const lit = dark && inside;
       later(home.z, () => {
         const base = frameOf('hollow', lit ? 'lit' : 'base');
-        put(ground, left, foot - base[3], base, flip);
-        // The trunk rises off the top of the screen.
+        // The trunk rises off the top of the screen: its segments make one shape, so none of them has a rim of its own.
+        put(ground, left, foot - base[3], base, flip, 1, undefined, false);
         const tile = sheets.trunk.tile[0];
         const tx = flip ? left + base[2] - tile[2] : left;
-        for (let y = foot - base[3] - tile[3]; y > -tile[3] - 60; y -= tile[3]) put(ground, tx, y, tile, flip);
+        for (let y = foot - base[3] - tile[3]; y > -tile[3] - 60; y -= tile[3]) put(ground, tx, y, tile, flip, 1, undefined, false);
         // By day its lantern hangs dark on its peg; at night it carries it, or, at home, it is lit by the door.
         const peg = [72, 79];
         const px = flip ? left + base[2] - 1 - peg[0] - 2 : left + peg[0];
@@ -165,9 +165,10 @@ export class Hollow {
 
     // The undergrowth.
     this.growth ??= undergrowth(game);
+    // No rim of light: on fronds this small the night's cold edge reads as frost, not as shape.
     for (const g of this.growth) later(g.z - 0.01, () => {
       const f = sheets[g.sheet][g.tag][0];
-      put(ground, geo.px(g.x) - f[2] / 2, geo.footY(g.x, g.z) - f[3], f, g.flip);
+      put(ground, geo.px(g.x) - f[2] / 2, geo.footY(g.x, g.z) - f[3], f, g.flip, 1, undefined, false);
     });
 
     // The props, the pond, the cairn.
@@ -235,15 +236,24 @@ export class Hollow {
       }
     }
 
-    // Under the canopy, in the dark, now and then the tall one walks through the glow at the end of the path.
-    const visit = visitAt(game.worldNow(), seed, life.biome, game.sky.daylight);
-    if (visit !== null) {
+    // Under the canopy, from dusk on, a pale glow far off between the trees at the end of the path; and now and then,
+    // in the dark, the tall one walks through it.
+    if (BIOMES[life.biome].canopy) {
       const [ma, mb, mk] = rows(MID);
-      const focus = forestFocus(game.scene.layout.homeLeft);
-      const vx = geo.px(focus + visit.dir * (visit.progress - 0.5) * 0.72);
-      const f = frameOf('visitor', 'walk');
-      const fade = Math.min(1, visit.progress * 8, (1 - visit.progress) * 8);
-      r.batches[MID].add(Math.round(vx - f[2] / 2), Math.round(geo.footY(0.5, 0) - f[3] - 34), f, ma, mb, mk, visit.dir < 0, 0.8 * fade);
+      const focus = geo.px(forestFocus(game.scene.layout.homeLeft));
+      const base = geo.footY(0.5, 0) - 30;
+      const dusk = Math.max(0, Math.min(1, (0.45 - game.sky.daylight) * 2.5));
+      if (dusk > 0) {
+        const g = sheets.glow.a[0];
+        r.batches[MID].add(Math.round(focus - g[2] / 2), Math.round(base - g[3] + 6), g, ma, mb, mk, false, 0.55 * dusk);
+      }
+      const visit = visitAt(game.worldNow(), seed, life.biome, game.sky.daylight);
+      if (visit !== null) {
+        const vx = focus + visit.dir * (visit.progress - 0.5) * 70;
+        const f = frameOf('visitor', 'walk');
+        const fade = Math.min(1, visit.progress * 8, (1 - visit.progress) * 8);
+        r.batches[MID].add(Math.round(vx - f[2] / 2), Math.round(base - f[3]), f, ma, mb, mk, visit.dir < 0, 0.85 * fade);
+      }
     }
 
     // The creature.

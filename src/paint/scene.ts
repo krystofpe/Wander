@@ -435,8 +435,10 @@ export function paintGround(c: Chunk, seed: number, layer: LayerDef, li: number,
     const pathy = PLAYFIELD.road && n === 'grass' && noise1(d / 260, seed ^ 0x9a7) > -0.1;
     // Band edges below the surface wander a pixel or two, so they read as drawn, not ruled.
     const j1 = Math.round(noise1(u / 9, seed ^ 0x31) * 1.5);
-    const j2 = Math.round(noise1(u / 13, seed ^ 0x32) * 2);
-    const j3 = Math.round(noise1(u / 17, seed ^ 0x33) * 3);
+    // On a deeper floor the bands are deeper, and their edges wander as much further.
+    const j2 = Math.round(noise1(u / (13 * PLAYFIELD.floor), seed ^ 0x32) * 2 * PLAYFIELD.floor);
+    const deep = PLAYFIELD.floor > 1;
+    const j3 = Math.round((deep ? noise1(u / (17 * PLAYFIELD.floor), seed ^ 0x33) * 0.7 + noise1(u / 7, seed ^ 0x34) * 0.3 : noise1(u / 17, seed ^ 0x33)) * 3 * PLAYFIELD.floor);
     const b1 = 3 + j1;
     const b2 = Math.round(11 * PLAYFIELD.floor) + j2;
     const b3 = Math.round(26 * PLAYFIELD.floor) + j3;

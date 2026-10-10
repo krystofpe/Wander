@@ -16,6 +16,7 @@
     "motion": "node --disable-warning=ExperimentalWarning tools/motion.ts",
     "start": "node --disable-warning=ExperimentalWarning server/main.ts",
     "creature": "node --disable-warning=ExperimentalWarning server/main.ts --creature",
+    "creature:tour": "node --disable-warning=ExperimentalWarning tools/creature-tour.ts",
     "listen": "node --disable-warning=ExperimentalWarning tools/listen.ts",
     "watch": "node --disable-warning=ExperimentalWarning tools/watch.ts",
     "tour": "node --disable-warning=ExperimentalWarning tools/tour.ts",

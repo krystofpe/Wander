@@ -26,6 +26,10 @@ export type CreatureOptions = {
   readonly act: string | null;
   /** The in-page bench, for this many seconds. */
   readonly bench: number | null;
+  /** The moment to begin at instead of now (ms since 1970, or a date), for pictures; with --hour, that day's hour. */
+  readonly now: number | null;
+  /** A new creature that already knows you by this name: no first meeting (pictures, checks). */
+  readonly user: string | null;
 };
 
 /** Option names and whether each takes a value. */
@@ -43,6 +47,8 @@ const NAMES: Readonly<Record<string, boolean>> = {
   manual: false,
   act: true,
   bench: true,
+  now: true,
+  user: true,
 };
 
 const num = (v: string | null, min: number, max: number): number | null => {
@@ -51,6 +57,11 @@ const num = (v: string | null, min: number, max: number): number | null => {
   return Number.isFinite(n) && n >= min && n <= max ? n : null;
 };
 const flag = (v: string | null): boolean => v !== null && v !== '0' && v !== 'false' && v !== 'no';
+const moment = (v: string | null): number | null => {
+  if (v === null || v.trim() === '') return null;
+  const ms = /^\d+$/.test(v) ? Number(v) : Date.parse(v);
+  return Number.isFinite(ms) ? ms : null;
+};
 
 export function parseCreatureOptions(get: (name: string) => string | null): CreatureOptions {
   const size = get('size')?.match(/^(\d{2,5})x(\d{2,5})$/);
@@ -69,6 +80,8 @@ export function parseCreatureOptions(get: (name: string) => string | null): Crea
     manual: flag(get('manual')),
     act: get('act'),
     bench: num(get('bench'), 1, 3600),
+    now: moment(get('now')),
+    user: get('user') !== null && prettyName(get('user') ?? '') !== '' ? prettyName(get('user') ?? '') : null,
   };
 }
 

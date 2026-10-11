@@ -240,7 +240,7 @@ const TORSO_SIT_SMOKE: Part = block(10, 15, [
  * the pack on or off, smoking (an ember stage) or not, eyes open or shut. His hips rest on the seat's top and the hood
  * stands 18 px above it, as a sitting body does.
  */
-function sitFrame(s: number, pack: boolean, ember: string | null, hood: Part = HOOD): string[] {
+function sitFrame(s: number, pack: boolean, ember: string | null, hood: Part = HOOD, offer = false): string[] {
   const hip = 34 - s;
   const dy = hip - 21;
   const parts: (Part | Placed)[] = [];
@@ -261,7 +261,8 @@ function sitFrame(s: number, pack: boolean, ember: string | null, hood: Part = H
     parts.push(block(21, 31, ['do.', 'do.', 'odo']), block(21, 34, ['bbBB.']), block(21, 35, ['bbbbb']));
   }
   parts.push({ part: hood, dy });
-  if (ember === null) parts.push(block(20, hip - 3, ['dd']));
+  if (offer) parts.push(stroke(19, hip - 7, 24, hip - 10, 'l', 'd'), block(24, hip - 11, ['..dd', 'dddd']));
+  else if (ember === null) parts.push(block(20, hip - 3, ['dd']));
   else {
     parts.push({ part: ARM_RAISED, dy });
     parts.push(block(21, 12 + dy, [`c${ember}`]));
@@ -353,6 +354,7 @@ export const SHEET: Sheet = {
     { name: 'shut', ms: 1000, frames: [standFrame(0, HOOD_SHUT)] },
     { name: 'back', ms: [1800, 1500], frames: [backFrame(0), backFrame(1)] },
     { name: 'sit0', ms: [1600, 1300], frames: [sitFrame(0, false, null), sitFrame(0, false, null, HOOD_BACK)] },
+    { name: 'offer', ms: 1000, frames: [sitFrame(0, false, null, HOOD, true)] },
     { name: 'sit5', ms: [1600, 1300], frames: [sitFrame(5, true, null), sitFrame(5, true, null, HOOD_BACK)] },
     { name: 'sit10', ms: [1600, 1300], frames: [sitFrame(10, true, null), sitFrame(10, true, null, HOOD_BACK)] },
     { name: 'sitsmoke0', ms: 600, frames: ['x', 'X', '*'].map((e) => sitFrame(0, false, e)) },

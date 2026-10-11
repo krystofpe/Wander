@@ -52,7 +52,7 @@ gtag('js', new Date());
 gtag('config', '${GA}');
 </script>
 </head>`;
-for (const [from, to, script] of [['web/index.html', 'index.html', 'web/main'], ['web/creature/index.html', 'creature/index.html', 'web/creature/main']] as const) {
+for (const [from, to, script] of [['web/index.html', 'index.html', 'web/main'], ['web/creature/index.html', 'creature/index.html', 'web/creature/entry']] as const) {
   const html = readFileSync(join(root, from), 'utf8');
   const page = html
     .replace('<html lang="en">', '<html lang="en" data-site>')

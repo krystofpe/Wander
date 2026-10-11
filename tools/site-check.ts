@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import type { Page, Route } from 'playwright-core';
 import { HEADLESS_FLAGS, findChromium } from '../server/browser.ts';
-import { camping, visitAt } from '../src/creature/visit.ts';
+import { boundVisit } from '../src/wisp/journey.ts';
 import type { Life, LifeEvent } from '../src/life.ts';
 import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, msOfStep, stepLive } from '../src/live.ts';
 import { ROOT, flags } from './headless.ts';
@@ -35,7 +35,7 @@ function visitMoment(): number | null {
   let l: Life = liveAt(LIVE_SEED, 0, env);
   for (let n = 1; n < 100 * STEPS_PER_DAY; n++) {
     l = stepLive(l, n, env, events);
-    const v = camping(l) ? visitAt(l.clock, LIVE_SEED) : null;
+    const v = boundVisit(l);
     if (v !== null && v.phase === 'with' && v.k > 0.3) return msOfStep(n);
   }
   return null;
@@ -82,8 +82,7 @@ async function openAt(query: string): Promise<Page> {
 }
 const liveOf = (page: Page): Promise<Live> => page.evaluate(() => (window as unknown as { __wander: W }).__wander.liveStep());
 
-type Road = { visit: { phase: string } | null; portal: number; gone: boolean; site: boolean };
-type C = { ready: boolean; error: string | null; save(): void; road(): Road; game: { life: { name: string; seed: number } } };
+type C = { ready: boolean; error: string | null; crossing: string | null; realm: string };
 /** Waits for whichever page is there to be drawn: the road (`__wander`) or the creature's (`__creature`). */
 async function drawn(page: Page, which: '__wander' | '__creature'): Promise<boolean> {
   try {
@@ -163,13 +162,12 @@ try {
     check(await drawn(page, '__creature'), `the creature's page opens at ${base}creature/ with no server behind it`);
     await page.waitForTimeout(1500);
     const first = await page.evaluate(() => {
-      const c = (window as unknown as { __creature: C }).__creature;
-      c.save();
-      return { name: c.game.life.name, road: c.road(), kept: localStorage.getItem('wander.creature') !== null, mode: localStorage.getItem('wander.mode') };
+      const frame = document.getElementById('dream-road') as HTMLIFrameElement;
+      return { seed: JSON.parse(localStorage.getItem('wander.wisp.v1') ?? '{}').seed, site: frame.contentDocument?.documentElement.hasAttribute('data-site'), kept: localStorage.getItem('wander.wisp.v1') !== null, mode: localStorage.getItem('wander.mode') };
     });
-    check(first.road.site, 'it follows the live road');
-    check(first.kept && first.mode === 'creature', `${first.name} is kept in this browser, and the creature is the mode last open`);
-    writeFileSync(join(out, 'hollow.png'), await page.screenshot());
+    check(first.site === true, 'the dreaming follows the actual live road');
+    check(first.kept && first.mode === 'creature', 'the wisp is kept in this browser, and the dreaming is the mode last open');
+    writeFileSync(join(out, 'dreaming.png'), await page.screenshot());
     // Tab: to the road and back again; then the road's address opens the creature, the mode last open.
     await page.keyboard.press('Tab');
     await page.waitForURL((u) => !u.pathname.includes('creature'), { timeout: 10000 });
@@ -178,8 +176,8 @@ try {
     await page.keyboard.press('Tab');
     await page.waitForURL((u) => u.pathname.includes('creature'), { timeout: 10000 });
     check(await drawn(page, '__creature'), `and Tab again the creature: ${page.url()}`);
-    const again = await page.evaluate(() => (window as unknown as { __creature: C }).__creature.game.life.name);
-    check(again === first.name, `the same creature, from this browser: ${again}`);
+    const again = await page.evaluate(() => JSON.parse(localStorage.getItem('wander.wisp.v1') ?? '{}').seed);
+    check(again === first.seed, `the same wisp, from this browser: ${again}`);
     await page.goto(base);
     await page.waitForURL((u) => u.pathname.includes('creature'), { timeout: 10000 });
     check(await drawn(page, '__creature'), `opening the road's address again opens the creature, the mode last open`);
@@ -200,8 +198,9 @@ try {
       await p.goto(`${base}creature/?now=${ms}&speed=0.0001&seed=moss&user=Krystof`);
       await drawn(p, '__creature');
       await p.waitForTimeout(1200);
-      const r = await p.evaluate(() => (window as unknown as { __creature: C }).__creature.road());
-      check(r.visit !== null && r.visit.phase === 'with', 'and from its own page it is the hour of its visit');
+      await p.waitForFunction(() => (window as unknown as { __creature: C }).__creature?.crossing === 'with', undefined, { timeout: 15000 });
+      const r = await p.evaluate(() => (window as unknown as { __creature: C }).__creature.crossing);
+      check(r === 'with', 'the dreaming and road agree on the same crossing');
       await p.close();
     }
   }

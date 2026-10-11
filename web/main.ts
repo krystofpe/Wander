@@ -25,13 +25,15 @@ import { revive } from '../src/creature/save.ts';
 import { travellerCame } from '../src/creature/traveller.ts';
 import type { Meeting } from '../src/creature/traveller.ts';
 import { VISIT } from '../src/creature/visit.ts';
+import { drawCrossing, drawWisp } from './wisp/paint.ts';
 
 const params = new URLSearchParams(location.search);
+const dreaming = params.has('dreaming') && window.parent !== window;
 const opts = parseOptions((k) => params.get(k));
 /** The published page: plain files, no server behind it (tools/site.ts marks its copy of the page). */
 const site = document.documentElement.hasAttribute('data-site');
 // On the published page, a visitor who was last with their creature goes back to it.
-if (site && params.toString() === '' && lastMode() === 'creature') {
+if (site && !dreaming && params.toString() === '' && lastMode() === 'creature') {
   location.replace(new URL('creature/', location.href).href);
   await new Promise(() => {});
 }
@@ -193,6 +195,14 @@ journey.life = life;
 status.life = life;
 (status as unknown as { mind: string }).mind = mind;
 const stage = new Stage(life.seed, journey.moonStart);
+stage.wispMode = !params.has('hollow');
+stage.previewVisit = opts.visit;
+const wispCanvas = document.createElement('canvas');
+wispCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none';
+if (stage.wispMode) canvas.after(wispCanvas);
+const wispContext = wispCanvas.getContext('2d');
+const wispPixels = document.createElement('canvas');
+const wispPixelContext = wispPixels.getContext('2d')!;
 // The creature that comes through its portal to his camp at night: yours, from its save (its file here, this browser
 // on the published page), or a stranger's look when there is none yet.
 async function neighbourOf(): Promise<Neighbour | null> {
@@ -224,6 +234,7 @@ stage.neighbour = await neighbourOf();
 /** It came through its portal and sat by his fire: the creature keeps the visit (its file, or this browser). */
 let keptNight = -1;
 function keepVisit(how: Meeting): void {
+  if (stage.wispMode) return;
   if (stage.neighbour === null) return;
   if (site) {
     try {
@@ -440,7 +451,7 @@ addEventListener('pointermove', () => {
   hintUntil = Math.max(hintUntil, performance.now() + 4000);
 });
 // The other mode, the creature's deep: Tab, or the dim line that shows with the bar and when the mouse moves.
-if (!tool) modes('wander', site, () => ui.barOn || performance.now() < hintUntil);
+if (!tool && !dreaming) modes('wander', site, () => ui.barOn || performance.now() < hintUntil);
 let drawnAt = anim;
 let uiAt = 0;
 
@@ -641,9 +652,40 @@ Object.assign(status, {
 function frame(now: number): void {
   try {
     const t0 = performance.now();
+    // The dream page follows this exact road. Paint it sparsely until a crossing reveals it.
+    if (dreaming && status.ready && !(window as unknown as { __wispRoadVisible?: boolean }).__wispRoadVisible && now - lastFrame < 1000) {
+      live(now, false);
+      return;
+    }
     bench?.begin(now);
     step(now);
     renderer.frame(stage.view, opts.frozen ? 999 : 1);
+    if (stage.wispMode && wispContext !== null) {
+      if (wispCanvas.width !== canvas.width || wispCanvas.height !== canvas.height) {
+        wispCanvas.width = canvas.width; wispCanvas.height = canvas.height;
+      }
+      const c = wispContext;
+      c.clearRect(0, 0, canvas.width, canvas.height);
+      if (wispPixels.width !== renderer.nativeW || wispPixels.height !== renderer.nativeH) {
+        wispPixels.width = renderer.nativeW; wispPixels.height = renderer.nativeH;
+      }
+      const p = wispPixelContext;
+      p.clearRect(0, 0, wispPixels.width, wispPixels.height);
+      p.save();
+      if (stage.wispGate !== null && stage.wispGate.alpha > 0) {
+        const gate = stage.wispGate;
+        p.globalAlpha = 1;
+        drawCrossing(p, gate.x, gate.y, anim, gate.alpha, true);
+      }
+      if (stage.wisp !== null) {
+        const spirit = stage.wisp;
+        p.globalAlpha = spirit.alpha * spirit.dim;
+        drawWisp(p, spirit.x, spirit.y, 4.3, anim, spirit.rest, 0.35);
+      }
+      p.restore();
+      c.imageSmoothingEnabled = false;
+      c.drawImage(wispPixels, renderer.viewOffsetX, renderer.viewOffsetY, renderer.nativeW * renderer.scale, renderer.nativeH * renderer.scale);
+    }
     bench?.end();
     if (bench?.report != null && (status as unknown as { bench: unknown }).bench === null) (status as unknown as { bench: unknown }).bench = bench.report;
     // A gap of more than a second is a pause (a hidden window), not a frame: it is not counted as one.

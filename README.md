@@ -96,7 +96,7 @@ The wisp, dream scenery, motes and stepped light are all pixel art, drawn on Wan
 
 ## The old hollow
 
-The hollow and moss creature deployed on October 11, 2026 are preserved in the annotated Git tag [archive/hollow-moss-live-2026-10-11](https://github.com/krystofpe/Wander/tree/archive/hollow-moss-live-2026-10-11), pointing to deployed commit `2a46527`. On GitHub, open the branch selector, select **Tags**, then choose that tag to browse or download the preserved source. It is a source snapshot, not a separate hosted website.
+The hollow and moss creature live as of October 11, 2026 are preserved in the annotated Git tag [archive/hollow-moss-live-2026-10-11](https://github.com/krystofpe/Wander/tree/archive/hollow-moss-live-2026-10-11), pointing to deployed commit `2a46527`. On GitHub, open the branch selector, select **Tags**, then choose that tag to browse or download the preserved source. It is a source snapshot, not a separate hosted website.
 
 The [live site](https://krystofpe.github.io/Wander/) continues to use the hollow and moss creature. The wisp experiment lives on [feat/wisp-dream-journey](https://github.com/krystofpe/Wander/tree/feat/wisp-dream-journey); pushing that branch does not publish it. GitHub Pages deploys only `main`.
 

@@ -75,7 +75,7 @@ try {
   for (const shot of shots) {
     const page = await s.browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
     page.on('pageerror', (e) => process.stderr.write(`[page error] ${shot.name}: ${e.message}\n`));
-    const q = new URLSearchParams({ manual: '1', size: `${W}x${H}`, mute: '1', ...shot.q });
+    const q = new URLSearchParams({ hollow: '1', manual: '1', size: `${W}x${H}`, mute: '1', ...shot.q });
     await page.goto(`${s.server.url}creature?${q.toString()}`);
     await page.waitForFunction(() => (window as unknown as { __creature?: { ready: boolean; error: string | null } }).__creature?.ready === true || (window as unknown as { __creature?: { error: string | null } }).__creature?.error != null, undefined, { timeout: 60_000 });
     const advance = (sec: number): Promise<void> =>

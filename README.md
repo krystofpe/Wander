@@ -4,7 +4,7 @@ A lone hooded wanderer walks forever through pixel-art lands made up as he goes.
 
 Nobody plays it. It is something to look at, or to leave running for hours full screen on a second monitor.
 
-It has a second mode, a world away and the same world: [the creature](#the-creature), a small creature wearing its moss like a blanket that lives in the hollow, the world under his world, and notices you, a tamagotchi of sorts. Tab goes from one to the other. Every night, when he has lain down by his fire, a ring of its mushrooms comes up beyond it, the earth inside opens on the hollow's light, and the creature climbs out to sit with him until the small hours; some nights he wakes and sits up with it, some nights he sleeps on.
+On this experimental branch its second mode is [the dreaming](#the-dreaming): a small wisp wanders an endless dream world of scattered stars, faint dust clouds, distant lights and near-empty darkness. It drifts, plays, rests, and sometimes finds its way to the wanderer's fire. Two journeys, quietly bound together. Tab moves between them. The old moss creature and hollow remain available for comparison.
 
 **Live: [krystofpe.github.io/Wander](https://krystofpe.github.io/Wander/)**: one wanderer for everyone, walking day and night. Whoever opens the page finds him in the same place at the same moment; Tab there opens a creature of your own. Or run your own road from this repository ([Run](#run)).
 
@@ -25,7 +25,7 @@ npm start
 
 | Key | Does |
 |---|---|
-| Tab | The other mode: the creature in its hollow, and from there back to the road (a dim line in the corner names it; a click on it works too) |
+| Tab | The other journey: the wisp in the dreaming, or the wanderer on the road |
 | H | A small dim bar: day on the road, distance, the place, the time, the weather, `mind: claude` or `mind: local` |
 | L | The log of places passed |
 | M | Sound on or off |
@@ -68,11 +68,37 @@ The road is saved to `~/.local/share/wander/journey.json` (or under `$XDG_DATA_H
 
 [The published page](https://krystofpe.github.io/Wander/) has no server behind it and saves nothing, yet everyone sees the same wanderer. Each real hour is one of his days. At the top of every hour he lies asleep by the fire at that night's camp, and where each night's camp lies is fixed in advance, so any browser can start from the last camp and live the hour up to now, in the same half-second steps as everyone else's (`src/live.ts`). Through the day a plan brings him to the next camp by nightfall: he never walks past it, waits by it if he is early, and stops for nothing if he is late. Every hour ends exactly where the next begins (`npm run live` checks thousands of them). His thoughts there come from his own voice, picked alike for everyone; a public page cannot hold an API key. Click once for sound (browsers ask for that), double-click or F for full screen.
 
-Tab there opens [the creature](https://krystofpe.github.io/Wander/creature/): one of your own, born in your browser and kept there, with its own small voice (no Claude on a public page). It keeps the live road's nights: when the live wanderer has lain down at his camp, it goes up through its ring to his fire, and the road shows it there with him. The page remembers which of the two you had open last.
+On this branch Tab opens the wisp's dreaming. The built site follows the actual live road: on occasional nights the two views show the same crossing. The page remembers which journey you had open last. This prototype has not been published; the public URL may still show the old hollow.
 
 `npm run site` builds both pages into `dist/` (the TypeScript with its types stripped, the pages marked as the site and given the Google Analytics tag, so only the published pages are counted), and the [Live page workflow](.github/workflows/pages.yml) publishes it on every push to `main`. `npm run site -- --serve` then serves the build as GitHub Pages will, to look at locally first; `npm start -- --live` opens the same road with the local server.
 
-## The creature
+## The dreaming
+
+`npm run creature -- --offline` opens the prototype. A small light travels independently through four slowly blending realms, each lasting about four real minutes. Its journey continues while closed. It has no feeding, loneliness or neglect system: interaction adds companionship, and leaving it alone is fine.
+
+Its guardian role appears through occasional camp crossings and the soft light it casts beside the sleeping wanderer. The dream page follows the actual road in a muted embedded view, painted only once a second until the camp is revealed. The same deterministic crossing rule drives both pages; it does not create a second imagined camp. On a local run the road continues and saves while the wisp is open; on the built site it follows the shared live road.
+
+| Key or mouse | Does |
+|---|---|
+| Tab | Switch journeys |
+| Move the pointer | Its eyes notice you |
+| Click the wisp or Space | A brief affectionate shimmer |
+| J / Escape | Open memories / close them |
+| H | Keep the realm and crossing count visible |
+| M, + / − | Toggle sound / change volume; click once to enable browser audio |
+| F | Full screen |
+
+Wisp memory is saved separately in browser storage as `wander.wisp.v1`; the old creature save is untouched. Clearing browser storage resets the wisp. Its appearance and dream environment are drawn procedurally, with no image assets or AI requests.
+
+For a crossing preview: `npm run creature -- --offline --visit --speed 6`. Preview runs do not save either journey. In the browser, `?realm=0`, `1`, `2`, or `3` starts a dream realm; `?t=20` fixes the dream animation for a picture. `npm run wisp:check` verifies the browser experience and writes review pictures to `work/wisp-preview/`.
+
+The wisp, dream scenery, motes and stepped light are all pixel art, drawn on Wander's native grid and enlarged by whole pixels without smoothing. More varied guardian actions, richer sound and dreams that echo the road's weather are future design work.
+
+## The old hollow
+
+The existing live hollow and moss creature are preserved at the annotated tag `archive/hollow-moss-live-2026-10-11` (deployed commit `2a46527`). The wisp experiment lives on `feat/wisp-dream-journey`; pushing that branch does not publish it. GitHub Pages continues to deploy only `main`.
+
+Open `/creature/?hollow=1` to compare the previous creature mode, or `/?hollow=1` for its road visits. Its original behaviour is described below. The existing `creature:tour` and `creature:check` tools explicitly use this legacy mode.
 
 `npm run creature` (or Tab from the road) opens the other mode: the hollow, and the creature. It wears its moss like a blanket, after a picture of one asleep: a soft mound of moss over its back and head, its face peeking out low at the front in the moss's shadow, big eyes that glow in the colour of its mood and a small mouth, little mossy paws in front, stubby mossy feet, and tiny mushrooms, one red and one sea-green, and a couple of leaves growing on top. It pads along, sits, hops, waves a paw. Unlike the wanderer, it notices you. It forages the pale caps, digs for small things, stacks stones into a cairn, chases the butterflies of light and the toy you throw, hums, watches the light come down through the openings far above, sleeps at night on its big mossy stone, its lantern lit on the stone beside it, and now and then comes up to the glass: to say hello, to bring you something it found, to ask you a question, or to tap when you have been away too long. Its behaviour is never scripted: a small brain with needs (food, rest, fun, love), a personality fixed at birth and a bond with you picks what it does next. Its clock is yours: night falls when it is night where you are, under today's moon.
 

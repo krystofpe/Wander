@@ -73,7 +73,9 @@ type C = { ready: boolean; error: string | null; moment(): Moment; game: { mode:
 async function openPage(browser: Browser, url: string): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   page.on('pageerror', (e) => process.stderr.write(`[page error] ${e.message}\n`));
-  await page.goto(url);
+  const legacy = new URL(url);
+  legacy.searchParams.set('hollow', '1');
+  await page.goto(legacy.href);
   await page.waitForFunction(() => (window as unknown as { __creature?: C }).__creature?.ready === true, undefined, { timeout: 60_000 });
   return page;
 }

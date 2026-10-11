@@ -9,7 +9,9 @@ const STORE = 'wander.mode';
 
 /** The address of the other mode's page, from this one. */
 function otherUrl(mode: Mode): string {
-  return new URL(mode === 'wander' ? 'creature/' : '../', location.href).href;
+  const url = new URL(mode === 'wander' ? 'creature/' : '../', location.href);
+  if (new URLSearchParams(location.search).has('hollow')) url.searchParams.set('hollow', '1');
+  return url.href;
 }
 
 /** The mode last open, as the browser remembers it (the published page), or null. */
@@ -43,7 +45,7 @@ export function modes(mode: Mode, site: boolean, shown: () => boolean, ready: ()
   requestAnimationFrame(() => requestAnimationFrame(() => (fade.style.opacity = '0')));
   const line = document.createElement('div');
   line.id = 'mode';
-  line.textContent = mode === 'wander' ? 'Tab · the hollow' : 'Tab · the road';
+  line.textContent = mode === 'wander' ? new URLSearchParams(location.search).has('hollow') ? 'Tab · the hollow' : 'Tab · the dreaming' : 'Tab · the road';
   line.style.cssText = 'position:fixed;right:calc(var(--px,3px)*8);top:calc(var(--px,3px)*6);font-family:var(--thought-font);font-style:italic;font-size:calc(var(--px,3px)*5);color:var(--dim);opacity:0;transition:opacity 0.8s ease;cursor:pointer;z-index:5;letter-spacing:0.03em';
   document.body.appendChild(line);
   let going = false;

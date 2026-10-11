@@ -23,6 +23,8 @@ import { ALBEDO_ROW, FOG_AFTER, paletteRow } from './render.ts';
 import type { Renderer, View } from './render.ts';
 import type { Atlas } from './sprites.ts';
 import { Around } from './around.ts';
+import { boundVisit } from '../src/wisp/journey.ts';
+import { wispBond, wispCrossing } from '../src/wisp/crossing.ts';
 
 type Puff = { x: number; y: number; vx: number; vy: number; age: number; life: number; big: boolean; splash: boolean };
 
@@ -55,6 +57,10 @@ export class Stage {
   readonly around = new Around();
   /** The creature that comes to his camp at night, as its save says (null: a stranger's look). */
   neighbour: Neighbour | null = null;
+  wispMode = false;
+  wisp: { x: number; y: number; alpha: number; rest: boolean; dim: number } | null = null;
+  wispGate: { x: number; y: number; alpha: number } | null = null;
+  previewVisit = false;
   /** The real time by the creature's clock (it keeps real hours; his days are faster): whether it is awake to visit. */
   creatureClock: () => number = () => Date.now();
   /** The creature's visit to his camp this frame (src/creature/visit.ts), or null. */
@@ -333,8 +339,10 @@ export class Stage {
 
     // At night at his camp a portal opens beyond his fire, and the creature comes through to sit by the fire with
     // him until the small hours (src/creature/visit.ts); then it goes back and the portal closes.
-    const visit = l.fire !== null && camping(l) ? visitAt(l.clock, l.seed) : null;
+    const visit = this.wispMode ? boundVisit(l, this.previewVisit) : l.fire !== null && camping(l) ? visitAt(l.clock, l.seed) : null;
     this.visit = visit;
+    this.wisp = null;
+    this.wispGate = null;
     if (visit !== null && l.fire !== null) {
       const rows: [number, number, number] = [rowA, rowB, b.k];
       const gate = l.fire.at + 3.4;
@@ -344,10 +352,12 @@ export class Stage {
       // Its way up: a ring of its mushrooms coming up beyond his fire, the earth inside parting on the hollow's light,
       // motes of it rising; at the end the moss closes over it. The far half first, its near rim after the creature.
       const sheet = atlas.sheets.portal;
-      const open = portalOpen(visit);
+      const open = this.wispMode ? wispCrossing(visit).seam : portalOpen(visit);
+      if (this.wispMode) this.wispGate = { x: gx, y: gy - 18, alpha: open };
       const ringFrame = (front: boolean): readonly number[] =>
         open < 1 ? (front ? sheet.openfront : sheet.open)[Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length))] : (front ? sheet.loopfront : sheet.loop)[Math.floor(time * 8) % sheet.loop.length];
       const ring = (front: boolean): void => {
+        if (this.wispMode) return;
         const f = ringFrame(front);
         r.ground.add(Math.round(gx - f[2] / 2), Math.round(gy - f[3] + 4), f, rowA, rowB, b.k, false);
       };
@@ -364,7 +374,23 @@ export class Stage {
       }
       // The creature: up out of the ring and over to the fire, there a while, back and down into the ring again.
       const dozing = this.neighbour !== null && !awakeAt(this.neighbour.nightOwl, this.creatureClock());
-      if (visit.phase === 'coming' || visit.phase === 'going') {
+      if (this.wispMode) {
+        const c = wispCrossing(visit);
+        const bond = wispBond(visit);
+        const x = gate + (seat - gate) * c.camp;
+        const baseX = colOf(x), baseY = groundRow(x) - 15 - Math.sin(time * 1.3) * 1.4 - Math.sin(c.camp * Math.PI) * 5;
+        const targetX = colOf(l.at) + (bond.hand > 0 ? 12 : 19);
+        const targetY = groundRow(l.at) - (bond.hand > 0 ? 19 : 12);
+        const near = Math.max(bond.hand, bond.watch * 0.75);
+        this.wisp = { x: baseX + (targetX - baseX) * near, y: baseY + (targetY - baseY) * near, alpha: c.shown, rest: visit.phase === 'with', dim: bond.dim };
+        if (light.count < 6 && c.shown > 0) {
+          const o = light.count++ * 4;
+          light.lights[o] = this.wisp.x;
+          light.lights[o + 1] = this.wisp.y;
+          light.lights[o + 2] = 34;
+          light.lights[o + 3] = 0.5 * c.shown * bond.dim;
+        }
+      } else if (visit.phase === 'coming' || visit.phase === 'going') {
         const c = crossing(visit);
         // Coming it faces the fire; going, the ring.
         const flip = visit.phase === 'coming';
@@ -382,6 +408,7 @@ export class Stage {
     // Him.
     const sheet = atlas.sheets.wanderer;
     // On the nights he wakes, he sits up by the fire while the creature is with him.
+    const bond = wispBond(this.wispMode ? this.visit : null);
     const stage = pose ?? (sitsUp(this.visit) ? 'wake' : l.stage);
     const seat = l.seat <= 2 ? 0 : l.seat <= 7 ? 5 : 10;
     let frame: readonly number[];
@@ -415,7 +442,7 @@ export class Stage {
         break;
       case 'campsit':
       case 'wake':
-        frame = l.smoking >= 0 ? sheet.sitsmoke0[dragging(l) ? 2 : l.smoking % 9.5 < 4 ? 1 : 0] : loop('sit0');
+        frame = bond.hand > 0.05 ? sheet.offer[0] : l.smoking >= 0 ? sheet.sitsmoke0[dragging(l) ? 2 : l.smoking % 9.5 < 4 ? 1 : 0] : loop('sit0');
         break;
       case 'lie':
         frame = loop('lie');

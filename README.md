@@ -96,11 +96,23 @@ The wisp, dream scenery, motes and stepped light are all pixel art, drawn on Wan
 
 ## The old hollow
 
-The existing live hollow and moss creature are preserved at the annotated tag `archive/hollow-moss-live-2026-10-11` (deployed commit `2a46527`). The wisp experiment lives on `feat/wisp-dream-journey`; pushing that branch does not publish it. GitHub Pages continues to deploy only `main`.
+The hollow and moss creature deployed on October 11, 2026 are preserved in the annotated Git tag [archive/hollow-moss-live-2026-10-11](https://github.com/krystofpe/Wander/tree/archive/hollow-moss-live-2026-10-11), pointing to deployed commit `2a46527`. On GitHub, open the branch selector, select **Tags**, then choose that tag to browse or download the preserved source. It is a source snapshot, not a separate hosted website.
+
+The [live site](https://krystofpe.github.io/Wander/) continues to use the hollow and moss creature. The wisp experiment lives on [feat/wisp-dream-journey](https://github.com/krystofpe/Wander/tree/feat/wisp-dream-journey); pushing that branch does not publish it. GitHub Pages deploys only `main`.
+
+To run the preserved version locally in a separate directory:
+
+```sh
+git fetch origin --tags
+git worktree add --detach ../Wander-hollow archive/hollow-moss-live-2026-10-11
+cd ../Wander-hollow
+npm ci
+npm run creature -- --offline
+```
 
 Open `/creature/?hollow=1` to compare the previous creature mode, or `/?hollow=1` for its road visits. Its original behaviour is described below. The existing `creature:tour` and `creature:check` tools explicitly use this legacy mode.
 
-`npm run creature` (or Tab from the road) opens the other mode: the hollow, and the creature. It wears its moss like a blanket, after a picture of one asleep: a soft mound of moss over its back and head, its face peeking out low at the front in the moss's shadow, big eyes that glow in the colour of its mood and a small mouth, little mossy paws in front, stubby mossy feet, and tiny mushrooms, one red and one sea-green, and a couple of leaves growing on top. It pads along, sits, hops, waves a paw. Unlike the wanderer, it notices you. It forages the pale caps, digs for small things, stacks stones into a cairn, chases the butterflies of light and the toy you throw, hums, watches the light come down through the openings far above, sleeps at night on its big mossy stone, its lantern lit on the stone beside it, and now and then comes up to the glass: to say hello, to bring you something it found, to ask you a question, or to tap when you have been away too long. Its behaviour is never scripted: a small brain with needs (food, rest, fun, love), a personality fixed at birth and a bond with you picks what it does next. Its clock is yours: night falls when it is night where you are, under today's moon.
+In the archived version, `npm run creature` (or Tab from the road) opens the hollow and moss creature. On the wisp branch, use `/creature/?hollow=1` to open it. It wears its moss like a blanket, after a picture of one asleep: a soft mound of moss over its back and head, its face peeking out low at the front in the moss's shadow, big eyes that glow in the colour of its mood and a small mouth, little mossy paws in front, stubby mossy feet, and tiny mushrooms, one red and one sea-green, and a couple of leaves growing on top. It pads along, sits, hops, waves a paw. Unlike the wanderer, it notices you. It forages the pale caps, digs for small things, stacks stones into a cairn, chases the butterflies of light and the toy you throw, hums, watches the light come down through the openings far above, sleeps at night on its big mossy stone, its lantern lit on the stone beside it, and now and then comes up to the glass: to say hello, to bring you something it found, to ask you a question, or to tap when you have been away too long. Its behaviour is never scripted: a small brain with needs (food, rest, fun, love), a personality fixed at birth and a bond with you picks what it does next. Its clock is yours: night falls when it is night where you are, under today's moon.
 
 The hollow is the world under his world, painted as his road is. Far above is the roof of earth and stone that is the underside of his world, vaulted, its edges catching the light from below, thin roots hanging from it. A few openings in it show the sky above at his hour (blue by day, warm at dusk, moonlit at night), and soft shafts of that light slant down through the mist. Two enormous roots of his world's trees reach down from the roof into the land. Under them, soft hills of moss go back in ranks into the mist: groves of round old trees and pale ones, ferns, bushes, flowers, mossy stones, a few toadstools glowing quietly. His road is the world in solitude; this is the world still living, and only the creature lives in it. Each of them has a fortress of solitude: his camp, and its stone. Living greens under a teal mist, graded through the hours as his road is; no weather but its mist.
 

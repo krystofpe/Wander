@@ -1,3 +1,5 @@
+import { wispPose } from '../../src/wisp/motion.ts';
+
 // Native-pixel primitives shared by the dream world and the road. No antialiased paths.
 export function pixelLine(c: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number): void {
   let x = Math.round(x0), y = Math.round(y0);
@@ -45,19 +47,19 @@ const SMALL_BODY = [
 
 export function drawWisp(c: CanvasRenderingContext2D, x: number, y: number, radius: number, t: number, rest = false, warm = 0, gaze = 0): void {
   const cx = Math.round(x), cy = Math.round(y);
-  const frame = Math.floor(t * 6);
+  const pose = wispPose(t, rest);
   const palette = warm > 0.5 ? ['#705b50', '#a38763', '#dbc594', '#f6edcc'] : ['#345b66', '#548892', '#9bcfc7', '#e1efcf'];
   const small = radius <= 5;
   const body = small ? SMALL_BODY : BODY;
   glow(c, cx, cy, small ? 18 : 37, warm > 0.5 ? '216,175,106' : '105,179,168', small ? 0.09 : 0.18);
-  // A ribbon of flat, tapered clusters; its shape changes in six discrete frames per second.
+  // The ribbon and body share an eight-pose loop, matching his normal walking cadence.
   const length = small ? 10 : 24;
   let previous: [number, number] | null = null;
   for (let i = length; i >= 0; i--) {
     const k = i / length;
     // A short, continuous ribbon rests behind the body rather than encircling its face.
     const tx = cx - (small ? 2 : 5) - i;
-    const ty = cy + (small ? 2 : 4) + Math.round(Math.sin(frame * (rest ? 0.07 : 0.2) - i * 0.14) * (1 + k * (rest ? 1 : 4)));
+    const ty = cy + (small ? 2 : 4) + Math.round(Math.sin(pose.ribbon - i * 0.14) * (1 + k * (rest ? 1 : 4)));
     const thick = Math.max(0, Math.round((1 - k) * (small ? 1 : 3)));
     c.fillStyle = palette[1];
     if (previous !== null) pixelLine(c, previous[0], previous[1], tx, ty);
@@ -65,7 +67,7 @@ export function drawWisp(c: CanvasRenderingContext2D, x: number, y: number, radi
     if (thick > 1) { c.fillStyle = palette[2]; c.fillRect(tx, ty - thick + 1, 1, thick); }
     previous = [tx, ty];
   }
-  const top = cy - (small ? 6 : 10) + (rest ? 1 : frame % 12 < 6 ? 0 : 1);
+  const top = cy - (small ? 6 : 10) + pose.bob;
   for (let row = 0; row < body.length; row++) for (let col = 0; col < body[row].length; col++) {
     const index = body[row][col];
     if (index === '.') continue;
@@ -74,7 +76,7 @@ export function drawWisp(c: CanvasRenderingContext2D, x: number, y: number, radi
   }
   c.fillStyle = '#25434c';
   const look = gaze > 0.4 ? 1 : gaze < -0.4 ? -1 : 0;
-  const blink = rest || frame % 40 === 39;
+  const blink = rest || Math.floor(t / 0.17) % 40 === 39;
   for (const side of [-1, 1]) {
     const ex = cx + side * (small ? 2 : 3) + look;
     const ey = top + (small ? 6 : 10);

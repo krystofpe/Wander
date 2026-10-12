@@ -34,8 +34,8 @@ style.textContent = `
 body.dreaming { background:#030609; }
 #scene { image-rendering:pixelated; z-index:1; }
 #dream-road { position:fixed;inset:0;width:100%;height:100%;border:0;pointer-events:none; }
-#dream-caption { position:fixed;left:5vw;bottom:7vh;z-index:3;font:italic 18px var(--thought-font);color:rgba(208,226,220,.58);letter-spacing:.05em;pointer-events:none;transition:opacity 2s; }
-#dream-help { position:fixed;right:3vw;bottom:3vh;z-index:3;font:italic 14px var(--thought-font);color:rgba(208,226,220,.38);transition:opacity 1.2s;pointer-events:none; }
+#dream-caption { z-index:3;max-width:44vw;transition:opacity 2s; }
+#dream-help { z-index:3;max-width:44vw;text-align:right; }
 #dream-journal { position:fixed;inset:20% 25%;z-index:4;padding:32px;background:rgba(3,6,9,.94);font:italic 22px var(--thought-font);color:#b8ceca;line-height:1.7;white-space:pre-line;display:none; }
 `;
 document.head.appendChild(style);
@@ -47,7 +47,7 @@ const pixels = document.createElement('canvas');
 const pixelContext = pixels.getContext('2d')!;
 let pixelScale = 1, pixelLeft = 0, pixelTop = 0;
 const caption = document.createElement('div'); caption.id = 'dream-caption'; document.body.appendChild(caption);
-const help = document.createElement('div'); help.id = 'dream-help'; help.textContent = 'Tab · the road     M · sound     J · memories'; document.body.appendChild(help);
+const help = document.createElement('div'); help.id = 'dream-help'; help.textContent = 'M sound · J memories · H more'; document.body.appendChild(help);
 const journal = document.createElement('div'); journal.id = 'dream-journal'; document.body.appendChild(journal);
 
 // Reuse the real road, including its saves and live clock, rather than inventing a second camp simulation.
@@ -154,7 +154,7 @@ function frame(now: number): void {
     caption.textContent = showInfo ? `${thought} · ${d.act} · ${save.meetings} crossings` : thought;
     caption.style.opacity = showInfo || pull > 0 || crossing === 'with' || chapter < 14 || chapter > 230 ? '1' : '0';
     help.style.opacity = now < hintUntil ? '1' : '0';
-    document.documentElement.style.setProperty('--px', `${Math.max(1.5, h / 360)}px`);
+    document.documentElement.style.setProperty('--px', `${pixelScale / ratio}px`);
     Object.assign(status, { frames: status.frames + 1, ready: true, realm: REALMS[d.realm], act: d.act, crossing, seconds: t, meetings: save.meetings, transition });
     if (rw?.__wander?.error) status.error = rw.__wander.error;
   } catch (err) { status.error = String(err); console.error(err); }

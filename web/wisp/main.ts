@@ -1,3 +1,4 @@
+import { catchUpLiveMeetings, liveTimeOf } from '../../src/wisp/live-memory.ts';
 import type { Life } from '../../src/life.ts';
 import { seedOf } from '../../src/options.ts';
 import { boundVisit, dreamAt, emberStrength, keepEmber, keepMeeting, newWisp, REALMS, reviveWisp } from '../../src/wisp/journey.ts';
@@ -25,6 +26,13 @@ const persist = (): void => {
 };
 persist();
 addEventListener('pagehide', persist);
+addEventListener('storage', e => {
+  if (ephemeral || e.key !== STORE || e.newValue === null) return;
+  try {
+    const other = reviveWisp(JSON.parse(e.newValue));
+    if (other !== null && other.seed === save.seed && other.bornAt === save.bornAt) Object.assign(save, other);
+  } catch { /* Ignore invalid changes from another tab. */ }
+});
 
 document.body.className = 'dreaming';
 document.body.style.cursor = 'none';
@@ -118,6 +126,7 @@ addEventListener('visibilitychange', () => {
 });
 modes('creature', site, () => showInfo || performance.now() < hintUntil);
 
+let checkedLiveAt = -Infinity;
 const status = { ready: false, frames: 0, renderer: 'Canvas 2D · dreaming / WebGL · road', error: null as string | null, realm: '', act: '', crossing: null as string | null, seconds: 0, meetings: save.meetings };
 (window as unknown as { __creature: typeof status }).__creature = status;
 addEventListener('error', e => { status.error = e.message; });
@@ -129,6 +138,13 @@ function frame(now: number): void {
     const rw = road.contentWindow as RoadWindow | null;
     const life = rw?.__wander?.life;
     const visit = life !== null && life !== undefined ? boundVisit(life, preview) : null;
+    if (!ephemeral && (site || q.has('live')) && life != null) {
+      const roadTime = liveTimeOf(life.clock);
+      if (roadTime - checkedLiveAt >= 30000) {
+        if (catchUpLiveMeetings(save, roadTime)) persist();
+        checkedLiveAt = roadTime;
+      }
+    }
     const crossing = visit?.phase ?? null;
     const transition = wispCrossing(visit);
     if (rw !== null) rw.__wispRoadVisible = visit !== null;

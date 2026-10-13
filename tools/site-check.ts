@@ -1,3 +1,4 @@
+import { catchUpLiveMeetings } from '../src/wisp/live-memory.ts';
 // npm run site:check -- [--out DIR] [--size WxH] [--also MS]
 // Checks the published page as GitHub Pages will serve it: the built files (npm run site) under /Wander/ on a plain
 // static server, nothing else. That it starts with no server behind it and asks for nothing that is not there; that
@@ -11,7 +12,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import type { Page, Route } from 'playwright-core';
 import { HEADLESS_FLAGS, findChromium } from '../server/browser.ts';
-import { boundVisit } from '../src/wisp/journey.ts';
+import { boundVisit, newWisp } from '../src/wisp/journey.ts';
 import type { Life, LifeEvent } from '../src/life.ts';
 import { LIVE, LIVE_SEED, STEPS_PER_DAY, liveAt, liveEnv, msOfStep, stepLive } from '../src/live.ts';
 import { ROOT, flags } from './headless.ts';
@@ -204,6 +205,42 @@ try {
       await p.close();
     }
   }
+
+  // A saved wisp was away for a whole day: recover the real road's nights, then reload safely.
+  const memoryTime = LIVE.epoch + 86 * LIVE.day * 1000;
+  const memory = newWisp(42, memoryTime - 24 * LIVE.day * 1000);
+  const expected = structuredClone(memory);
+  catchUpLiveMeetings(expected, memoryTime);
+  const memoryPage = await browser.newPage({ viewport: { width: w, height: h } });
+  await memoryPage.route(GOOGLE, quiet);
+  memoryPage.on('pageerror', e => errors.push(e.message));
+  await memoryPage.addInitScript(saved => {
+    if (localStorage.getItem('wander.wisp.v1') === null) localStorage.setItem('wander.wisp.v1', JSON.stringify(saved));
+  }, memory);
+  await memoryPage.goto(`${base}creature/?now=${memoryTime}&mute=1`);
+  await drawn(memoryPage, '__creature');
+  await memoryPage.waitForFunction(() => (window as any).__creature.meetings > 0);
+  const recovered = await memoryPage.evaluate(() => (window as any).__creature.meetings);
+  check(recovered === expected.meetings, `a day away remembers ${recovered} real camp crossings (expected ${expected.meetings})`);
+  await memoryPage.reload();
+  await drawn(memoryPage, '__creature');
+  check(await memoryPage.evaluate(() => (window as any).__creature.meetings) === recovered, 'reloading does not count recovered meetings twice');
+  await memoryPage.close();
+
+  // The standalone road must remember a witnessed visit, too, without needing the dream open.
+  const witnessedTime = LIVE.epoch + LIVE.day * 1000 + 180000;
+  const roadPage = await browser.newPage({ viewport: { width: w, height: h } });
+  await roadPage.route(GOOGLE, quiet);
+  roadPage.on('pageerror', e => errors.push(e.message));
+  await roadPage.addInitScript(({ time, saved }) => {
+    Date.now = () => time;
+    localStorage.setItem('wander.wisp.v1', JSON.stringify(saved));
+  }, { time: witnessedTime, saved: newWisp(42, witnessedTime) });
+  await roadPage.goto(`${base}?mute=1`);
+  await drawn(roadPage, '__wander');
+  const roadMemory = await roadPage.evaluate(() => JSON.parse(localStorage.getItem('wander.wisp.v1')!).meetings);
+  check(roadMemory === 1, 'a visit viewed on the standalone road is remembered');
+  await roadPage.close();
 
   if (f.has('also')) {
     const page = await openAt(`?now=${f.get('also')}&speed=0.0001`);

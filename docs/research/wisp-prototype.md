@@ -41,3 +41,5 @@ Camp companionship now includes one brief open-palm greeting during waking visit
 The wisp occasionally slows and looks toward a faint light that awakens nearby, following it a little before continuing. Crossings and resting take priority. After returning from camp, a tiny amber spark accompanies it and fades over 150 seconds; its timestamp is stored with the journey so reopening does not restart the glow. Older version-one saves load with no ember.
 
 The wisp body and ribbon now share an eight-pose drifting cycle, using the wanderer’s usual walking cadence (PACE.base / FRAME_M, about 5.9 pose changes per second). Resting uses two poses with the same 1600/1300 ms timing as his sitting animation. Canvas position and scene rendering still update each display frame.
+
+Live crossing memory now catches up actual eligible camp visits since the saved wisp was born, including time with the browser closed or on the road. A saved live-time cursor avoids reprocessing old nights. Older saves with recorded visits start after their most recent known night to avoid double counting. Standalone road visits also update existing wisp memory. Preview runs stay isolated.

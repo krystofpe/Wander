@@ -1,3 +1,4 @@
+import { keepMeeting as keepWispMeeting, reviveWisp } from '../src/wisp/journey.ts';
 // The page: options, the canvas in device pixels, his life stepped by the clock, the stage drawn by the renderer.
 import { BIOMES } from '../src/biomes.ts';
 import type { BiomeId } from '../src/biomes.ts';
@@ -234,7 +235,14 @@ stage.neighbour = await neighbourOf();
 /** It came through its portal and sat by his fire: the creature keeps the visit (its file, or this browser). */
 let keptNight = -1;
 function keepVisit(how: Meeting): void {
-  if (stage.wispMode) return;
+  if (stage.wispMode) {
+    if (dreaming || tool || opts.visit || opts.speed !== 1 || params.has('now')) return;
+    try {
+      const wisp = reviveWisp(JSON.parse(localStorage.getItem('wander.wisp.v1') ?? 'null'));
+      if (wisp !== null && keepWispMeeting(wisp, stage.visit)) localStorage.setItem('wander.wisp.v1', JSON.stringify(wisp));
+    } catch { /* Storage is optional. */ }
+    return;
+  }
   if (stage.neighbour === null) return;
   if (site) {
     try {

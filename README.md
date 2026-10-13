@@ -74,7 +74,7 @@ On this branch Tab opens the wisp's dreaming. The built site follows the actual 
 
 ## The dreaming
 
-`npm run creature -- --offline` opens the prototype. A small light travels independently through four slowly blending realms, each lasting about four real minutes. Its journey continues while closed. It has no feeding, loneliness or neglect system: interaction adds companionship, and leaving it alone is fine.
+`npm run creature -- --offline` opens the prototype. A small light travels independently through four slowly blending realms, each lasting about four real minutes. Its journey continues while closed. On the live site, its crossing count catches up eligible camp visits since this browser’s wisp was born, even when the page was closed; visits viewed on the road are remembered too. It has no feeding, loneliness or neglect system: interaction adds companionship, and leaving it alone is fine.
 
 Its guardian role appears through occasional camp crossings and the soft light it casts beside the sleeping wanderer. The dream page follows the actual road in a muted embedded view, painted only once a second until the camp is revealed. The same deterministic crossing rule drives both pages; it does not create a second imagined camp. On a local run the road continues and saves while the wisp is open; on the built site it follows the shared live road.
 

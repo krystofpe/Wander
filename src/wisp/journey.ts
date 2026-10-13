@@ -7,10 +7,10 @@ export const REALMS = ['The scattered stars', 'The dust sea', 'The distant light
 export const REALM_SECONDS = 240;
 /** Hours on his clock: eighteen seconds to open, twenty-four to travel on a one-hour day. */
 export const WISP_CROSSING = { opening: 0.12, travel: 0.16 } as const;
-export type WispSave = { version: 1; seed: number; bornAt: number; meetings: number; lastNight: number | null; emberAt: number | null; emberNight: number | null };
+export type WispSave = { version: 1; seed: number; bornAt: number; meetings: number; lastNight: number | null; emberAt: number | null; emberNight: number | null; liveCheckedAt: number | null };
 
 export function newWisp(seed: number, now: number): WispSave {
-  return { version: 1, seed, bornAt: now, meetings: 0, lastNight: null, emberAt: null, emberNight: null };
+  return { version: 1, seed, bornAt: now, meetings: 0, lastNight: null, emberAt: null, emberNight: null, liveCheckedAt: null };
 }
 
 export function reviveWisp(value: unknown): WispSave | null {
@@ -18,10 +18,11 @@ export function reviveWisp(value: unknown): WispSave | null {
   const s = value as Record<string, unknown>;
   if (s.version !== 1 || typeof s.seed !== 'number' || !Number.isSafeInteger(s.seed) || typeof s.bornAt !== 'number' || !Number.isFinite(s.bornAt) || typeof s.meetings !== 'number' || !Number.isSafeInteger(s.meetings) || s.meetings < 0) return null;
   if (s.lastNight !== null && (typeof s.lastNight !== 'number' || !Number.isSafeInteger(s.lastNight))) return null;
-  const emberAt = s.emberAt ?? null, emberNight = s.emberNight ?? null;
+  const emberAt = s.emberAt ?? null, emberNight = s.emberNight ?? null, liveCheckedAt = s.liveCheckedAt ?? null;
+  if (liveCheckedAt !== null && (typeof liveCheckedAt !== 'number' || !Number.isFinite(liveCheckedAt))) return null;
   if (emberAt !== null && (typeof emberAt !== 'number' || !Number.isFinite(emberAt))) return null;
   if (emberNight !== null && (typeof emberNight !== 'number' || !Number.isSafeInteger(emberNight))) return null;
-  return { version: 1, seed: s.seed as number, bornAt: s.bornAt as number, meetings: s.meetings as number, lastNight: s.lastNight as number | null, emberAt: emberAt as number | null, emberNight: emberNight as number | null };
+  return { version: 1, seed: s.seed as number, bornAt: s.bornAt as number, meetings: s.meetings as number, lastNight: s.lastNight as number | null, emberAt: emberAt as number | null, emberNight: emberNight as number | null, liveCheckedAt: liveCheckedAt as number | null };
 }
 
 /** Crossings are occasional, shared by both views, and happen only at an actual camp. */
@@ -40,7 +41,7 @@ export function boundVisit(road: { seed: number; clock: number; act: string; sta
 }
 
 export function keepMeeting(save: WispSave, visit: Visit | null): boolean {
-  if (visit?.phase !== 'with' || save.lastNight === visit.night) return false;
+  if (visit?.phase !== 'with' || (save.lastNight !== null && save.lastNight >= visit.night)) return false;
   save.lastNight = visit.night;
   save.meetings++;
   return true;

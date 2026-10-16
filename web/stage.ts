@@ -352,7 +352,7 @@ export class Stage {
       // Its way up: a ring of its mushrooms coming up beyond his fire, the earth inside parting on the hollow's light,
       // motes of it rising; at the end the moss closes over it. The far half first, its near rim after the creature.
       const sheet = atlas.sheets.portal;
-      const open = this.wispMode ? wispCrossing(visit).seam : portalOpen(visit);
+      const open = this.wispMode ? wispCrossing(visit).gate : portalOpen(visit);
       if (this.wispMode) this.wispGate = { x: gx, y: gy - 18, alpha: open };
       const ringFrame = (front: boolean): readonly number[] =>
         open < 1 ? (front ? sheet.openfront : sheet.open)[Math.min(sheet.open.length - 1, Math.floor(open * sheet.open.length))] : (front ? sheet.loopfront : sheet.loop)[Math.floor(time * 8) % sheet.loop.length];

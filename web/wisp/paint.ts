@@ -127,3 +127,36 @@ export function drawCrossing(c: CanvasRenderingContext2D, x: number, y: number, 
   }
   c.restore();
 }
+
+/**
+ * A small grid of its own for the wisp and what goes with it, placed on the screen to the device pixel rather than to
+ * the art pixel: its slow drift then glides, as the road's far layers do, instead of ticking an art pixel at a time.
+ */
+export class Sprite {
+  private readonly canvas = document.createElement('canvas');
+  private readonly context: CanvasRenderingContext2D;
+  /** Where it was last placed, in device pixels: left, top and side. */
+  box: [number, number, number] = [0, 0, 0];
+  /** Art pixels from its centre to its edge. */
+  readonly half: number;
+  constructor(half: number) {
+    this.half = half;
+    this.canvas.width = this.canvas.height = half * 2;
+    this.context = this.canvas.getContext('2d')!;
+  }
+
+  /** Paints it around its centre (cx, cy), then sets that centre at native (x, y) of a view whose top-left is at
+   * (left, top) on `target`, `scale` device pixels to an art pixel. */
+  place(target: CanvasRenderingContext2D, x: number, y: number, scale: number, left: number, top: number, alpha: number, paint: (c: CanvasRenderingContext2D, cx: number, cy: number) => void): void {
+    const c = this.context;
+    c.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    paint(c, this.half, this.half);
+    const side = this.canvas.width * scale;
+    this.box = [Math.round(left + (x - this.half) * scale), Math.round(top + (y - this.half) * scale), side];
+    target.save();
+    target.globalAlpha = alpha;
+    target.imageSmoothingEnabled = false;
+    target.drawImage(this.canvas, this.box[0], this.box[1], side, side);
+    target.restore();
+  }
+}

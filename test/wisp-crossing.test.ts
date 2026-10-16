@@ -22,6 +22,15 @@ test('a single spirit passes through the opening before travelling to the fire',
   assert.equal(wispCrossing(visit('with', 0.5)).seam, 0, 'the seam closes while it rests');
 });
 
+test('on the road the portal stands open only for the wisp to pass, and shuts behind it', () => {
+  for (const phase of ['opening', 'with', 'closing'] as Phase[]) for (let i = 0; i <= 100; i++) assert.equal(wispCrossing(visit(phase, i / 100)).gate, 0, `shut while ${phase}`);
+  for (const phase of ['coming', 'going'] as Phase[]) for (let i = 0; i <= 1000; i++) {
+    const s = wispCrossing(visit(phase, i / 1000));
+    if (s.shown > 0 && s.shown < 1) assert.equal(s.gate, 1, `it comes out of, and goes into, an open portal (${phase} ${i / 1000})`);
+  }
+  assert.equal(wispCrossing(visit('going', 1)).gate, 0, 'shut before the dreaming comes back');
+});
+
 test('the greeting occurs only while awake, and sleeping visits dim the guardian', () => {
   const asleep = visit('with', 0.32);
   assert.equal(wispBond(asleep).hand, 0);

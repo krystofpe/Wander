@@ -5,8 +5,8 @@ import type { Visit } from '../creature/visit.ts';
 
 export const REALMS = ['The scattered stars', 'The dust sea', 'The distant lights', 'The quiet between'] as const;
 export const REALM_SECONDS = 240;
-/** Hours on his clock: eighteen seconds to open, twenty-four to travel on a one-hour day. */
-export const WISP_CROSSING = { opening: 0.12, travel: 0.16 } as const;
+/** Hours on his clock: twelve seconds to open, nine to travel on a one-hour day. */
+export const WISP_CROSSING = { opening: 0.08, travel: 0.06 } as const;
 export type WispSave = { version: 1; seed: number; bornAt: number; meetings: number; lastNight: number | null; emberAt: number | null; emberNight: number | null; liveCheckedAt: number | null };
 
 export function newWisp(seed: number, now: number): WispSave {

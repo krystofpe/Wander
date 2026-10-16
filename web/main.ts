@@ -26,7 +26,7 @@ import { revive } from '../src/creature/save.ts';
 import { travellerCame } from '../src/creature/traveller.ts';
 import type { Meeting } from '../src/creature/traveller.ts';
 import { VISIT } from '../src/creature/visit.ts';
-import { drawCrossing, drawWisp } from './wisp/paint.ts';
+import { drawCrossing, drawWisp, Sprite } from './wisp/paint.ts';
 
 const params = new URLSearchParams(location.search);
 const dreaming = params.has('dreaming') && window.parent !== window;
@@ -204,6 +204,7 @@ if (stage.wispMode) canvas.after(wispCanvas);
 const wispContext = wispCanvas.getContext('2d');
 const wispPixels = document.createElement('canvas');
 const wispPixelContext = wispPixels.getContext('2d')!;
+const wispSprite = new Sprite(24);
 // The creature that comes through its portal to his camp at night: yours, from its save (its file here, this browser
 // on the published page), or a stranger's look when there is none yet.
 async function neighbourOf(): Promise<Neighbour | null> {
@@ -554,8 +555,9 @@ function step(now: number): void {
     uiAt = now;
     ui.showBar(barText(hour));
     ui.showLog(logLines());
-    // The published page says, for a while and when the mouse moves, how to hear it and what the keys do.
-    if (site) ui.showHint(now < hintUntil ? `${sound?.waiting === true ? 'click for sound' : 'M sound'} · F full screen · H, L more` : null);
+    // The published page says, for a while and when the mouse moves, how to hear it and what the keys do. Inside the
+    // dreaming the keys are the dreaming's, and it says so itself.
+    if (site && !dreaming) ui.showHint(now < hintUntil ? `${sound?.waiting === true ? 'click for sound' : 'M sound'} · F full screen · H, L more` : null);
   }
 }
 
@@ -685,14 +687,14 @@ function frame(now: number): void {
         p.globalAlpha = 1;
         drawCrossing(p, gate.x, gate.y, anim, gate.alpha, true);
       }
-      if (stage.wisp !== null) {
-        const spirit = stage.wisp;
-        p.globalAlpha = spirit.alpha * spirit.dim;
-        drawWisp(p, spirit.x, spirit.y, 4.3, anim, spirit.rest, 0.35);
-      }
       p.restore();
       c.imageSmoothingEnabled = false;
       c.drawImage(wispPixels, renderer.viewOffsetX, renderer.viewOffsetY, renderer.nativeW * renderer.scale, renderer.nativeH * renderer.scale);
+      // The wisp on a grid of its own, so it glides to the fire and back rather than ticking from pixel to pixel.
+      if (stage.wisp !== null) {
+        const spirit = stage.wisp;
+        wispSprite.place(c, spirit.x, spirit.y, renderer.scale, renderer.viewOffsetX, renderer.viewOffsetY, spirit.alpha * spirit.dim, (s, cx, cy) => drawWisp(s, cx, cy, 4.3, anim, spirit.rest, 0.35));
+      }
     }
     bench?.end();
     if (bench?.report != null && (status as unknown as { bench: unknown }).bench === null) (status as unknown as { bench: unknown }).bench = bench.report;

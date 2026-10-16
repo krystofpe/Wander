@@ -51,8 +51,6 @@ const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const context = canvas.getContext('2d');
 if (context === null) throw new Error('The dreaming needs a canvas.');
 const c = context;
-const pixels = document.createElement('canvas');
-const pixelContext = pixels.getContext('2d')!;
 let pixelScale = 1, pixelLeft = 0, pixelTop = 0;
 const caption = document.createElement('div'); caption.id = 'dream-caption'; document.body.appendChild(caption);
 const help = document.createElement('div'); help.id = 'dream-help'; help.textContent = 'M sound · J memories · H more'; document.body.appendChild(help);
@@ -148,7 +146,6 @@ function frame(now: number): void {
     const crossing = visit?.phase ?? null;
     const transition = wispCrossing(visit);
     if (rw !== null) rw.__wispRoadVisible = visit !== null;
-    const pull = transition.seam;
     if (keepMeeting(save, visit)) persist();
     if (keepEmber(save, visit, Date.now())) persist();
     const d = dreamAt(t, save.seed);
@@ -159,19 +156,16 @@ function frame(now: number): void {
     const nh = Math.min(400, Math.ceil(canvas.height / pixelScale));
     pixelLeft = Math.floor((canvas.width - nw * pixelScale) / 2);
     pixelTop = Math.floor((canvas.height - nh * pixelScale) / 2);
-    if (pixels.width !== nw || pixels.height !== nh) { pixels.width = nw; pixels.height = nh; }
-    dream.draw(pixelContext, nw, nh, t, save.seed, transition, pointer === null ? null : (pointer * ratio - pixelLeft) / pixelScale, Math.max(0, 1 - (now - affectionAt) / 4000), emberStrength(save, Date.now()));
-    c.imageSmoothingEnabled = false;
     c.fillStyle = '#030609'; c.fillRect(0, 0, canvas.width, canvas.height);
-    c.drawImage(pixels, pixelLeft, pixelTop, nw * pixelScale, nh * pixelScale);
+    dream.draw(c, nw, nh, pixelScale, pixelLeft, pixelTop, t, save.seed, transition, pointer === null ? null : (pointer * ratio - pixelLeft) / pixelScale, Math.max(0, 1 - (now - affectionAt) / 4000), emberStrength(save, Date.now()));
     canvas.style.opacity = String(transition.dream);
     const chapter = t % 240;
     const thought = crossing === 'going' || crossing === 'closing' ? 'Until the next fire.' : crossing === 'opening' ? 'A warmth, somewhere.' : crossing === 'coming' ? 'There you are.' : crossing === 'with' ? 'I will keep the light.' : d.act === 'rest' ? 'Even a little light needs to dream.' : REALMS[d.blend > 0.5 ? d.next : d.realm];
     caption.textContent = showInfo ? `${thought} · ${d.act} · ${save.meetings} crossings` : thought;
-    caption.style.opacity = showInfo || pull > 0 || crossing === 'with' || chapter < 14 || chapter > 230 ? '1' : '0';
+    caption.style.opacity = showInfo || crossing !== null || chapter < 14 || chapter > 230 ? '1' : '0';
     help.style.opacity = now < hintUntil ? '1' : '0';
     document.documentElement.style.setProperty('--px', `${pixelScale / ratio}px`);
-    Object.assign(status, { frames: status.frames + 1, ready: true, realm: REALMS[d.realm], act: d.act, crossing, seconds: t, meetings: save.meetings, transition });
+    Object.assign(status, { frames: status.frames + 1, ready: true, realm: REALMS[d.realm], act: d.act, crossing, seconds: t, meetings: save.meetings, transition, wispBox: dream.sprite.box });
     if (rw?.__wander?.error) status.error = rw.__wander.error;
   } catch (err) { status.error = String(err); console.error(err); }
   requestAnimationFrame(frame);

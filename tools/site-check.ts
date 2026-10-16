@@ -202,6 +202,12 @@ try {
       await p.waitForFunction(() => (window as unknown as { __creature: C }).__creature?.crossing === 'with', undefined, { timeout: 15000 });
       const r = await p.evaluate(() => (window as unknown as { __creature: C }).__creature.crossing);
       check(r === 'with', 'the dreaming and road agree on the same crossing');
+      const hints = await p.evaluate(() => {
+        const road = (document.getElementById('dream-road') as HTMLIFrameElement).contentDocument;
+        return { road: road?.getElementById('hint')?.classList.contains('shown') ?? false, own: document.getElementById('dream-help')!.style.opacity };
+      });
+      check(!hints.road && hints.own === '1', 'at his fire only the dreaming says what the keys do, not the road under it too');
+      writeFileSync(join(out, 'crossing.png'), await p.screenshot());
       await p.close();
     }
   }

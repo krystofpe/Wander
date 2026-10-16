@@ -554,8 +554,9 @@ function step(now: number): void {
     uiAt = now;
     ui.showBar(barText(hour));
     ui.showLog(logLines());
-    // The published page says, for a while and when the mouse moves, how to hear it and what the keys do.
-    if (site) ui.showHint(now < hintUntil ? `${sound?.waiting === true ? 'click for sound' : 'M sound'} · F full screen · H, L more` : null);
+    // The published page says, for a while and when the mouse moves, how to hear it and what the keys do. Inside the
+    // dreaming the keys are the dreaming's, and it says so itself.
+    if (site && !dreaming) ui.showHint(now < hintUntil ? `${sound?.waiting === true ? 'click for sound' : 'M sound'} · F full screen · H, L more` : null);
   }
 }
 
